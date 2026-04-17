@@ -1,165 +1,70 @@
-# Forge-v1
+# Forge
 
-Next.js starter with Tailwind CSS, `@solana/kit`, and an Anchor vault program example.
+A trustless freelance marketplace on Solana where every participant is a verified unique human, every reputation is permanently on-chain, and every payment is governed by smart contract escrow — creating the infrastructure layer for professional identity on Solana.
 
-## Getting Started
+## The Problem
 
-```shell
-npx -y create-solana-dapp@latest -t solana-foundation/templates/kit/Forge-v1
-```
+- **No trust between strangers**: Clients and workers cannot verify each other before committing money.
+- **Platform-locked reputation**: Your ratings disappear if the platform shuts down. You own nothing.
+- **Payment fraud**: Workers get ghosted. Clients get bad work. No trustless recourse exists.
+- **Fake accounts and bots**: Multi-wallet gaming inflates fake reputation. No proof of unique humanity.
 
-```shell
-npm install
-npm run setup   # Builds the Anchor program and generates the TypeScript client
-npm run dev
-```
+## The Solution — 4 Core Pillars
 
-Open [http://localhost:3000](http://localhost:3000), connect your wallet, and interact with the vault.
+### 01. World ID Verification (Identity Layer)
+Every user must verify as a unique human via World ID before interacting with Forge. One device, one identity. Iris-verified or phone-verified. No bots, no sockpuppets, no one gaming the system with multiple wallets. The verification proof is stored on-chain in the `forge_identity` program — every other program checks this gate before executing.
 
-## What's Included
+### 02. On-Chain Escrow (Payment Layer)
+When a task owner selects a worker, USDC locks into a PDA (Program Derived Address) in the `forge_escrow` Anchor program. Funds release automatically when the owner approves completion. If disputed, funds freeze until resolution. No middleman, no chargebacks, no "trust me". The smart contract is the arbiter.
 
-- **Wallet connection** via wallet-standard with auto-discovery and dropdown UI
-- **Cluster switching** — devnet, testnet, mainnet, and localnet from the header
-- **Wallet balance** display with airdrop button (devnet/testnet/localnet)
-- **SOL Vault program** — deposit and withdraw SOL from a personal PDA vault
-- **Toast notifications** with explorer links for every transaction
-- **Error handling** — human-readable messages for common Solana and program errors
-- **Codama-generated client** — type-safe program interactions using `@solana/kit`
-- **Tailwind CSS v4** with light/dark mode toggle
+### 03. Dual Soulbound Tokens (Reputation Layer)
+Every completed task mints a non-transferable SBT to both the worker and the client wallet via the `forge_sbt` program. 
+- **Worker SBTs record**: skill category, tasks completed, average rating, on-time delivery rate. 
+- **Client SBTs record**: tasks posted, successful payments, payment speed, dispute rate. 
+These tokens are permanent, portable, and owned by the individual, not the platform.
 
-## Stack
+### 04. Task and Bounty Marketplace (Application Layer)
+The front-end application built on top of the three programs. Post a task with title, description, price in USDC, deadline, and required SBT level. Workers browse and apply with a proposal. Owner reviews applicants — their SBT history is visible before selection. Bounties work the same way but are open to multiple completions. Everything flows through the on-chain programs — the frontend is just the interface.
 
-| Layer          | Technology                       |
-| -------------- | -------------------------------- |
-| Frontend       | Next.js 16, React 19, TypeScript |
-| Styling        | Tailwind CSS v4                  |
-| Solana Client  | `@solana/kit`, wallet-standard   |
-| Program Client | Codama-generated, `@solana/kit`  |
-| Program        | Anchor (Rust)                    |
+## End-to-End User Flow
 
-## Project Structure
+1. **Connect wallet + Verify with World ID**: User connects Phantom/Backpack. World ID prompt appears. After iris/phone verification, wallet is marked human-verified on-chain. Gate opens.
+2. **Client posts a task**: Title, description, USDC price, deadline, skill tags, minimum SBT level required to apply. Transaction goes on-chain.
+3. **Workers browse and apply**: Workers see the task on the marketplace. Their SBT history and World ID badge are visible on their profile. They submit a proposal with a message and timeline.
+4. **Client selects worker -> Funds lock**: Client picks a worker. USDC immediately locks into the escrow PDA on-chain. Worker is notified. Work begins.
+5. **Worker submits deliverable**: Worker marks task complete and submits their work link/proof. Client receives notification to review.
+6. **Client approves -> Escrow releases**: Client clicks approve. Escrow program releases USDC to worker wallet minus Forge protocol fee. Transaction confirmed on-chain.
+7. **SBTs mint to both wallets**: `forge_sbt` mints a badge to the worker (skill + rating + completion count) and a badge to the client (payment confirmed + reliability score). Both wallets now carry permanent, verifiable proof of this interaction.
 
-```
-├── app/
-│   ├── components/
-│   │   ├── cluster-context.tsx  # Cluster state (React context + localStorage)
-│   │   ├── cluster-select.tsx   # Cluster switcher dropdown
-│   │   ├── grid-background.tsx  # Solana-branded decorative grid
-│   │   ├── providers.tsx        # Wallet + theme providers
-│   │   ├── theme-toggle.tsx     # Light/dark mode toggle
-│   │   ├── vault-card.tsx       # Vault deposit/withdraw UI
-│   │   └── wallet-button.tsx    # Wallet connect/disconnect dropdown
-│   ├── generated/vault/        # Codama-generated program client
-│   ├── lib/
-│   │   ├── wallet/             # Wallet-standard connection layer
-│   │   │   ├── types.ts        # Wallet types
-│   │   │   ├── standard.ts     # Wallet discovery + session creation
-│   │   │   ├── signer.ts       # WalletSession → TransactionSigner
-│   │   │   └── context.tsx     # WalletProvider + useWallet() hook
-│   │   ├── hooks/
-│   │   │   ├── use-balance.ts  # SWR-based balance fetching
-│   │   │   └── use-send-transaction.ts  # Transaction send with loading state
-│   │   ├── cluster.ts          # Cluster endpoints + RPC factory
-│   │   ├── lamports.ts         # SOL/lamports conversion
-│   │   ├── send-transaction.ts # Transaction build + sign + send pipeline
-│   │   ├── errors.ts           # Transaction error parsing
-│   │   └── explorer.ts         # Explorer URL builder + address helpers
-│   └── page.tsx                # Main page
-├── anchor/                     # Anchor workspace
-│   └── programs/vault/         # Vault program (Rust)
-└── codama.json                 # Codama client generation config
-```
+## The Bigger Picture — Onchain Professional Identity
 
-## Local Development
+Forge is not just a marketplace. The SBT system creates something the web3 space has never had cleanly: a portable, human-verified, tamper-proof professional identity that lives in your wallet.
 
-To test against a local validator instead of devnet:
+- **For developers**: Share your wallet address in a job application. Employer verifies your entire work history on-chain in seconds.
+- **For DAOs**: Filter contributors by SBT credentials (e.g., "only wallets with 5+ Rust tasks can apply to this grant").
+- **For other protocols**: DeFi platforms, lending protocols, and other dApps can read Forge SBTs as trust signals.
+- **For Africa and emerging markets**: A freelancer in Lagos with 50 on-chain completions has equal credibility to anyone globally. No LinkedIn needed.
 
-1. **Start a local validator**
+## Architecture: 3 Anchor Programs
 
-   ```bash
-   solana-test-validator
-   ```
+1. **`forge_identity`**: World ID verification gate. Marks wallets as human-verified on-chain.
+   - Instructions: `verify_human`
+2. **`forge_escrow`**: Locks USDC into PDAs, handles task lifecycle, releases on approval.
+   - Instructions: `create`, `accept`, `approve`, `dispute`
+3. **`forge_sbt`**: Mints non-transferable badges to both wallets on task completion.
+   - Instructions: `mint_worker`, `mint_client`
 
-2. **Deploy the program locally**
+## Monetization
 
-   ```bash
-   solana config set --url localhost
-   cd anchor
-   anchor build
-   anchor deploy
-   cd ..
-   npm run codama:js   # Regenerate client with local program ID
-   ```
+- **Protocol fee**: ~2% cut on every completed escrow. Baked into the smart contract. Automatic.
+- **Featured listings**: Task posters pay USDC to boost their task to the top of the marketplace.
+- **SBT verification API**: Other dApps and employers pay to query Forge SBT trust scores programmatically.
+- **Premium profiles**: Workers pay for enhanced profile visibility and priority in applicant lists.
 
-3. **Switch to localnet** in the app using the cluster selector in the header.
+## Why Forge wins at Frontier
 
-## Deploy Your Own Vault
-
-The included vault program is already deployed to devnet. To deploy your own:
-
-### Prerequisites
-
-- [Rust](https://rustup.rs/)
-- [Solana CLI](https://solana.com/docs/intro/installation)
-- [Anchor](https://www.anchor-lang.com/docs/installation)
-
-### Steps
-
-1. **Configure Solana CLI for devnet**
-
-   ```bash
-   solana config set --url devnet
-   ```
-
-2. **Create a wallet (if needed) and fund it**
-
-   ```bash
-   solana-keygen new
-   solana airdrop 2
-   ```
-
-3. **Build and deploy the program**
-
-   ```bash
-   cd anchor
-   anchor build
-   anchor keys sync    # Updates program ID in source
-   anchor build        # Rebuild with new ID
-   anchor deploy
-   cd ..
-   ```
-
-4. **Regenerate the client and restart**
-   ```bash
-   npm run setup   # Rebuilds program and regenerates client
-   npm run dev
-   ```
-
-## Testing
-
-Tests use [LiteSVM](https://github.com/LiteSVM/litesvm), a fast lightweight Solana VM for testing.
-
-```bash
-npm run anchor-build   # Build the program first
-npm run anchor-test    # Run tests
-```
-
-The tests are in `anchor/programs/vault/src/tests.rs` and automatically use the program ID from `declare_id!`.
-
-## Regenerating the Client
-
-If you modify the program, regenerate the TypeScript client:
-
-```bash
-npm run setup   # Or: npm run anchor-build && npm run codama:js
-```
-
-This uses [Codama](https://github.com/codama-idl/codama) to generate a type-safe client from the Anchor IDL.
-
-## Learn More
-
-- [Solana Docs](https://solana.com/docs) — core concepts and guides
-- [Anchor Docs](https://www.anchor-lang.com/docs/introduction) — program development framework
-- [Deploying Programs](https://solana.com/docs/programs/deploying) — deployment guide
-- [@solana/kit](https://github.com/anza-xyz/kit) — Solana JavaScript SDK
-- [Codama](https://github.com/codama-idl/codama) — client generation from IDL
+- **Novel on-chain logic**: Three composable programs, not just a frontend over a wallet.
+- **Infrastructure play**: The SBT identity layer is bigger than the marketplace itself.
+- **Real world usability**: Solves a problem millions of freelancers face today, especially in Africa.
+- **Clear monetization**: Protocol fee is automatic, baked into the contract, day one revenue.
+- **Network effects**: The more people use it, the more valuable every SBT becomes.

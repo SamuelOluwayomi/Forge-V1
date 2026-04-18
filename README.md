@@ -12,18 +12,23 @@ A trustless freelance marketplace on Solana where every participant is a verifie
 ## The Solution — 4 Core Pillars
 
 ### 01. World ID Verification (Identity Layer)
+
 Every user must verify as a unique human via World ID before interacting with Forge. One device, one identity. Iris-verified or phone-verified. No bots, no sockpuppets, no one gaming the system with multiple wallets. The verification proof is stored on-chain in the `forge_identity` program — every other program checks this gate before executing.
 
 ### 02. On-Chain Escrow (Payment Layer)
+
 When a task owner selects a worker, USDC locks into a PDA (Program Derived Address) in the `forge_escrow` Anchor program. Funds release automatically when the owner approves completion. If disputed, funds freeze until resolution. No middleman, no chargebacks, no "trust me". The smart contract is the arbiter.
 
 ### 03. Dual Soulbound Tokens (Reputation Layer)
-Every completed task mints a non-transferable SBT to both the worker and the client wallet via the `forge_sbt` program. 
-- **Worker SBTs record**: skill category, tasks completed, average rating, on-time delivery rate. 
-- **Client SBTs record**: tasks posted, successful payments, payment speed, dispute rate. 
-These tokens are permanent, portable, and owned by the individual, not the platform.
+
+Every completed task mints a non-transferable SBT to both the worker and the client wallet via the `forge_sbt` program.
+
+- **Worker SBTs record**: skill category, tasks completed, average rating, on-time delivery rate.
+- **Client SBTs record**: tasks posted, successful payments, payment speed, dispute rate.
+  These tokens are permanent, portable, and owned by the individual, not the platform.
 
 ### 04. Task and Bounty Marketplace (Application Layer)
+
 The front-end application built on top of the three programs. Post a task with title, description, price in USDC, deadline, and required SBT level. Workers browse and apply with a proposal. Owner reviews applicants — their SBT history is visible before selection. Bounties work the same way but are open to multiple completions. Everything flows through the on-chain programs — the frontend is just the interface.
 
 ## End-to-End User Flow

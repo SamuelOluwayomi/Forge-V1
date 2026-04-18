@@ -5,10 +5,12 @@ import Link from "next/link";
 import { ThemeToggle } from "./components/theme-toggle";
 import { ClusterSelect } from "./components/cluster-select";
 import { WalletButton } from "./components/wallet-button";
+import { FireParticles } from "./components/fire-particles";
 
 export default function Home() {
   return (
     <div className="relative min-h-screen bg-background text-foreground noise selection:bg-primary/30">
+      <FireParticles />
       <div className="fixed inset-0 z-[1] pointer-events-none">
         <Image
           src="/background.webp"

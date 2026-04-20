@@ -1,5 +1,8 @@
 [workspace]
-members = ["programs/*"]
+members = [
+    "programs/forge_escrow",
+    "programs/forge_sbt"
+]
 resolver = "2"
 
 [profile.release]

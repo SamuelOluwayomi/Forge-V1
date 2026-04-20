@@ -3,33 +3,6 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #fdfaf8;
-  --foreground: #0a0503;
-  --primary: #ea580c; /* Fiery Orange */
-  --primary-foreground: #ffffff;
-  --muted: #fef1e8;
-  --muted-foreground: #737373;
-  --card: #ffffff;
-  --card-foreground: #0a0503;
-  --popover: #ffffff;
-  --popover-foreground: #0a0503;
-  --border: #f9d8c4;
-  --border-low: #fdf5ef;
-  --input: #f9d8c4;
-  --accent: #fdf5ef;
-  --accent-foreground: #ea580c;
-  --cream: #fdf5ef;
-  --destructive: #ef4444;
-  --destructive-foreground: #ef4444;
-  --ring: #ea580c;
-  --radius: 0rem;
-  --secondary: #fdf5ef;
-  --secondary-foreground: #0a0503;
-  --font-sans: var(--font-inter), system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-}
-
-.dark {
   --background: #070302; /* Very deep charcoal/coal */
   --foreground: #fff5ed;
   --primary: #ea580c; /* Fiery orange */
@@ -51,6 +24,8 @@
   --ring: #ea580c;
   --secondary: #1c0c08;
   --secondary-foreground: #fff5ed;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
 @theme inline {
@@ -99,7 +74,7 @@
   position: fixed;
   inset: 0;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-  opacity: 0.05;
+  opacity: 0.08; /* Bumped up slightly so it is visible over the bright fire */
   pointer-events: none;
-  z-index: 50; /* Ensure it stays on top of most things */
+  z-index: 9999; /* Ensure it stays on top of the z-50 fire particles */
 }

@@ -1,0 +1,25 @@
+[package]
+name = "forge_escrow"
+version = "0.1.0"
+description = "Forge escrow program — trustless task payment on Solana"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "forge_escrow"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+
+[dependencies]
+anchor-lang = { version = "1.0.0", features = ["init-if-needed"] }
+anchor-spl = { version = "1.0.0", features = ["token"] }
+
+[dev-dependencies]
+# litesvm = "=0.7.1"
+# solana-sdk = "2.3"

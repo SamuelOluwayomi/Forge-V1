@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ThemeToggle } from "./components/theme-toggle";
+
 import { ClusterSelect } from "./components/cluster-select";
 import { WalletButton } from "./components/wallet-button";
 import { FireParticles } from "./components/fire-particles";
@@ -41,7 +41,7 @@ export default function Home() {
             <div className="hidden lg:flex items-center gap-2">
                <ClusterSelect />
             </div>
-            <ThemeToggle />
+
             <div className="ml-2">
                 <WalletButton />
             </div>

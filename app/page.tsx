@@ -10,7 +10,6 @@ import { FireParticles } from "./components/fire-particles";
 export default function Home() {
   return (
     <div className="relative min-h-screen bg-background text-foreground noise selection:bg-primary/30">
-      <FireParticles />
       <div className="fixed inset-0 z-[1] pointer-events-none">
         <Image
           src="/background.webp"

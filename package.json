@@ -27,6 +27,7 @@
   "private": true,
   "dependencies": {
     "@civic/solana-gateway-react": "^1.2.4",
+    "@phosphor-icons/react": "^2.1.10",
     "@solana/kit": "^6.3.0",
     "@solana/kit-client-rpc": "^0.7.0",
     "@solana/kit-plugin-rpc": "^0.7.0",

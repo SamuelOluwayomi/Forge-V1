@@ -21,7 +21,7 @@ export function FireParticles() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 pointer-events-none mix-blend-screen opacity-80 overflow-hidden">
+    <div className="fixed inset-0 z-10 pointer-events-none mix-blend-screen opacity-80 overflow-hidden">
       <Particles
         id="tsparticles"
         className="w-full h-full"

@@ -3,27 +3,26 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #4B5320;
-  --foreground: #f4f5f0;
-  --primary: #ea580c; 
+  --background: #F7F5F0; /* Warmer cream texturized off-white */
+  --foreground: #111111; /* Near black */
+  --primary: #FF4500;    /* Orange for accents and tape */
   --primary-foreground: #ffffff;
-  --muted: #3d441a;
-  --muted-foreground: #d2d4c8;
-  --card: #4B5320;
-  --card-foreground: #f4f5f0;
-  --popover: #4B5320;
-  --popover-foreground: #f4f5f0;
-  --border: #3d441a;
-  --border-low: rgba(61, 68, 26, 0.5);
-  --input: #3d441a;
-  --accent: #5c6628;
-  --accent-foreground: #ea580c;
-  --cream: #3d441a;
+  --muted: #e0e0e0;      /* Light gray */
+  --muted-foreground: #666666;
+  --card: #ffffff;
+  --card-foreground: #2c2c2e;
+  --popover: #ffffff;
+  --popover-foreground: #2c2c2e;
+  --border: #dcdcc6;
+  --border-low: rgba(220, 220, 198, 0.5);
+  --input: #ffffff;
+  --accent: #FF8C00;     /* Dark Orange */
+  --accent-foreground: #ffffff;
   --destructive: #ef4444;
   --destructive-foreground: #ef4444;
-  --ring: #ea580c;
-  --secondary: #5c6628;
-  --secondary-foreground: #f4f5f0;
+  --ring: #FF4500;
+  --secondary: #2c2c2e;
+  --secondary-foreground: #F5F5DC;
   --font-sans: var(--font-nunito), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
@@ -141,16 +140,113 @@
   align-items: center;
 }
 
-.army-texture {
-  background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='txt'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.1 0 0 0 0 0.1 0 0 0 0 0.1 0 0 0 0.1 0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23txt)'/%3E%3C/svg%3E");
+.brutalist-card {
+  background: white;
+  border: 3px solid black;
+  box-shadow: 6px 6px 0px 0px rgba(0, 0, 0, 1);
+  transition: all 0.15s ease;
 }
 
-.aurora-bg {
-  background: radial-gradient(circle at 10% 10%, rgba(138, 154, 54, 0.3) 0%, transparent 50%),
-              radial-gradient(circle at 80% 90%, rgba(234, 88, 12, 0.25) 0%, transparent 40%),
-              radial-gradient(circle at 90% 20%, rgba(85, 96, 36, 0.4) 0%, transparent 50%),
-              radial-gradient(circle at 50% 50%, rgba(61, 68, 26, 0.5) 0%, transparent 70%);
+.brutalist-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 10px 10px 0px 0px rgba(0, 0, 0, 1);
+}
+
+.brutalist-pill {
+  background: white;
+  border: 2px solid black;
+  border-radius: 9999px;
+  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+}
+
+.brutalist-button {
+  background: var(--primary);
+  color: white;
+  border: 2px solid black;
+  font-weight: 900;
+  text-transform: uppercase;
+  padding: 0.6rem 1.5rem;
+  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+  transition: all 0.1s ease;
+}
+
+.brutalist-button:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px 0px rgba(0, 0, 0, 1);
+}
+
+.brutalist-button:active {
+  transform: translate(0px, 0px);
+  box-shadow: 0px 0px 0px 0px rgba(0, 0, 0, 1);
+}
+
+.brutalist-tape {
+  background: var(--primary);
+  color: white;
+  border: 2px solid black;
+  box-shadow: 3px 3px 0px 0px rgba(0, 0, 0, 1);
+  display: inline-block;
+  padding: 0.25rem 1rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  transform: rotate(calc(-3deg + 6deg * var(--random-rotation, 0)));
+}
+
+.brutalist-sticker {
+  background: var(--primary);
+  border: 3px solid black;
+  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+  border-radius: 50%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brutalist-link {
+  text-transform: uppercase;
+  font-weight: 900;
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+  padding: 0.5rem 1rem;
+  transition: all 0.2s ease;
+}
+
+.brutalist-link:hover {
+  background: black;
+  color: white;
+}
+
+.paper-texture {
+  position: relative;
   background-color: var(--background);
+}
+
+.paper-texture::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 10;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+.nav-wrapper {
+  position: fixed;
+  top: 1.5rem;
+  left: 0;
+  right: 0;
+  width: 100%;
+  padding: 0 4rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 1000;
 }
 
 /* Grain/noise overlay */

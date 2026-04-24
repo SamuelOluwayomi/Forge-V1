@@ -4,41 +4,51 @@ import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 
 export function TunnelBackground() {
+  const [mounted, setMounted] = React.useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const requestRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted || !containerRef.current) return;
 
     // --- SETUP ---
     const scene = new THREE.Scene();
     
-    // We want a very long view distance for the tunnel
+    // Warm light beige fog to create depth in the light environment
+    scene.fog = new THREE.FogExp2(0xF5F5DC, 0.0008);
+    
+    // Tighter FOV for better depth perception (was 75)
     const camera = new THREE.PerspectiveCamera(
-      75,
+      50,
       window.innerWidth / window.innerHeight,
-      0.1,
-      5000
+      1,
+      10000
     );
     camera.position.z = 0;
 
     const renderer = new THREE.WebGLRenderer({ 
       antialias: true, 
-      alpha: true 
+      alpha: false 
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(0xF5F5DC, 1); // Exact Beige background
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
     // --- LIGHTING ---
-    // The light orbits the camera and provides that dynamic shine
-    const light = new THREE.PointLight(0xea580c, 2, 800); // App primary (orange)
+    // Powerful light with warm amber tone
+    const light = new THREE.PointLight(0xFFD700, 5, 2000); 
+    light.position.set(0, 0, -800);
     scene.add(light);
 
-    // Add some ambient light to see the mesh
-    const ambient = new THREE.AmbientLight(0x4B5320, 0.5); // App background (army green)
+    // More ambient light for a light theme to prevent overly dark corners
+    const ambient = new THREE.AmbientLight(0xFFF5E1, 0.4);
     scene.add(ambient);
 
     // --- ELEMENTS ---
@@ -49,12 +59,12 @@ export function TunnelBackground() {
     const cubesPerCircle = 13;
     const spacing = 180;
     
-    // Forge Palette
+    // FIERY colors (Oranges, Reds, Golds)
     const colors = [
-      new THREE.Color(0x4B5320), // Army Green
-      new THREE.Color(0x5c6628), // Lighter Green
-      new THREE.Color(0xea580c), // Primary Orange
-      new THREE.Color(0x3d441a)  // Deep Muted Green
+      new THREE.Color(0xFF4500), // OrangeRed
+      new THREE.Color(0xFFA500), // Orange
+      new THREE.Color(0xFFD700), // Gold
+      new THREE.Color(0x8B0000)  // DarkRed
     ];
 
     const geometry = new THREE.BoxGeometry(50, 50, 150);
@@ -66,15 +76,13 @@ export function TunnelBackground() {
       for (let j = 0; j < cubesPerCircle; j++) {
         const material = new THREE.MeshPhongMaterial({ 
           color: colors[i % colors.length],
-          shininess: 100,
-          transparent: true,
-          opacity: 0.9
+          shininess: 120,
+          specular: 0x555555
         });
         
         const cube = new THREE.Mesh(geometry, material);
         const rotation = new THREE.Matrix4().makeRotationZ((Math.PI * 2 / cubesPerCircle) * j);
         
-        // Apply rotation and translation to position the cube in a ring
         cube.applyMatrix4(new THREE.Matrix4().multiplyMatrices(rotation, translate));
         circleGroup.add(cube);
       }
@@ -91,22 +99,16 @@ export function TunnelBackground() {
     const animate = () => {
       requestRef.current = requestAnimationFrame(animate);
 
-      // Scroll the camera forward
       camera.position.z -= 7;
-      light.position.z = camera.position.z - 750; // Follow camera with offset
+      light.position.z = camera.position.z - 800;
       
-      // Orbit the light
-      light.position.y = Math.sin(counter / 50) * 75;
-      light.position.x = Math.cos(counter / 50) * 75;
+      light.position.y = Math.sin(counter / 50) * 85;
+      light.position.x = Math.cos(counter / 50) * 85;
       
-      // Rotate camera for dizziness/trippiness
       camera.rotation.z += 0.005;
 
-      // Wrap circles around (infinite tunnel logic)
       for (let i = 0; i < elements.children.length; i++) {
         const circle = elements.children[i];
-        
-        // If camera has passed the circle
         if (camera.position.z <= circle.position.z) {
           farest -= spacing;
           circle.position.z = farest;
@@ -119,7 +121,6 @@ export function TunnelBackground() {
 
     animate();
 
-    // --- RESIZE HANDLING ---
     const handleResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
@@ -135,13 +136,16 @@ export function TunnelBackground() {
         rendererRef.current.dispose();
       }
     };
-  }, []);
+  }, [mounted]);
+
+  if (!mounted) return null;
 
   return (
     <div 
       ref={containerRef} 
       className="fixed inset-0 z-0 pointer-events-none"
-      style={{ filter: "blur(2px) contrast(1.1)" }}
+      style={{ backgroundColor: "#d8d886ff" }}
+      suppressHydrationWarning
     />
   );
 }

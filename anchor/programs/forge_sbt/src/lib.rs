@@ -48,7 +48,7 @@ pub mod forge_sbt {
 
     // ─────────────────────────────────────────────
     // 2. MARK WORLD ID VERIFIED
-    // Called after successful World ID verification.
+    // Called after successful Civic Captcha.
     // Sets the verified flag on the reputation account.
     // ─────────────────────────────────────────────
     pub fn mark_world_id_verified(ctx: Context<MarkVerified>) -> Result<()> {

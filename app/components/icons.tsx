@@ -1,3 +1,3 @@
 "use client";
 
-export { ArrowRight, Hammer } from "@phosphor-icons/react";
+export { ArrowRight, Hammer, GithubLogo, XLogo, TelegramLogo } from "@phosphor-icons/react";

@@ -11,7 +11,7 @@ A trustless freelance marketplace on Solana where every participant is a verifie
 
 ## The Solution — 4 Core Pillars
 
-### 01. World ID Verification (Identity Layer)
+### 01. Civic Captcha (Identity Layer)
 
 Every user must verify as a unique human via World ID before interacting with Forge. One device, one identity. Iris-verified or phone-verified. No bots, no sockpuppets, no one gaming the system with multiple wallets. The verification proof is stored on-chain in the `forge_identity` program — every other program checks this gate before executing.
 
@@ -52,7 +52,7 @@ Forge is not just a marketplace. The SBT system creates something the web3 space
 
 ## Architecture: 3 Anchor Programs
 
-1. **`forge_identity`**: World ID verification gate. Marks wallets as human-verified on-chain.
+1. **`forge_identity`**: Civic Captcha gate. Marks wallets as human-verified on-chain.
    - Instructions: `verify_human`
 2. **`forge_escrow`**: Locks USDC into PDAs, handles task lifecycle, releases on approval.
    - Instructions: `create`, `accept`, `approve`, `dispute`

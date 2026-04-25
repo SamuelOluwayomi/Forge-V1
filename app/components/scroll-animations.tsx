@@ -129,9 +129,9 @@ export function StaggerChild({
     <motion.div
       className={className}
       variants={{
-        hidden: variants[variant].hidden as object,
+        hidden: variants[variant].hidden as any,
         visible: {
-          ...(variants[variant].visible as object),
+          ...(variants[variant].visible as any),
           transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
         },
       }}

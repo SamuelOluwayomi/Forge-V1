@@ -43,7 +43,7 @@ const variants: Record<string, Variants> = {
   },
 };
 
-const easings: Record<string, string | number[]> = {
+const easings: Record<string, [number, number, number, number]> = {
   fadeUp: [0.22, 1, 0.36, 1],
   fadeLeft: [0.22, 1, 0.36, 1],
   fadeRight: [0.22, 1, 0.36, 1],

@@ -1,10 +1,3 @@
-// useEscrow.ts – React hook for the Forge escrow program
-// ----------------------------------------------------------
-// This hook pulls in the generated IDL, builds an Anchor Program instance,
-// and wraps the core escrow instructions in easy‑to‑use async functions.
-// It is built on top of the existing Solana client & wallet contexts
-// (SolanaClientProvider & WalletProvider) already used throughout the app.
-
 "use client";
 
 import { useCallback, useMemo } from "react";
@@ -12,20 +5,11 @@ import { AnchorProvider, Program, web3, Idl, BN } from "@coral-xyz/anchor";
 import { useSolanaClient } from "../solana-client-context"; // provides connection
 import { useWallet } from "../wallet/context"; // provides wallet adapter
 import { PublicKey } from "@solana/web3.js";
-
-// Load the IDL – we copy it into the frontend for type safety
-// (make sure the file exists at this path after build)
 import forgeEscrowIdl from "@/app/lib/idl/forge_escrow.json";
 
-// Types generated from the IDL (optional but nice for autocomplete)
-// Using the generic "any" for simplicity – you can run `anchor idl parse`
-// to generate a dedicated TypeScript type if desired.
 export type ForgeEscrowProgram = Program<any>;
 
-/**
- * Hook that returns an initialized Anchor Program for the forge escrow contract
- * and a set of helper methods to call its instructions.
- */
+
 export function useEscrow() {
   const { connection } = useSolanaClient(); // Solana RPC connection
   const { wallet } = useWallet();
@@ -36,8 +20,6 @@ export function useEscrow() {
     if (!wallet || !wallet.signTransaction) {
       throw new Error("Wallet does not support signing or is not connected");
     }
-    // We assume the cluster-context/solana-client-context handled the chain ID.
-    // Anchor uses legacy web3.js transactions.
     const serialized = transaction.serialize({ requireAllSignatures: false });
     const signed = await wallet.signTransaction(serialized, "solana:devnet"); // fallback to devnet if unknown
     return web3.Transaction.from(signed);
@@ -49,8 +31,6 @@ export function useEscrow() {
     const wallet = {
       publicKey: walletPublicKey,
       signTransaction,
-      // The AnchorProvider expects a `signAllTransactions` method; we can reuse the
-      // same signTransaction for simplicity.
       signAllTransactions: async (txs: web3.Transaction[]) => {
         const signed: web3.Transaction[] = [];
         for (const tx of txs) {
@@ -72,8 +52,6 @@ export function useEscrow() {
     return new Program(forgeEscrowIdl as Idl, provider) as ForgeEscrowProgram;
   }, [provider]);
 
-  // ------- Helper functions for each instruction -------
-  // All helpers are `useCallback` so they have stable references.
 
   /** Create a new escrow task */
   const createTask = useCallback(
@@ -92,7 +70,7 @@ export function useEscrow() {
         Buffer.from([...(new BN(taskId).toArray('le', 8))]),
       ], program.programId);
 
-      return await program.methods
+      return await (program.methods as any)
         .createTask(taskId, amount, reviewWindowDays, difficulty, taskMetadataUri)
         .accounts({
           escrowAccount: escrowPda,
@@ -114,7 +92,7 @@ export function useEscrow() {
         Buffer.from([...(new BN(taskId).toArray('le', 8))]),
       ], program.programId);
 
-      return await program.methods
+      return await (program.methods as any)
         .acceptWorker(workerPubkey)
         .accounts({
           escrowAccount: escrowPda,
@@ -139,7 +117,7 @@ export function useEscrow() {
         Buffer.from([...(new BN(taskId).toArray('le', 8))]),
       ], program.programId);
 
-      return await program.methods
+      return await (program.methods as any)
         .submitWork(submissionUri, aiReportHash ?? null)
         .accounts({
           escrowAccount: escrowPda,
@@ -160,14 +138,14 @@ export function useEscrow() {
         Buffer.from([...(new BN(taskId).toArray('le', 8))]),
       ], program.programId);
 
-      return await program.methods
+      return await (program.methods as any)
         .approveWork()
         .accounts({
           escrowAccount: escrowPda,
           client: walletPublicKey,
           vault: await findVaultPda(escrowPda, program.programId),
           workerTokenAccount: await findAssociatedTokenAddress(
-            await program.account.escrowAccount.fetch(escrowPda).then((a: any) => a.worker),
+            await (program.account as any).escrowAccount.fetch(escrowPda).then((a: any) => a.worker),
             USDC_MINT
           ),
           tokenProgram: new web3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"),
@@ -177,7 +155,6 @@ export function useEscrow() {
     [program, walletPublicKey]
   );
 
-  // Additional helper utilities -------------------------------------------------
   const USDC_MINT = new web3.PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"); // SPL USDC
 
   // Derive the associated token account for a given owner & mint
@@ -207,7 +184,6 @@ export function useEscrow() {
     acceptWorker,
     submitWork,
     approveWork,
-    // expose raw provider for advanced usage if needed
     provider,
   } as const;
 }

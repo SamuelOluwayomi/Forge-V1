@@ -28,7 +28,20 @@ export type ForgeEscrowProgram = Program<any>;
  */
 export function useEscrow() {
   const { connection } = useSolanaClient(); // Solana RPC connection
-  const { publicKey: walletPublicKey, signTransaction } = useWallet();
+  const { wallet } = useWallet();
+  const walletPublicKey = useMemo(() => wallet ? new PublicKey(wallet.account.address) : null, [wallet]);
+
+  // Shim for Anchor's expected signTransaction
+  const signTransaction = useCallback(async (transaction: web3.Transaction) => {
+    if (!wallet || !wallet.signTransaction) {
+      throw new Error("Wallet does not support signing or is not connected");
+    }
+    // We assume the cluster-context/solana-client-context handled the chain ID.
+    // Anchor uses legacy web3.js transactions.
+    const serialized = transaction.serialize({ requireAllSignatures: false });
+    const signed = await wallet.signTransaction(serialized, "solana:devnet"); // fallback to devnet if unknown
+    return web3.Transaction.from(signed);
+  }, [wallet]);
 
   // Provider – combines connection, wallet, and options
   const provider = useMemo(() => {

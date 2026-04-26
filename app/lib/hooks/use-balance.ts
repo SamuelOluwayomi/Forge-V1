@@ -8,7 +8,7 @@ import { useSolanaClient } from "../solana-client-context";
 
 export function useBalance(address?: Address) {
   const { cluster } = useCluster();
-  const client = useSolanaClient();
+  const { client } = useSolanaClient();
 
   const { data, isLoading, error, mutate } = useSWR(
     address ? (["balance", cluster, address] as const) : null,

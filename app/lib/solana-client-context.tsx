@@ -1,17 +1,26 @@
 "use client";
 
 import { createContext, useContext, useMemo, type ReactNode } from "react";
-import { createSolanaClient, type SolanaClient } from "./solana-client";
+import { Connection } from "@solana/web3.js";
+import { createSolanaClient, type SolanaClient, getClusterUrl } from "./solana-client";
 import { useCluster } from "../components/cluster-context";
 
-const SolanaClientContext = createContext<SolanaClient | null>(null);
+type SolanaContextValue = {
+  client: SolanaClient;
+  connection: Connection;
+};
+
+const SolanaClientContext = createContext<SolanaContextValue | null>(null);
 
 export function SolanaClientProvider({ children }: { children: ReactNode }) {
   const { cluster } = useCluster();
   const client = useMemo(() => createSolanaClient(cluster), [cluster]);
+  const connection = useMemo(() => new Connection(getClusterUrl(cluster), "processed"), [cluster]);
+
+  const value = useMemo(() => ({ client, connection }), [client, connection]);
 
   return (
-    <SolanaClientContext.Provider value={client}>
+    <SolanaClientContext.Provider value={value}>
       {children}
     </SolanaClientContext.Provider>
   );

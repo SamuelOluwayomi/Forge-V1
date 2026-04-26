@@ -84,7 +84,7 @@ export function ConnectModal({ open, onClose }: ConnectModalProps) {
         aria-labelledby="modal-title"
       >
         {/* Header bar - Fixed at top */}
-        <div className="bg-background text-white px-8 py-5 flex items-center justify-between border-b-4 border-black shrink-0">
+        <div className="bg-primary text-white px-8 py-5 flex items-center justify-between border-b-4 border-black shrink-0">
           <div className="flex items-center gap-3">
             <Image
               src="/forge.png"

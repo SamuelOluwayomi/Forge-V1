@@ -8,7 +8,7 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
-import { AnchorProvider, Program, web3, Idl } from "@coral-xyz/anchor";
+import { AnchorProvider, Program, web3, Idl, BN } from "@coral-xyz/anchor";
 import { useSolanaClient } from "../solana-client-context"; // provides connection
 import { useWallet } from "../wallet/context"; // provides wallet adapter
 import { PublicKey } from "@solana/web3.js";
@@ -89,7 +89,7 @@ export function useEscrow() {
       const [escrowPda] = await web3.PublicKey.findProgramAddress([
         Buffer.from("escrow"),
         walletPublicKey.toBuffer(),
-        Buffer.from([...(new web3.BN(taskId).toArray('le', 8))]),
+        Buffer.from([...(new BN(taskId).toArray('le', 8))]),
       ], program.programId);
 
       return await program.methods
@@ -111,7 +111,7 @@ export function useEscrow() {
       const [escrowPda] = await web3.PublicKey.findProgramAddress([
         Buffer.from("escrow"),
         walletPublicKey.toBuffer(),
-        Buffer.from([...(new web3.BN(taskId).toArray('le', 8))]),
+        Buffer.from([...(new BN(taskId).toArray('le', 8))]),
       ], program.programId);
 
       return await program.methods
@@ -136,7 +136,7 @@ export function useEscrow() {
       const [escrowPda] = await web3.PublicKey.findProgramAddress([
         Buffer.from("escrow"),
         walletPublicKey.toBuffer(),
-        Buffer.from([...(new web3.BN(taskId).toArray('le', 8))]),
+        Buffer.from([...(new BN(taskId).toArray('le', 8))]),
       ], program.programId);
 
       return await program.methods
@@ -157,7 +157,7 @@ export function useEscrow() {
       const [escrowPda] = await web3.PublicKey.findProgramAddress([
         Buffer.from("escrow"),
         walletPublicKey.toBuffer(),
-        Buffer.from([...(new web3.BN(taskId).toArray('le', 8))]),
+        Buffer.from([...(new BN(taskId).toArray('le', 8))]),
       ], program.programId);
 
       return await program.methods

@@ -3,11 +3,11 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #FDF3E3; /* Still cooler than orange but noticeably warmer parchment cream */
+  --background: #fdf3e3;
   --foreground: #111111; /* Near black */
-  --primary: #FF4500;    /* Orange for accents and tape */
+  --primary: #ff4500; /* Orange for accents and tape */
   --primary-foreground: #ffffff;
-  --muted: #e0e0e0;      /* Light gray */
+  --muted: #e0e0e0; /* Light gray */
   --muted-foreground: #666666;
   --card: #ffffff;
   --card-foreground: #2c2c2e;
@@ -16,13 +16,13 @@
   --border: #dcdcc6;
   --border-low: rgba(220, 220, 198, 0.5);
   --input: #ffffff;
-  --accent: #FF8C00;     /* Dark Orange */
+  --accent: #ff8c00; /* Dark Orange */
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
   --destructive-foreground: #ef4444;
-  --ring: #FF4500;
+  --ring: #ff4500;
   --secondary: #2c2c2e;
-  --secondary-foreground: #F5F5DC;
+  --secondary-foreground: #f5f5dc;
   --font-sans: var(--font-nunito), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
@@ -89,26 +89,39 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #FF4500;
+  background: #ff4500;
   border: 2px solid #000;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #FF8C00;
+  background: #ff8c00;
 }
 
-/* Firefox */
-* {
+/* Scoped Scrollbar for Modals */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #000000;
+  border-radius: 10px;
+}
+
+.custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #FF4500 #1a1a1a;
+  scrollbar-color: #000000 transparent;
 }
 
 .clay-panel {
   background: var(--background);
-  box-shadow: 
-    12px 12px 32px rgba(35, 39, 15, 0.7), 
-    -12px -12px 32px rgba(115, 127, 49, 0.25), 
-    inset 2px 2px 12px rgba(138, 154, 54, 0.2), 
+  box-shadow:
+    12px 12px 32px rgba(35, 39, 15, 0.7),
+    -12px -12px 32px rgba(115, 127, 49, 0.25),
+    inset 2px 2px 12px rgba(138, 154, 54, 0.2),
     inset -2px -2px 12px rgba(35, 39, 15, 0.5);
 }
 
@@ -251,7 +264,7 @@
   padding: 0.5rem 1rem;
   transition: all 0.1s ease;
   border: 2px solid transparent;
-  box-shadow: 3px 3px 0px 0px rgba(0,0,0,1);
+  box-shadow: 3px 3px 0px 0px rgba(0, 0, 0, 1);
 }
 
 .brutalist-link:hover {

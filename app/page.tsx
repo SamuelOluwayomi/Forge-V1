@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, GithubLogo, XLogo, TelegramLogo } from "./components/icons";
@@ -7,17 +8,21 @@ import { GridBackground } from "./components/grid-background";
 import { FireParticles } from "./components/fire-particles";
 import { Navbar } from "./components/navbar";
 import { AnimateIn, StaggerIn, StaggerChild, ParallaxFloat } from "./components/scroll-animations";
-import DebugEscrow from "./components/DebugEscrow";
+import { ConnectModal } from "./components/connect-modal";
 
 export default function Home() {
+  const [modalOpen, setModalOpen] = useState(false);
+
   return (
-    <div
-      className="relative min-h-screen paper-texture text-foreground selection:bg-primary/30 overflow-x-clip flex flex-col"
-      suppressHydrationWarning
-    >
+    <>
+      <ConnectModal open={modalOpen} onClose={() => setModalOpen(false)} />
+      <div
+        className="relative min-h-screen paper-texture text-foreground selection:bg-primary/30 overflow-x-clip flex flex-col"
+        suppressHydrationWarning
+      >
       <GridBackground />
       <FireParticles />
-      <Navbar />
+      <Navbar onGetStarted={() => setModalOpen(true)} />
 
       <main id="home" className="scroll-mt-32 flex-1 pt-8 px-8 md:px-16 max-w-7xl mx-auto relative w-full">
 
@@ -303,7 +308,11 @@ export default function Home() {
               </p>
             </AnimateIn>
             <AnimateIn variant="scaleIn" delay={0.4}>
-              <button className="brutalist-button px-12 py-5 bg-primary text-white border-white border-2 shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all font-black text-xl uppercase flex items-center gap-3">
+              <button
+                id="cta-get-started"
+                onClick={() => setModalOpen(true)}
+                className="brutalist-button px-12 py-5 bg-primary text-white border-white border-2 shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all font-black text-xl uppercase flex items-center gap-3"
+              >
                 Get Started <ArrowRight size={24} weight="bold" />
               </button>
             </AnimateIn>
@@ -366,6 +375,7 @@ export default function Home() {
         </footer>
 
       </main>
-    </div>
+      </div>
+    </>
   );
 }

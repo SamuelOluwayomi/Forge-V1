@@ -11,7 +11,11 @@ const NAV_LINKS = [
   { label: "Goals", href: "#goals", id: "goals" },
 ];
 
-export function Navbar() {
+interface NavbarProps {
+  onGetStarted?: () => void;
+}
+
+export function Navbar({ onGetStarted }: NavbarProps) {
   const [activeSection, setActiveSection] = useState("home");
 
   useEffect(() => {
@@ -19,7 +23,6 @@ export function Navbar() {
     const goalsEl = document.getElementById("goals");
 
     const handleScroll = () => {
-      const scrollY = window.scrollY;
       const aboutTop = aboutEl?.getBoundingClientRect().top ?? 9999;
       const goalsTop = goalsEl?.getBoundingClientRect().top ?? 9999;
       const threshold = window.innerHeight * 0.45;
@@ -34,7 +37,7 @@ export function Navbar() {
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll(); // set initial state
+    handleScroll();
 
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -71,7 +74,11 @@ export function Navbar() {
       </nav>
 
       {/* Action Button */}
-      <button className="brutalist-button px-8 py-3 bg-black text-white hover:bg-primary border-black border-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 active:bg-[#e0e0e0] active:text-black transition-all">
+      <button
+        id="navbar-get-started"
+        onClick={onGetStarted}
+        className="brutalist-button px-8 py-3 bg-black text-white hover:bg-primary border-black border-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 active:bg-[#e0e0e0] active:text-black transition-all"
+      >
         <div className="flex items-center gap-2">
           Get Started
           <ArrowRight weight="bold" />

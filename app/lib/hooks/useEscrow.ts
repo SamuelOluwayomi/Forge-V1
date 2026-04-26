@@ -11,7 +11,7 @@ import { useCallback, useMemo } from "react";
 import { AnchorProvider, Program, web3, Idl } from "@coral-xyz/anchor";
 import { useSolanaClient } from "../solana-client-context"; // provides connection
 import { useWallet } from "../wallet/context"; // provides wallet adapter
-import { publicKey } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 
 // Load the IDL – we copy it into the frontend for type safety
 // (make sure the file exists at this path after build)

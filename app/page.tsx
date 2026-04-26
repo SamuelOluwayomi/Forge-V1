@@ -7,6 +7,7 @@ import { GridBackground } from "./components/grid-background";
 import { FireParticles } from "./components/fire-particles";
 import { Navbar } from "./components/navbar";
 import { AnimateIn, StaggerIn, StaggerChild, ParallaxFloat } from "./components/scroll-animations";
+import DebugEscrow from "./components/DebugEscrow";
 
 export default function Home() {
   return (

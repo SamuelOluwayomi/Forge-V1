@@ -47,9 +47,9 @@ const easings: Record<string, [number, number, number, number]> = {
   fadeUp: [0.22, 1, 0.36, 1],
   fadeLeft: [0.22, 1, 0.36, 1],
   fadeRight: [0.22, 1, 0.36, 1],
-  scaleIn: [0.34, 1.56, 0.64, 1], // springy overshoot
+  scaleIn: [0.34, 1.56, 0.64, 1], 
   rotateIn: [0.22, 1, 0.36, 1],
-  stampIn: [0.34, 1.3, 0.64, 1],  // stamp bounce
+  stampIn: [0.34, 1.3, 0.64, 1], 
   slideDown: [0.22, 1, 0.36, 1],
 };
 

@@ -1,0 +1,996 @@
+{
+  "address": "AkoaVinz9Md94KsC2k6sULNdwvqh2uF16KdKiWdpr6ye",
+  "metadata": {
+    "name": "forge_escrow",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Forge escrow program — trustless task payment on Solana"
+  },
+  "instructions": [
+    {
+      "name": "accept_worker",
+      "discriminator": [
+        95,
+        96,
+        243,
+        253,
+        32,
+        17,
+        215,
+        123
+      ],
+      "accounts": [
+        {
+          "name": "escrow_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "client"
+              },
+              {
+                "kind": "account",
+                "path": "escrow_account.task_id",
+                "account": "EscrowAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "client",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "client_token_account",
+          "writable": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "escrow_account"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "worker",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "approve_work",
+      "discriminator": [
+        181,
+        118,
+        45,
+        143,
+        204,
+        88,
+        237,
+        109
+      ],
+      "accounts": [
+        {
+          "name": "escrow_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "client"
+              },
+              {
+                "kind": "account",
+                "path": "escrow_account.task_id",
+                "account": "EscrowAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "client",
+          "signer": true,
+          "relations": [
+            "escrow_account"
+          ]
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "worker_token_account",
+          "writable": true
+        },
+        {
+          "name": "treasury",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "cancel_task",
+      "discriminator": [
+        69,
+        228,
+        134,
+        187,
+        134,
+        105,
+        238,
+        48
+      ],
+      "accounts": [
+        {
+          "name": "escrow_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "client"
+              },
+              {
+                "kind": "account",
+                "path": "escrow_account.task_id",
+                "account": "EscrowAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "client",
+          "signer": true,
+          "relations": [
+            "escrow_account"
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "claim_completion",
+      "discriminator": [
+        89,
+        9,
+        83,
+        69,
+        176,
+        3,
+        122,
+        36
+      ],
+      "accounts": [
+        {
+          "name": "escrow_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "escrow_account.client",
+                "account": "EscrowAccount"
+              },
+              {
+                "kind": "account",
+                "path": "escrow_account.task_id",
+                "account": "EscrowAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "caller",
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "worker_token_account",
+          "writable": true
+        },
+        {
+          "name": "treasury",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "create_task",
+      "discriminator": [
+        194,
+        80,
+        6,
+        180,
+        232,
+        127,
+        48,
+        171
+      ],
+      "accounts": [
+        {
+          "name": "escrow_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "client"
+              },
+              {
+                "kind": "arg",
+                "path": "task_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "client",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "task_id",
+          "type": "u64"
+        },
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "review_window_days",
+          "type": "u8"
+        },
+        {
+          "name": "difficulty",
+          "type": "u8"
+        },
+        {
+          "name": "task_metadata_uri",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "raise_dispute",
+      "discriminator": [
+        41,
+        243,
+        1,
+        51,
+        150,
+        95,
+        246,
+        73
+      ],
+      "accounts": [
+        {
+          "name": "escrow_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "escrow_account.client",
+                "account": "EscrowAccount"
+              },
+              {
+                "kind": "account",
+                "path": "escrow_account.task_id",
+                "account": "EscrowAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "caller",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "reason_uri",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "resolve_dispute",
+      "discriminator": [
+        231,
+        6,
+        202,
+        6,
+        96,
+        103,
+        12,
+        230
+      ],
+      "accounts": [
+        {
+          "name": "escrow_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "escrow_account.client",
+                "account": "EscrowAccount"
+              },
+              {
+                "kind": "account",
+                "path": "escrow_account.task_id",
+                "account": "EscrowAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "arbitrator",
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "recipient_token_account",
+          "writable": true
+        },
+        {
+          "name": "treasury",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "release_to_worker",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "submit_work",
+      "discriminator": [
+        158,
+        80,
+        101,
+        51,
+        114,
+        130,
+        101,
+        253
+      ],
+      "accounts": [
+        {
+          "name": "escrow_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "escrow_account.client",
+                "account": "EscrowAccount"
+              },
+              {
+                "kind": "account",
+                "path": "escrow_account.task_id",
+                "account": "EscrowAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "worker",
+          "signer": true,
+          "relations": [
+            "escrow_account"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "submission_uri",
+          "type": "string"
+        },
+        {
+          "name": "ai_report_hash",
+          "type": {
+            "option": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "EscrowAccount",
+      "discriminator": [
+        36,
+        69,
+        48,
+        18,
+        128,
+        225,
+        125,
+        135
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "AutoReleased",
+      "discriminator": [
+        103,
+        140,
+        223,
+        78,
+        196,
+        27,
+        56,
+        16
+      ]
+    },
+    {
+      "name": "DisputeRaised",
+      "discriminator": [
+        246,
+        167,
+        109,
+        37,
+        142,
+        45,
+        38,
+        176
+      ]
+    },
+    {
+      "name": "DisputeResolved",
+      "discriminator": [
+        121,
+        64,
+        249,
+        153,
+        139,
+        128,
+        236,
+        187
+      ]
+    },
+    {
+      "name": "TaskCancelled",
+      "discriminator": [
+        158,
+        101,
+        220,
+        187,
+        16,
+        141,
+        141,
+        64
+      ]
+    },
+    {
+      "name": "TaskCreated",
+      "discriminator": [
+        49,
+        174,
+        6,
+        7,
+        71,
+        159,
+        69,
+        175
+      ]
+    },
+    {
+      "name": "WorkApproved",
+      "discriminator": [
+        82,
+        19,
+        106,
+        191,
+        46,
+        255,
+        164,
+        142
+      ]
+    },
+    {
+      "name": "WorkSubmitted",
+      "discriminator": [
+        136,
+        185,
+        210,
+        174,
+        216,
+        140,
+        64,
+        125
+      ]
+    },
+    {
+      "name": "WorkerAccepted",
+      "discriminator": [
+        246,
+        195,
+        150,
+        74,
+        110,
+        229,
+        235,
+        19
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidAmount",
+      "msg": "Amount must be greater than zero"
+    },
+    {
+      "code": 6001,
+      "name": "InvalidReviewWindow",
+      "msg": "Review window must be between 1 and 7 days"
+    },
+    {
+      "code": 6002,
+      "name": "InvalidDifficulty",
+      "msg": "Difficulty must be between 1 (Apprentice) and 4 (Grandmaster)"
+    },
+    {
+      "code": 6003,
+      "name": "MetadataUriTooLong",
+      "msg": "Metadata URI exceeds maximum length of 200 characters"
+    },
+    {
+      "code": 6004,
+      "name": "InvalidStatus",
+      "msg": "Invalid escrow status for this instruction"
+    },
+    {
+      "code": 6005,
+      "name": "Unauthorized",
+      "msg": "You are not authorized to perform this action"
+    },
+    {
+      "code": 6006,
+      "name": "InvalidWorker",
+      "msg": "Invalid worker address"
+    },
+    {
+      "code": 6007,
+      "name": "NoSubmissionFound",
+      "msg": "No submission found on this escrow"
+    },
+    {
+      "code": 6008,
+      "name": "ReviewWindowNotExpired",
+      "msg": "Review window has not expired yet"
+    }
+  ],
+  "types": [
+    {
+      "name": "AutoReleased",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "task_id",
+            "type": "u64"
+          },
+          {
+            "name": "worker",
+            "type": "pubkey"
+          },
+          {
+            "name": "worker_amount",
+            "type": "u64"
+          },
+          {
+            "name": "released_at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DisputeRaised",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "task_id",
+            "type": "u64"
+          },
+          {
+            "name": "raised_by",
+            "type": "pubkey"
+          },
+          {
+            "name": "reason_uri",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DisputeResolved",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "task_id",
+            "type": "u64"
+          },
+          {
+            "name": "release_to_worker",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "EscrowAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "task_id",
+            "type": "u64"
+          },
+          {
+            "name": "client",
+            "type": "pubkey"
+          },
+          {
+            "name": "worker",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "EscrowStatus"
+              }
+            }
+          },
+          {
+            "name": "difficulty",
+            "type": "u8"
+          },
+          {
+            "name": "review_window_days",
+            "type": "u8"
+          },
+          {
+            "name": "auto_release_window",
+            "type": "i64"
+          },
+          {
+            "name": "task_metadata_uri",
+            "type": "string"
+          },
+          {
+            "name": "submission_uri",
+            "type": "string"
+          },
+          {
+            "name": "ai_report_hash",
+            "type": {
+              "option": {
+                "array": [
+                  "u8",
+                  32
+                ]
+              }
+            }
+          },
+          {
+            "name": "submission_timestamp",
+            "type": {
+              "option": "i64"
+            }
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "EscrowStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Open"
+          },
+          {
+            "name": "Active"
+          },
+          {
+            "name": "Submitted"
+          },
+          {
+            "name": "Completed"
+          },
+          {
+            "name": "Disputed"
+          },
+          {
+            "name": "Cancelled"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TaskCancelled",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "task_id",
+            "type": "u64"
+          },
+          {
+            "name": "client",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TaskCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "task_id",
+            "type": "u64"
+          },
+          {
+            "name": "client",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "difficulty",
+            "type": "u8"
+          },
+          {
+            "name": "review_window_days",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "WorkApproved",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "task_id",
+            "type": "u64"
+          },
+          {
+            "name": "client",
+            "type": "pubkey"
+          },
+          {
+            "name": "worker",
+            "type": "pubkey"
+          },
+          {
+            "name": "worker_amount",
+            "type": "u64"
+          },
+          {
+            "name": "fee_amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "WorkSubmitted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "task_id",
+            "type": "u64"
+          },
+          {
+            "name": "worker",
+            "type": "pubkey"
+          },
+          {
+            "name": "submission_timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "auto_release_at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "WorkerAccepted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "task_id",
+            "type": "u64"
+          },
+          {
+            "name": "client",
+            "type": "pubkey"
+          },
+          {
+            "name": "worker",
+            "type": "pubkey"
+          }
+        ]
+      }
+    }
+  ]
+}

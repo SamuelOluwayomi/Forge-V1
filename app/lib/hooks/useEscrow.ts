@@ -68,8 +68,8 @@ export function useEscrow() {
   // Program instance – memoised so we only load once per provider change
   const program = useMemo(() => {
     if (!provider) return null;
-    // The program ID is defined in the IDL (metadata.address)
-    const programId = new web3.PublicKey((forgeEscrowIdl as Idl).metadata.address);
+    // The program ID is defined at the root of the IDL JSON
+    const programId = new web3.PublicKey((forgeEscrowIdl as any).address);
     return new Program(forgeEscrowIdl as Idl, programId, provider) as ForgeEscrowProgram;
   }, [provider]);
 

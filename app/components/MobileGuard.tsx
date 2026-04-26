@@ -70,7 +70,7 @@ export function MobileGuard({ children }: { children: React.ReactNode }) {
             </div>
             
             <p className="text-[10px] font-bold text-black/50 uppercase tracking-widest">
-              forge-v1.vercel.app
+              forge-frontier.vercel.app
             </p>
           </div>
         </div>

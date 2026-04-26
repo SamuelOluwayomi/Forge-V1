@@ -21,7 +21,7 @@ const nunito = Nunito({
   display: "swap",
 });
 
-const BASE_URL = "https://forge-v1.vercel.app";
+const BASE_URL = "https://forge-frontier.vercel.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),

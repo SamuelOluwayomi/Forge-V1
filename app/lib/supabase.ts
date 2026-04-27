@@ -1,7 +1,10 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// Initialize Supabase client
-export const supabase = createClient(supabaseUrl, supabaseKey);
+// Initialize Supabase client conditionally so it doesn't crash builds if env vars are missing
+export const supabase: SupabaseClient | null = 
+  supabaseUrl && supabaseKey 
+    ? createClient(supabaseUrl, supabaseKey) 
+    : null;

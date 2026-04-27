@@ -16,8 +16,8 @@ export async function POST(req: Request) {
     // Insert into Supabase
     // If Supabase is not configured (missing keys), we'll gracefully mock the success
     // so the frontend flow still works during development.
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      console.warn("Supabase keys not found. Mocking database insert for task:", taskData.pda);
+    if (!supabase) {
+      console.warn("Supabase keys not found or invalid. Mocking database insert for task:", taskData.pda);
       return NextResponse.json({ success: true, mocked: true, pda: taskData.pda });
     }
 

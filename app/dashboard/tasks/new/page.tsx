@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useWallet } from "@/app/lib/wallet/context";
 import { useEscrow } from "@/app/lib/hooks/useEscrow";
 import { toast } from "sonner";
 import { validateTaskInput } from "@/app/lib/validation";

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useEscrow } from "@/app/lib/hooks/useEscrow";
 import { toast } from "sonner";
+import { validateTaskInput } from "@/app/lib/validation";
 
 const DIFFICULTY_OPTIONS = [
   { value: 1, label: "Beginner", desc: "Simple tasks, clear scope" },
@@ -14,7 +15,8 @@ const DIFFICULTY_OPTIONS = [
 
 export default function NewTaskPage() {
   const router = useRouter();
-  const { createTask } = useEscrow();
+  const { wallet } = useWallet();
+  const { createTask, program } = useEscrow();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -23,28 +25,107 @@ export default function NewTaskPage() {
   const [difficulty, setDifficulty] = useState(1);
   const [metadataUri, setMetadataUri] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState("");
+
+  const generateHash = async (data: string) => {
+    const msgUint8 = new TextEncoder().encode(data);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!createTask) return;
+    if (!createTask || !program || !wallet) return;
 
-    const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      toast.error("Enter a valid USDC amount.");
+    // Validate inputs
+    const validation = validateTaskInput({
+      title,
+      description,
+      amount,
+      reviewDays,
+      difficulty,
+      metadataUri,
+    });
+
+    if (!validation.isValid) {
+      validation.errors.forEach((err) => toast.error(err));
       return;
     }
 
+    const cleanData = validation.data;
     setLoading(true);
     try {
-      const taskId = Date.now(); // unique numeric ID — replace with on-chain counter later
-      const lamports = BigInt(Math.round(parsedAmount * 1_000_000)); // USDC has 6 decimals
-      await createTask(taskId, lamports, reviewDays, difficulty, metadataUri || `forge://task/${taskId}`);
-      toast.success("Task posted to escrow.");
+      // 1. Generate AI Brief
+      setLoadingStep("Generating AI brief...");
+      const aiResponse = await fetch("/api/tasks/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: cleanData.title, description: cleanData.description }),
+      });
+      const aiData = await aiResponse.json();
+      if (!aiResponse.ok) throw new Error(aiData.error || "AI generation failed");
+
+      // 2. Hash the data for integrity
+      const offChainData = {
+        title: cleanData.title,
+        description: cleanData.description,
+        difficulty: cleanData.difficulty,
+        aiAnalysis: aiData.analysis
+      };
+      const contentHash = await generateHash(JSON.stringify(offChainData));
+      const finalMetadataUri = cleanData.metadataUri || `forge://hash/${contentHash.substring(0, 32)}`;
+
+      // 3. Post to Escrow on-chain
+      setLoadingStep("Locking USDC in Escrow...");
+      const taskId = Date.now(); // unique numeric ID
+      const lamports = BigInt(Math.round(cleanData.amount * 1_000_000));
+      await createTask(taskId, lamports, cleanData.reviewDays, cleanData.difficulty, finalMetadataUri);
+
+      // 4. Compute the PDA (Unique identifier)
+      const { PublicKey } = await import("@solana/web3.js");
+      const { BN } = await import("@coral-xyz/anchor");
+      const clientPubkey = new PublicKey(wallet.account.address);
+      const [escrowPda] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("escrow"),
+          clientPubkey.toBuffer(),
+          Buffer.from([...new BN(taskId).toArray('le', 8)]),
+        ],
+        program.programId
+      );
+
+      // 5. Save to Off-Chain Database
+      setLoadingStep("Saving task details...");
+      const dbResponse = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pda: escrowPda.toString(),
+          client: clientPubkey.toString(),
+          task_id: taskId,
+          title: cleanData.title,
+          description: cleanData.description,
+          amount: cleanData.amount,
+          difficulty: cleanData.difficulty,
+          skills: aiData.analysis?.recommendedSkills || [],
+          ai_analysis: aiData.analysis,
+          content_hash: contentHash
+        }),
+      });
+      
+      if (!dbResponse.ok) {
+         console.warn("Failed to save to database, but on-chain task created successfully.");
+      }
+
+      toast.success("Task posted successfully!");
       router.push("/dashboard/tasks");
     } catch (err: any) {
+      console.error(err);
       toast.error(err?.message ?? "Failed to post task. Check your wallet connection.");
     } finally {
       setLoading(false);
+      setLoadingStep("");
     }
   };
 
@@ -133,7 +214,7 @@ export default function NewTaskPage() {
                 type="number"
                 required
                 min="1"
-                max="30"
+                max="7"
                 value={reviewDays}
                 onChange={(e) => setReviewDays(Number(e.target.value))}
                 className="flex-1 px-4 py-3 font-black text-sm text-black bg-transparent outline-none"
@@ -206,7 +287,7 @@ export default function NewTaskPage() {
                 <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity="0.2" /><path d="M12 3a9 9 0 019 9" />
                 </svg>
-                Posting to Escrow...
+                {loadingStep || "Posting to Escrow..."}
               </>
             ) : (
               "Lock Funds and Post Task"

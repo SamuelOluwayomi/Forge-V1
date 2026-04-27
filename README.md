@@ -59,6 +59,20 @@ Forge is not just a marketplace. The SBT system creates something the web3 space
 3. **`forge_sbt`**: Mints non-transferable badges to both wallets on task completion.
    - Instructions: `mint_worker`, `mint_client`
 
+## Hybrid Storage Architecture & Security
+
+To maintain a fast, Web2-like experience while preserving Web3 trustlessness, Forge utilizes a **Hybrid State Architecture**:
+
+- **On-Chain (Solana)**: Core state (Escrow PDA, task ID, client/worker wallets, USDC amount, deadlines).
+- **Off-Chain (Supabase DB)**: Heavy metadata (Task title, description, skills, AI-generated briefs, applicant proposals).
+- **The Bridge (Integrity Hash)**: The off-chain data is hashed using SHA-256 (`content_hash`). This hash is passed into the `createTask` instruction and stored on-chain inside the `task_metadata_uri` field. Anyone can re-hash the database content and compare it to the on-chain hash to mathematically prove the task details haven't been tampered with.
+
+### Input Security & Sanitization
+All inputs passing between the client and the off-chain database go through a strict validation pipeline:
+- **Sanitization**: Deep HTML tag stripping to prevent XSS vulnerabilities without relying on heavy DOM parsers.
+- **Strict Typing**: Strict character limits (e.g., 5000 chars for descriptions) and constraint enforcement (e.g., review windows limited to 1-7 days to perfectly match smart contract bounds).
+- **PDA Verification**: The backend strictly validates Solana base58 wallet formats and PDA structures before allocating database storage.
+
 ## Monetization
 
 - **Protocol fee**: ~2% cut on every completed escrow. Baked into the smart contract. Automatic.

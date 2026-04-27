@@ -190,7 +190,7 @@
 }
 
 .brutalist-card {
-  background: white;
+  background-color: var(--card);
   border: 3px solid black;
   box-shadow: 6px 6px 0px 0px rgba(0, 0, 0, 1);
   transition: all 0.15s ease;
@@ -226,6 +226,8 @@
 .brutalist-button:hover {
   transform: translate(-2px, -2px);
   box-shadow: 6px 6px 0px 0px rgba(0, 0, 0, 1);
+  background: #FFD700; /* Yellow hover */
+  color: black;
 }
 
 .brutalist-button:active {

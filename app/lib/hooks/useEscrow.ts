@@ -6,6 +6,7 @@ import { useSolanaClient } from "../solana-client-context"; // provides connecti
 import { useWallet } from "../wallet/context"; // provides wallet adapter
 import { PublicKey } from "@solana/web3.js";
 import forgeEscrowIdl from "@/app/lib/idl/forge_escrow.json";
+import forgeSbtIdl from "@/app/lib/idl/forge_sbt.json";
 
 export type ForgeEscrowProgram = Program<any>;
 
@@ -20,9 +21,12 @@ export function useEscrow() {
     if (!wallet || !wallet.signTransaction) {
       throw new Error("Wallet does not support signing or is not connected");
     }
+    // The custom wallet interface accepts/returns raw Uint8Array (Solana Kit standard).
+    // Anchor passes a Transaction object, so we must serialize it first, then
+    // deserialize the signed bytes back into a Transaction for Anchor to use.
     const serialized = transaction.serialize({ requireAllSignatures: false });
-    const signed = await wallet.signTransaction(serialized, "solana:devnet"); // fallback to devnet if unknown
-    return web3.Transaction.from(signed);
+    const signedBytes = await wallet.signTransaction(serialized, "solana:devnet");
+    return web3.Transaction.from(signedBytes);
   }, [wallet]);
 
   // Provider – combines connection, wallet, and options
@@ -50,6 +54,11 @@ export function useEscrow() {
     if (!provider) return null;
     // Anchor 1.0.0+ resolves the programId automatically from the IDL root
     return new Program(forgeEscrowIdl as Idl, provider) as ForgeEscrowProgram;
+  }, [provider]);
+
+  const sbtProgram = useMemo(() => {
+    if (!provider) return null;
+    return new Program(forgeSbtIdl as Idl, provider);
   }, [provider]);
 
 
@@ -180,6 +189,7 @@ export function useEscrow() {
   // Return the program and helpers so components can import the hook.
   return {
     program,
+    sbtProgram,
     createTask,
     acceptWorker,
     submitWork,

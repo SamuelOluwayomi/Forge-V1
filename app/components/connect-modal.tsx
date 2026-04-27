@@ -63,9 +63,8 @@ export function ConnectModal({ open, onClose }: ConnectModalProps) {
 
   const steps = [
     { num: "01", label: "Connect your Solana wallet" },
-    { num: "02", label: "Complete one-time Civic verification" },
-    { num: "03", label: "Your reputation account is initialized on-chain" },
-    { num: "04", label: "Dashboard unlocked — start forging" },
+    { num: "02", label: "Initialize your on-chain reputation account" },
+    { num: "03", label: "Dashboard unlocked — start forging" },
   ];
 
   return (
@@ -190,7 +189,7 @@ export function ConnectModal({ open, onClose }: ConnectModalProps) {
                     className={`flex items-center gap-4 border-2 border-black bg-white px-5 py-3 font-black text-sm uppercase tracking-wide transition-all disabled:opacity-50 disabled:cursor-not-allowed group
                       ${connecting === connector.id 
                         ? "translate-x-1 translate-y-1 shadow-none" 
-                        : "hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_rgba(255,69,0,1)] hover:bg-primary hover:text-white hover:border-primary shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none"
+                        : "hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:bg-[#FFD700] hover:text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none"
                       }`}
                   >
                     {connector.icon && (

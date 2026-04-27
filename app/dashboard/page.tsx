@@ -144,64 +144,10 @@ export default function DashboardOverview() {
         <Link
           href="/dashboard/tasks/new"
           id="overview-post-task"
-          className="brutalist-button px-8 py-3 bg-primary text-white border-black text-sm self-start"
+          className="brutalist-button px-8 py-3 bg-primary text-white border-black text-sm self-start transition-colors"
         >
           Post New Task
         </Link>
-      </div>
-
-      {/* Wallet address strip */}
-      <div className="brutalist-card bg-black text-white p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8">
-        <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-black uppercase tracking-widest text-white/50 mb-1">
-            Your Wallet
-          </p>
-          <p className="font-mono text-sm break-all text-white/80">
-            {address ?? "Not connected"}
-          </p>
-        </div>
-        <div className="flex items-center gap-3 shrink-0">
-          <span className="font-black text-lg tabular-nums">
-            {balance.lamports != null ? lamportsToSolString(balance.lamports) : "—"}
-            <span className="text-xs font-bold text-white/50 ml-1">SOL</span>
-          </span>
-          <button
-            id="overview-copy-address"
-            onClick={handleCopy}
-            className={`flex items-center gap-2 border-2 px-4 py-2 text-xs font-black uppercase transition-all duration-150
-              ${copied
-                ? "bg-[#4ADE80] border-[#4ADE80] text-black scale-95"
-                : "border-white text-white hover:bg-white hover:text-black"
-              }`}
-            style={{ boxShadow: copied ? "none" : "3px 3px 0px 0px rgba(255,255,255,0.2)" }}
-          >
-            {copied ? (
-              <>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                  <path d="M20 6L9 17l-5-5" />
-                </svg>
-                Copied
-              </>
-            ) : (
-              <>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <rect x="9" y="9" width="13" height="13" /><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-                </svg>
-                Copy Address
-              </>
-            )}
-          </button>
-          {address && (
-            <a
-              href={getExplorerUrl(`/address/${address}`)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="border-2 border-white/40 px-3 py-2 text-xs font-black uppercase text-white/60 hover:border-white hover:text-white transition-all"
-            >
-              Explorer
-            </a>
-          )}
-        </div>
       </div>
 
       {/* Stat grid */}
@@ -241,47 +187,52 @@ export default function DashboardOverview() {
               <Link
                 href="/dashboard/tasks/new"
                 id="quick-post-task"
-                className="brutalist-button text-center px-4 py-3 text-sm bg-primary text-white border-black"
+                className="brutalist-button text-center px-4 py-3 text-sm bg-primary text-white border-black transition-colors"
               >
                 Post a Task
               </Link>
               <Link
                 href="/dashboard/tasks"
                 id="quick-browse-tasks"
-                className="brutalist-button text-center px-4 py-3 text-sm bg-black text-white border-black"
+                className="brutalist-button text-center px-4 py-3 text-sm bg-black text-white border-black transition-colors"
               >
                 Browse Tasks
               </Link>
               <Link
                 href="/dashboard/profile"
                 id="quick-view-profile"
-                className="brutalist-button text-center px-4 py-3 text-sm bg-background text-black border-black"
+                className="brutalist-button text-center px-4 py-3 text-sm bg-white text-black border-black transition-colors"
               >
                 View Profile
               </Link>
             </div>
           </div>
 
-          {/* Status guide */}
-          <div className="brutalist-card bg-black text-white p-6">
-            <h2 className="font-black text-base uppercase tracking-tight mb-4 text-white">
-              Status Guide
-            </h2>
-            {[
-              { label: "Open", color: "#4ADE80", desc: "Awaiting a worker" },
-              { label: "In Progress", color: "#FFD700", desc: "Work underway" },
-              { label: "Completed", color: "#fff", desc: "Escrow released" },
-              { label: "Disputed", color: "#FF4500", desc: "Under review" },
-            ].map((s) => (
-              <div key={s.label} className="flex items-center gap-3 mb-3 last:mb-0">
-                <div
-                  className="w-3 h-3 border-2 border-white/30 shrink-0"
-                  style={{ background: s.color }}
-                />
-                <span className="font-black text-xs uppercase text-white/80">{s.label}</span>
-                <span className="text-xs text-white/40 font-bold ml-auto">{s.desc}</span>
+          {/* Reputation Breakdown */}
+          <div className="brutalist-card bg-primary text-white p-6 border-4 border-black">
+            <h2 className="font-black text-2xl uppercase tracking-tight mb-4 drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">Reputation</h2>
+            <div className="space-y-4">
+              <div className="flex flex-col gap-1">
+                <div className="flex justify-between text-xs font-black uppercase text-white">
+                  <span>Trust Score</span>
+                  <span>0 / 1000</span>
+                </div>
+                <div className="h-6 border-4 border-black bg-white/20 overflow-hidden p-1">
+                  <div className="h-full bg-[#FFD700] w-0 transition-all duration-500" />
+                </div>
               </div>
-            ))}
+              <div className="flex items-center gap-4 p-4 bg-black/20 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                <div className="w-12 h-12 border-4 border-black bg-white flex items-center justify-center shrink-0">
+                  <svg className="text-primary" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="black" strokeWidth="2">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="font-black text-sm uppercase text-white">No Badges Yet</p>
+                  <p className="text-[10px] font-bold text-white/80 uppercase">Complete your first task to earn a badge.</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

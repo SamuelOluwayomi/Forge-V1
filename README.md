@@ -11,9 +11,9 @@ A trustless freelance marketplace on Solana where every participant is a verifie
 
 ## The Solution — 4 Core Pillars
 
-### 01. Civic Captcha (Identity Layer)
+### 01. Identity Pass (Coming Soon)
 
-Every user must verify as a unique human via World ID before interacting with Forge. One device, one identity. Iris-verified or phone-verified. No bots, no sockpuppets, no one gaming the system with multiple wallets. The verification proof is stored on-chain in the `forge_identity` program — every other program checks this gate before executing.
+Every user will eventually be verified as a unique human via Civic or World ID before interacting with Forge. This ensures one device, one identity — no bots, no sockpuppets, and no one gaming the system with multiple wallets. We are currently researching the best decentralized identity solution for Forge.
 
 ### 02. On-Chain Escrow (Payment Layer)
 
@@ -33,9 +33,9 @@ The front-end application built on top of the three programs. Post a task with t
 
 ## End-to-End User Flow
 
-1. **Connect wallet + Verify with World ID**: User connects Phantom/Backpack. World ID prompt appears. After iris/phone verification, wallet is marked human-verified on-chain. Gate opens.
+1. **Connect wallet + One-time Profile Setup**: User connects Phantom/Backpack. On first launch, a Reputation account is initialized on-chain. In future versions, a Proof of Humanity pass will be required here. Gate opens.
 2. **Client posts a task**: Title, description, USDC price, deadline, skill tags, minimum SBT level required to apply. Transaction goes on-chain.
-3. **Workers browse and apply**: Workers see the task on the marketplace. Their SBT history and World ID badge are visible on their profile. They submit a proposal with a message and timeline.
+3. **Workers browse and apply**: Workers see the task on the marketplace. Their SBT history is visible on their profile. They submit a proposal with a message and timeline.
 4. **Client selects worker -> Funds lock**: Client picks a worker. USDC immediately locks into the escrow PDA on-chain. Worker is notified. Work begins.
 5. **Worker submits deliverable**: Worker marks task complete and submits their work link/proof. Client receives notification to review.
 6. **Client approves -> Escrow releases**: Client clicks approve. Escrow program releases USDC to worker wallet minus Forge protocol fee. Transaction confirmed on-chain.
@@ -52,8 +52,8 @@ Forge is not just a marketplace. The SBT system creates something the web3 space
 
 ## Architecture: 3 Anchor Programs
 
-1. **`forge_identity`**: Civic Captcha gate. Marks wallets as human-verified on-chain.
-   - Instructions: `verify_human`
+1. **`forge_identity` (Planned)**: Identity gate. Marks wallets as human-verified on-chain.
+   - Status: *In Research*
 2. **`forge_escrow`**: Locks USDC into PDAs, handles task lifecycle, releases on approval.
    - Instructions: `create`, `accept`, `approve`, `dispute`
 3. **`forge_sbt`**: Mints non-transferable badges to both wallets on task completion.

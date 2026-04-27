@@ -12,7 +12,9 @@ export function Providers({ children }: PropsWithChildren) {
     <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
       <ClusterProvider>
         <SolanaClientProvider>
-          <WalletProvider>{children}</WalletProvider>
+          <WalletProvider>
+            {children}
+          </WalletProvider>
         </SolanaClientProvider>
         <Toaster position="bottom-right" richColors />
       </ClusterProvider>

@@ -140,15 +140,19 @@ export default function Home() {
               <div className="absolute -top-6 -right-2 md:-right-6 z-20">
                 <div className="bg-[#FF90E8] absolute inset-0 translate-x-2 translate-y-2 border-2 border-black"></div>
                 <div className="bg-black text-white px-4 md:px-6 py-2 md:py-3 relative border-2 border-black font-black text-xl md:text-2xl uppercase whitespace-nowrap">
-                  1. Prove You're Human
+                  1. Identity Pass (Soon)
                 </div>
               </div>
               <div className="p-8 md:p-12 flex-1 flex flex-col justify-center order-2 md:order-1">
-                <h3 className="text-3xl md:text-4xl font-black uppercase mb-4 text-black">Civic CAPTCHA Verification</h3>
-                <p className="font-bold text-lg leading-relaxed text-black/80">Every user is verified as a real human via Civic CAPTCHA before interacting. No bots, no fake profiles.</p>
+                <div className="brutalist-tape text-[10px] px-2 py-0.5 self-start mb-3" style={{ transform: "rotate(-2deg)" }}>Research Phase</div>
+                <h3 className="text-3xl md:text-4xl font-black uppercase mb-4 text-black">Proof of Humanity</h3>
+                <p className="font-bold text-lg leading-relaxed text-black/80">In the future, every user will be verified as a real human via Civic or WorldID before interacting. We are currently refining the best bot-protection for Forge.</p>
               </div>
-              <div className="w-full md:w-2/5 aspect-[4/3] md:aspect-auto border-b-4 md:border-b-0 md:border-l-4 border-black relative overflow-hidden bg-gray-100 order-1 md:order-2">
-                <Image draggable={false} src="/civic.jpg" alt="Civic Captcha" fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover group-hover:scale-105 transition-transform" />
+              <div className="w-full md:w-2/5 aspect-[4/3] md:aspect-auto border-b-4 md:border-b-0 md:border-l-4 border-black relative overflow-hidden bg-gray-100 order-1 md:order-2 opacity-60">
+                <div className="absolute inset-0 bg-black/20 z-10 flex items-center justify-center">
+                   <div className="brutalist-card bg-white px-4 py-2 rotate-12 font-black uppercase">Coming Soon</div>
+                </div>
+                <Image draggable={false} src="/civic.jpg" alt="Identity Verification" fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover grayscale" />
               </div>
             </StaggerChild>
 
@@ -238,7 +242,7 @@ export default function Home() {
                 {[
                   { week: "Week 1", label: "Ship forge_identity + forge_escrow programs to Solana devnet" },
                   { week: "Week 2", label: "forge_sbt program live — full escrow lifecycle working end-to-end" },
-                  { week: "Week 3", label: "Frontend wired to all programs + Civic CAPTCHA + AI task generator" },
+                  { week: "Week 3", label: "Frontend wired to all programs + Identity Pass (V2 Research) + AI task generator" },
                   { week: "Week 4", label: "UI polish, Vercel deploy, demo video & hackathon README pitch" },
                 ].map(({ week, label }) => (
                   <div key={week} className="flex items-start gap-4">

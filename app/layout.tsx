@@ -43,7 +43,6 @@ export const metadata: Metadata = {
     "USDC escrow",
     "web3 freelance",
     "decentralized marketplace",
-    "Civic CAPTCHA",
     "Solana Frontier Hackathon",
     "blockchain developer",
   ],

@@ -77,7 +77,7 @@ export function Navbar({ onGetStarted }: NavbarProps) {
       <button
         id="navbar-get-started"
         onClick={onGetStarted}
-        className="brutalist-button px-8 py-3 bg-black text-white hover:bg-primary border-black border-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 active:bg-[#e0e0e0] active:text-black transition-all"
+        className="brutalist-button px-8 py-3 bg-black text-white border-black border-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 active:bg-[#e0e0e0] active:text-black transition-all"
       >
         <div className="flex items-center gap-2">
           Get Started

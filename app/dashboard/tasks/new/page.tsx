@@ -27,6 +27,49 @@ export default function NewTaskPage() {
   const [metadataUri, setMetadataUri] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState("");
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [aiAnalysisCache, setAiAnalysisCache] = useState<any>(null);
+
+  const handleGenerateWithAI = async () => {
+    if (!aiPrompt) {
+      toast.error("Please describe your task first.");
+      return;
+    }
+    setGenerating(true);
+    try {
+      const aiResponse = await fetch("/api/ai/generate-task", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: aiPrompt }),
+      });
+      const aiData = await aiResponse.json();
+      if (!aiResponse.ok) throw new Error(aiData.error || "AI generation failed");
+
+      const task = aiData.task;
+      setTitle(task.title || "");
+      
+      let fullDesc = task.description || "";
+      if (task.deliverables && task.deliverables.length > 0) {
+        fullDesc += "\n\nDeliverables:\n- " + task.deliverables.join("\n- ");
+      }
+      if (task.acceptance_criteria && task.acceptance_criteria.length > 0) {
+        fullDesc += "\n\nAcceptance Criteria:\n- " + task.acceptance_criteria.join("\n- ");
+      }
+      
+      setDescription(fullDesc);
+      if (task.suggested_price_usdc) setAmount(task.suggested_price_usdc.toString());
+      if (task.difficulty) setDifficulty(task.difficulty);
+      setAiAnalysisCache(task);
+      
+      toast.success("Task details generated! Review and post.");
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Failed to generate task details.");
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const generateHash = async (data: string) => {
     const msgUint8 = new TextEncoder().encode(data);
@@ -57,30 +100,21 @@ export default function NewTaskPage() {
     const cleanData = validation.data;
     setLoading(true);
     try {
-      // 1. Generate AI Brief
-      setLoadingStep("Generating AI brief...");
-      const aiResponse = await fetch("/api/tasks/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: cleanData.title, description: cleanData.description }),
-      });
-      const aiData = await aiResponse.json();
-      if (!aiResponse.ok) throw new Error(aiData.error || "AI generation failed");
-
-      // 2. Hash the data for integrity
+      // 1. Hash the data for integrity
       const offChainData = {
         title: cleanData.title,
         description: cleanData.description,
         difficulty: cleanData.difficulty,
-        aiAnalysis: aiData.analysis
+        aiAnalysis: aiAnalysisCache
       };
       const contentHash = await generateHash(JSON.stringify(offChainData));
       const finalMetadataUri = cleanData.metadataUri || `forge://hash/${contentHash.substring(0, 32)}`;
 
-      // 3. Post to Escrow on-chain
-      setLoadingStep("Locking USDC in Escrow...");
+      // 2. Post to Escrow on-chain
+      setLoadingStep("Locking SOL in Escrow...");
       const taskId = Date.now(); // unique numeric ID
-      const lamports = BigInt(Math.round(cleanData.amount * 1_000_000));
+      // Web3.js lamports conversion (1 SOL = 1_000_000_000 lamports)
+      const lamports = BigInt(Math.round(cleanData.amount * 1_000_000_000));
       await createTask(taskId, lamports, cleanData.reviewDays, cleanData.difficulty, finalMetadataUri);
 
       // 4. Compute the PDA (Unique identifier)
@@ -109,8 +143,8 @@ export default function NewTaskPage() {
           description: cleanData.description,
           amount: cleanData.amount,
           difficulty: cleanData.difficulty,
-          skills: aiData.analysis?.recommendedSkills || [],
-          ai_analysis: aiData.analysis,
+          skills: aiAnalysisCache?.skills || [],
+          ai_analysis: aiAnalysisCache,
           content_hash: contentHash
         }),
       });
@@ -144,8 +178,43 @@ export default function NewTaskPage() {
           Post a Task
         </h1>
         <p className="font-bold text-base text-black/60 mt-3 leading-snug">
-          USDC is locked in escrow immediately. Released only when you approve the work.
+          SOL is locked in escrow immediately. Released only when you approve the work.
         </p>
+      </div>
+
+      {/* AI Generator Box */}
+      <div className="brutalist-card bg-[#e0e0e0] p-6 flex flex-col gap-3 border-dashed mb-6">
+        <label htmlFor="ai-prompt" className="font-black text-sm uppercase tracking-widest text-black flex items-center gap-2">
+          ✨ Auto-fill with AI
+        </label>
+        <p className="text-sm font-bold text-black/60 leading-tight">
+          Describe what you need in plain English. Gemini will structure it, suggest a price, and fill the form for you.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-2 mt-2">
+          <input
+            id="ai-prompt"
+            type="text"
+            value={aiPrompt}
+            onChange={(e) => setAiPrompt(e.target.value)}
+            placeholder="e.g. I need a Rust developer to build an SPL token staking contract..."
+            className="border-2 border-black bg-white px-4 py-3 font-bold text-sm text-black outline-none focus:border-primary flex-1 placeholder:text-black/30"
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleGenerateWithAI(); } }}
+          />
+          <button
+            type="button"
+            onClick={handleGenerateWithAI}
+            disabled={generating}
+            className="brutalist-button px-6 py-3 bg-black text-white border-black text-sm disabled:opacity-50"
+          >
+            {generating ? "Generating..." : "Generate"}
+          </button>
+        </div>
+      </div>
+      
+      <div className="flex items-center gap-4 mb-6">
+        <div className="flex-1 h-0.5 bg-black/10"></div>
+        <span className="font-black text-xs text-black/40 uppercase tracking-widest">OR EDIT MANUALLY</span>
+        <div className="flex-1 h-0.5 bg-black/10"></div>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
@@ -185,11 +254,11 @@ export default function NewTaskPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="brutalist-card bg-white p-6 flex flex-col gap-3">
             <label htmlFor="task-amount" className="font-black text-sm uppercase tracking-widest text-black/60">
-              USDC Amount <span className="text-primary">*</span>
+              Reward Amount <span className="text-primary">*</span>
             </label>
             <div className="flex items-center border-2 border-black bg-background">
               <span className="px-4 py-3 font-black text-sm bg-black text-white border-r-2 border-black">
-                USDC
+                SOL
               </span>
               <input
                 id="task-amount"
@@ -199,7 +268,7 @@ export default function NewTaskPage() {
                 step="0.01"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                placeholder="100"
+                placeholder="0.5"
                 className="flex-1 px-4 py-3 font-black text-sm text-black bg-transparent outline-none placeholder:text-black/30"
               />
             </div>

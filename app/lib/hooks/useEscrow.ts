@@ -91,7 +91,9 @@ export function useEscrow() {
     [program, walletPublicKey]
   );
 
-  /** Accept a worker and lock USDC into the vault */
+  const TREASURY_PUBKEY = new web3.PublicKey("SysvarRent111111111111111111111111111111111"); // Dummy treasury for testing
+
+  /** Accept a worker and lock SOL into the PDA */
   const acceptWorker = useCallback(
     async (taskId: number, workerPubkey: web3.PublicKey) => {
       if (!program || !walletPublicKey) throw new Error("Wallet not connected");
@@ -106,9 +108,6 @@ export function useEscrow() {
         .accounts({
           escrowAccount: escrowPda,
           client: walletPublicKey,
-          clientTokenAccount: await findAssociatedTokenAddress(walletPublicKey, USDC_MINT),
-          vault: await findVaultPda(escrowPda, program.programId),
-          tokenProgram: new web3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"),
           systemProgram: web3.SystemProgram.programId,
         })
         .rpc();
@@ -137,7 +136,7 @@ export function useEscrow() {
     [program, walletPublicKey]
   );
 
-  /** Client approves the worker's work and releases funds */
+  /** Client approves the worker's work and releases SOL */
   const approveWork = useCallback(
     async (taskId: number) => {
       if (!program || !walletPublicKey) throw new Error("Wallet not connected");
@@ -147,44 +146,20 @@ export function useEscrow() {
         Buffer.from([...(new BN(taskId).toArray('le', 8))]),
       ], program.programId);
 
+      const escrowData = await (program.account as any).escrowAccount.fetch(escrowPda);
+
       return await (program.methods as any)
         .approveWork()
         .accounts({
           escrowAccount: escrowPda,
           client: walletPublicKey,
-          vault: await findVaultPda(escrowPda, program.programId),
-          workerTokenAccount: await findAssociatedTokenAddress(
-            await (program.account as any).escrowAccount.fetch(escrowPda).then((a: any) => a.worker),
-            USDC_MINT
-          ),
-          tokenProgram: new web3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"),
+          worker: escrowData.worker,
+          treasury: TREASURY_PUBKEY,
         })
         .rpc();
     },
     [program, walletPublicKey]
   );
-
-  const USDC_MINT = new web3.PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"); // SPL USDC
-
-  // Derive the associated token account for a given owner & mint
-  const findAssociatedTokenAddress = async (owner: web3.PublicKey, mint: web3.PublicKey) => {
-    return (
-      await web3.PublicKey.findProgramAddress(
-        [owner.toBuffer(), new web3.PublicKey("ATokenGPvH1J9p8R4A2M6F9p3z3yF2cE6v3jG9P8jT5hD").toBuffer(), mint.toBuffer()],
-        new web3.PublicKey("ATokenGPvH1J9p8R4A2M6F9p3z3yF2cE6v3jG9P8jT5hD")
-      )
-    )[0];
-  };
-
-  // Vault PDA lives under the escrow account – matches the program logic.
-  const findVaultPda = async (escrow: web3.PublicKey, programId: web3.PublicKey) => {
-    return (
-      await web3.PublicKey.findProgramAddress([
-        Buffer.from("vault"),
-        escrow.toBuffer(),
-      ], programId)
-    )[0];
-  };
 
   // Return the program and helpers so components can import the hook.
   return {

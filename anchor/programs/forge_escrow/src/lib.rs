@@ -395,6 +395,7 @@ pub struct CancelTask<'info> {
         seeds = [b"escrow", client.key().as_ref(), escrow_account.task_id.to_le_bytes().as_ref()],
         bump = escrow_account.bump,
         has_one = client,
+        close = client,
     )]
     pub escrow_account: Account<'info, EscrowAccount>,
     pub client: Signer<'info>,

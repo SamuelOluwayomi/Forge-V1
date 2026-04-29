@@ -145,16 +145,21 @@ export default function ProfilePage() {
   const handleDownloadCard = async () => {
     try {
       const html2canvas = (await import("html2canvas")).default;
-      const card = document.getElementById("profile-card");
+      const card = document.getElementById("profile-card-export");
       if (!card) return;
 
       toast.loading("Rendering card...", { id: "download" });
       
       const canvas = await html2canvas(card, {
-        backgroundColor: "#FF4500", // Match primary color
-        scale: 2, // Higher resolution
-        useCORS: true, // Allow loading cross-origin images (like avatar)
+        backgroundColor: "#FF4500", 
+        scale: 3, // Even higher for "premium" feel
+        useCORS: true,
         logging: false,
+        onclone: (clonedDoc) => {
+          // Force standard colors on the cloned element to prevent html2canvas oklab crash
+          const el = clonedDoc.getElementById("profile-card-export");
+          if (el) el.style.display = "block";
+        }
       });
 
       const link = document.createElement("a");
@@ -284,6 +289,70 @@ export default function ProfilePage() {
             >
               Share Profile
             </button>
+          </div>
+
+          {/* HIDDEN EXPORTABLE CARD (Standard Hex only for html2canvas compatibility) */}
+          <div className="hidden">
+            <div 
+              id="profile-card-export"
+              className="w-[450px] bg-[#FF4500] p-10 border-[6px] border-black relative overflow-hidden"
+              style={{ color: "black", fontFamily: "sans-serif" }}
+            >
+              {/* Header with Logo */}
+              <div className="flex justify-between items-center mb-10">
+                <div className="bg-black text-white px-4 py-1 font-black text-2xl italic tracking-tighter uppercase border-2 border-black">
+                  FORGE
+                </div>
+                <div className="bg-white px-3 py-1 border-2 border-black font-black text-[10px] uppercase tracking-widest">
+                  Identity Card
+                </div>
+              </div>
+
+              <div className="flex gap-8 items-start mb-8">
+                {/* Photo */}
+                <div className="w-32 h-32 bg-white border-[4px] border-black shrink-0 overflow-hidden">
+                  {displayPhoto ? (
+                    <img src={displayPhoto} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center font-black text-4xl text-black/10">?</div>
+                  )}
+                </div>
+
+                {/* Main Identity */}
+                <div className="flex-1">
+                  <h2 className="font-black text-3xl uppercase leading-none mb-4 italic">Dev Profile</h2>
+                  <div className="bg-black text-white px-3 py-2 border-2 border-black inline-block">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-[#FF4500] mb-1">Forge Score</p>
+                    <p className="font-black text-3xl leading-none">{stats[3].value}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Wallet Section */}
+              <div className="bg-white/90 border-[3px] border-black p-4 mb-8">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/50 mb-1">Authenticated Wallet</p>
+                <p className="font-mono text-xs font-black text-black break-all">
+                  {address || "Not Connected"}
+                </p>
+              </div>
+
+              {/* Stats Bar */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-black/10 border-2 border-black p-3">
+                  <p className="text-[10px] font-black uppercase text-black/40">Tasks Posted</p>
+                  <p className="font-black text-2xl text-black">{stats[1].value}</p>
+                </div>
+                <div className="bg-black/10 border-2 border-black p-3">
+                  <p className="text-[10px] font-black uppercase text-black/40">Tasks Done</p>
+                  <p className="font-black text-2xl text-black">{stats[0].value}</p>
+                </div>
+              </div>
+
+              {/* Footer Tape */}
+              <div className="absolute -bottom-4 -right-10 bg-black text-white px-20 py-4 font-black uppercase text-sm tracking-widest rotate-[-15deg] border-y-4 border-black">
+                FORGE PROTOCOL
+              </div>
+            </div>
           </div>
         </div>
 

@@ -154,9 +154,10 @@ export default function EscrowsPage() {
         );
 
         const mapped: Escrow[] = myEscrows.map((e: any) => {
-          const stateKeys = Object.keys(e.account.state);
+          const stateKeys = Object.keys(e.account.status);
           let status = "Funded";
-          if (stateKeys.includes("inProgress")) status = "In Progress";
+          if (stateKeys.includes("active")) status = "In Progress";
+          if (stateKeys.includes("submitted")) status = "Submitted";
           if (stateKeys.includes("completed")) status = "Completed";
           if (stateKeys.includes("disputed")) status = "Disputed";
           

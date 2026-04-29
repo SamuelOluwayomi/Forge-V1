@@ -162,10 +162,10 @@ export default function TasksPage() {
         );
 
         const mappedTasks: Task[] = myEscrows.map((e: any) => {
-          const stateKeys = Object.keys(e.account.state);
+          const stateKeys = Object.keys(e.account.status);
           let status = "Open";
-          if (stateKeys.includes("funded")) status = "Open";
-          if (stateKeys.includes("inProgress")) status = "In Progress";
+          if (stateKeys.includes("active")) status = "In Progress";
+          if (stateKeys.includes("submitted")) status = "In Progress";
           if (stateKeys.includes("completed")) status = "Completed";
           if (stateKeys.includes("disputed")) status = "Disputed";
           

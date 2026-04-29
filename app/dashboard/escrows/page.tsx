@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useEscrow } from "@/app/lib/hooks/useEscrow";
+import { useWallet } from "@/app/lib/wallet/context";
 
 type EscrowStatus = "Funded" | "In Progress" | "Submitted" | "Completed" | "Disputed";
 
@@ -83,7 +85,7 @@ function EscrowCard({ escrow }: { escrow: Escrow }) {
       <div className="border-t-2 border-b-2 border-black/10 py-3 flex items-center justify-between">
         <p className="text-xs font-black uppercase tracking-widest text-black/50">Locked Amount</p>
         <p className="font-black text-2xl text-black tabular-nums">
-          {escrow.amount}<span className="text-xs font-bold text-black/50 ml-1">USDC</span>
+          {escrow.amount}<span className="text-xs font-bold text-black/50 ml-1">SOL</span>
         </p>
       </div>
 
@@ -134,7 +136,54 @@ function EscrowCard({ escrow }: { escrow: Escrow }) {
 
 export default function EscrowsPage() {
   const [filter, setFilter] = useState<EscrowStatus | "All">("All");
-  const escrows: Escrow[] = [];
+  const [escrows, setEscrows] = useState<Escrow[]>([]);
+  const { program } = useEscrow();
+  const { wallet } = useWallet();
+
+  useEffect(() => {
+    if (!program || !wallet) return;
+
+    const fetchEscrows = async () => {
+      try {
+        const address = wallet.account.address;
+        const allEscrows = await program.account.escrowAccount.all();
+        
+        // Filter those where the user is either the client or the worker
+        const myEscrows = allEscrows.filter(
+          (e: any) => e.account.client.toBase58() === address || (e.account.worker && e.account.worker.toBase58() === address)
+        );
+
+        const mapped: Escrow[] = myEscrows.map((e: any) => {
+          const stateKeys = Object.keys(e.account.state);
+          let status = "Funded";
+          if (stateKeys.includes("inProgress")) status = "In Progress";
+          if (stateKeys.includes("completed")) status = "Completed";
+          if (stateKeys.includes("disputed")) status = "Disputed";
+          
+          const isClient = e.account.client.toBase58() === address;
+          const counterparty = isClient 
+            ? (e.account.worker ? e.account.worker.toBase58() : "None yet") 
+            : e.account.client.toBase58();
+
+          return {
+             id: e.account.taskId.toString(),
+             role: isClient ? "Client" : "Worker",
+             counterparty,
+             amount: (Number(e.account.amount) / 1_000_000_000).toString(),
+             status: status as EscrowStatus,
+             taskTitle: "On-Chain Task",
+             createdAt: "Recently"
+          }
+        });
+        
+        setEscrows(mapped.reverse());
+      } catch (err) {
+        console.error("Failed to fetch on-chain escrows:", err);
+      }
+    };
+
+    fetchEscrows();
+  }, [program, wallet]);
   const filtered = filter === "All" ? escrows : escrows.filter((e) => e.status === filter);
   const filters: (EscrowStatus | "All")[] = ["All", "Funded", "In Progress", "Submitted", "Completed", "Disputed"];
 

@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useEscrow } from "@/app/lib/hooks/useEscrow";
+import { useWallet } from "@/app/lib/wallet/context";
 
 type TaskStatus = "Open" | "In Progress" | "Completed" | "Disputed";
 
@@ -66,7 +68,7 @@ function TaskCard({ task }: { task: Task }) {
         <p className="text-xs font-black uppercase tracking-widest text-black/50">Escrow Amount</p>
         <p className="font-black text-xl text-black tabular-nums">
           {task.amount}
-          <span className="text-xs font-bold text-black/50 ml-1">USDC</span>
+          <span className="text-xs font-bold text-black/50 ml-1">SOL</span>
         </p>
       </div>
 
@@ -140,8 +142,52 @@ function TaskCard({ task }: { task: Task }) {
 export default function TasksPage() {
   const [filter, setFilter] = useState<TaskStatus | "All">("All");
 
-  // Placeholder — replace with useEscrow() account fetch
-  const tasks: Task[] = [];
+  const { program } = useEscrow();
+  const { wallet } = useWallet();
+  const [tasks, setTasks] = useState<Task[]>([]);
+
+  useEffect(() => {
+    if (!program || !wallet) return;
+
+    const fetchTasks = async () => {
+      try {
+        const address = wallet.account.address;
+        
+        // Fetch all escrows from the blockchain
+        const allEscrows = await program.account.escrowAccount.all();
+        
+        // Filter those where the client is the current user
+        const myEscrows = allEscrows.filter(
+          (e: any) => e.account.client.toBase58() === address
+        );
+
+        const mappedTasks: Task[] = myEscrows.map((e: any) => {
+          const stateKeys = Object.keys(e.account.state);
+          let status = "Open";
+          if (stateKeys.includes("funded")) status = "Open";
+          if (stateKeys.includes("inProgress")) status = "In Progress";
+          if (stateKeys.includes("completed")) status = "Completed";
+          if (stateKeys.includes("disputed")) status = "Disputed";
+          
+          return {
+             id: e.account.taskId.toString(),
+             title: "On-Chain Task", // Title isn't stored on-chain, but this serves as a placeholder until Supabase sync is added
+             amount: (Number(e.account.amount) / 1_000_000_000).toString(),
+             status: status as TaskStatus,
+             worker: e.account.worker ? e.account.worker.toBase58() : null,
+             posted: "Just now",
+             difficulty: e.account.difficulty
+          }
+        });
+        
+        setTasks(mappedTasks.reverse());
+      } catch (err) {
+        console.error("Failed to fetch on-chain tasks:", err);
+      }
+    };
+
+    fetchTasks();
+  }, [program, wallet]);
 
   const filtered =
     filter === "All" ? tasks : tasks.filter((t) => t.status === filter);

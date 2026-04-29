@@ -206,17 +206,7 @@ export default function ProfilePage() {
               )}
             </div>
 
-            {/* Verifications inside Card */}
-            <div className="relative z-10 mt-6 grid grid-cols-2 gap-2">
-              <div className="bg-white/50 border-2 border-black p-2 flex flex-col items-center text-center">
-                <div className="w-3 h-3 bg-[#4ADE80] border-2 border-black mb-1" />
-                <span className="font-black text-[9px] uppercase">Civic Verified</span>
-              </div>
-              <div className="bg-white/50 border-2 border-black p-2 flex flex-col items-center text-center">
-                <div className="w-3 h-3 bg-[#4ADE80] border-2 border-black mb-1" />
-                <span className="font-black text-[9px] uppercase">Reputation Init</span>
-              </div>
-            </div>
+
           </div>
 
           {/* Action Buttons */}
@@ -250,32 +240,7 @@ export default function ProfilePage() {
             ))}
           </div>
 
-          {/* Forge Score breakdown */}
-          <div className="brutalist-card bg-black text-white p-6">
-            <h2 className="font-black text-xl uppercase tracking-tight mb-4">Forge Score Breakdown</h2>
-            <p className="text-sm font-bold text-white/50 leading-relaxed">
-              Your Forge Score increases each time you complete a task, earn a badge, or receive a positive review.
-              It is stored permanently on-chain and visible to potential clients.
-            </p>
-            {[
-              { label: "Tasks Completed", pts: 0, max: 50 },
-              { label: "Average Rating", pts: 0, max: 30 },
-              { label: "Badges Earned", pts: 0, max: 20 },
-            ].map((row) => (
-              <div key={row.label} className="mt-4">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-black text-xs uppercase tracking-widest text-white/60">{row.label}</span>
-                  <span className="font-black text-xs text-white/60">{row.pts} / {row.max}</span>
-                </div>
-                <div className="h-2 border-2 border-white/20 bg-white/5">
-                  <div
-                    className="h-full bg-primary transition-all duration-500"
-                    style={{ width: `${(row.pts / row.max) * 100}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+
 
           {/* SBT Badges */}
           <div className="brutalist-card bg-white p-6">

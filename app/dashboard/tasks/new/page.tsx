@@ -25,6 +25,8 @@ export default function NewTaskPage() {
   const [reviewDays, setReviewDays] = useState(3);
   const [difficulty, setDifficulty] = useState(1);
   const [contactInfo, setContactInfo] = useState("");
+  const [listingDeadline, setListingDeadline] = useState("");
+  const [taskType, setTaskType] = useState<"challenge" | "bounty">("challenge");
   const [metadataUri, setMetadataUri] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState("");
@@ -157,6 +159,10 @@ export default function NewTaskPage() {
           amount: cleanData.amount,
           difficulty: cleanData.difficulty,
           contact_info: contactInfo,
+          listing_deadline: listingDeadline 
+            ? new Date(listingDeadline).toISOString() 
+            : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // Default: 7 days
+          task_type: taskType,
           skills: aiAnalysisCache?.skills || [],
           ai_analysis: aiAnalysisCache,
           content_hash: contentHash,
@@ -248,6 +254,55 @@ export default function NewTaskPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        {/* Task Type Toggle */}
+        <div className="brutalist-card bg-white p-6 flex flex-col gap-4">
+          <p className="font-black text-sm uppercase tracking-widest text-black/60">
+            Task Type <span className="text-primary">*</span>
+          </p>
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              type="button"
+              onClick={() => setTaskType("challenge")}
+              className={`flex flex-col gap-2 p-5 border-2 text-left transition-all duration-100 ${
+                taskType === "challenge"
+                  ? "bg-black text-white border-black shadow-none translate-x-0.5 translate-y-0.5"
+                  : "bg-white text-black border-black hover:bg-black/5"
+              }`}
+              style={{ boxShadow: taskType === "challenge" ? "none" : "4px 4px 0px 0px rgba(0,0,0,1)" }}
+            >
+              <div className="flex items-center gap-2">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4-4v2" />
+                  <circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 00-3-3.87" /><path d="M16 3.13a4 4 0 010 7.75" />
+                </svg>
+                <span className="font-black text-base uppercase">Challenge</span>
+              </div>
+              <span className={`text-[11px] font-bold leading-tight ${taskType === "challenge" ? "text-white/60" : "text-black/50"}`}>
+                Developers apply, you pick ONE to build. Only the selected developer works and gets paid.
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setTaskType("bounty")}
+              className={`flex flex-col gap-2 p-5 border-2 text-left transition-all duration-100 ${
+                taskType === "bounty"
+                  ? "bg-primary text-white border-black shadow-none translate-x-0.5 translate-y-0.5"
+                  : "bg-white text-black border-black hover:bg-black/5"
+              }`}
+              style={{ boxShadow: taskType === "bounty" ? "none" : "4px 4px 0px 0px rgba(0,0,0,1)" }}
+            >
+              <div className="flex items-center gap-2">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+                <span className="font-black text-base uppercase">Bounty</span>
+              </div>
+              <span className={`text-[11px] font-bold leading-tight ${taskType === "bounty" ? "text-white/60" : "text-black/50"}`}>
+                Multiple developers submit work. You review all submissions and pick the best one to pay.
+              </span>
+            </button>
+          </div>
+        </div>
         {/* Title */}
         <div className="brutalist-card bg-white p-6 flex flex-col gap-3">
           <label
@@ -304,8 +359,41 @@ export default function NewTaskPage() {
             className="border-2 border-black bg-background px-4 py-3 font-bold text-sm text-black outline-none focus:border-primary transition-colors placeholder:text-black/30"
           />
           <p className="text-xs font-bold text-black/40 leading-tight">
-            Workers will use this to contact you directly after seeing your task in the marketplace.
+            Workers will use this to contact you directly after being accepted for your task.
           </p>
+        </div>
+
+        {/* Listing Deadline */}
+        <div className="brutalist-card bg-white p-6 flex flex-col gap-3">
+          <label
+            htmlFor="listing-deadline"
+            className="font-black text-sm uppercase tracking-widest text-black/60"
+          >
+            Listing Deadline <span className="font-bold text-black/30">(optional)</span>
+          </label>
+          <input
+            id="listing-deadline"
+            type="datetime-local"
+            value={listingDeadline}
+            onChange={(e) => setListingDeadline(e.target.value)}
+            min={new Date().toISOString().slice(0, 16)}
+            className="border-2 border-black bg-background px-4 py-3 font-bold text-sm text-black outline-none focus:border-primary transition-colors"
+          />
+          <p className="text-xs font-bold text-black/40 leading-tight">
+            Set a date for the listing to close for new applicants. If left blank, the listing will automatically expire in <span className="text-primary font-black">7 days</span>.
+            After expiry, you have <span className="text-primary font-black">48 hours</span> to pick a developer from applicants.
+          </p>
+          <div className="bg-black/5 border-2 border-dashed border-black/20 px-4 py-3">
+            <p className="text-[10px] font-black uppercase text-primary tracking-widest mb-1">
+              {taskType === "challenge" ? "Challenge Mode" : "Bounty Mode"}
+            </p>
+            <p className="text-xs font-bold text-black/60 leading-tight">
+              {taskType === "challenge" 
+                ? "Only the developer you select will work on and get paid for this task. This is NOT a bounty \u2014 multiple people will NOT build the same thing."
+                : "Multiple developers can submit their work. You will review all submissions and select the best one. Only the winning submission gets paid."
+              }
+            </p>
+          </div>
         </div>
 
         {/* Amount + Review Window */}

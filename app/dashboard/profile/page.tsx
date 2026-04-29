@@ -36,7 +36,13 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { program } = useEscrow();
-  const balance = useBalance(address);
+  const balance = useBalance(address || undefined);
+
+  // Social accounts
+  const [socials, setSocials] = useState({ twitter: "", github: "", discord: "", telegram: "" });
+  const [savingSocials, setSavingSocials] = useState(false);
+  const [rank, setRank] = useState<number>(0);
+
   const [stats, setStats] = useState([
     { label: "Tasks Completed", value: 0 },
     { label: "Tasks Posted", value: 0 },
@@ -54,12 +60,19 @@ export default function ProfilePage() {
     const fetchProfile = async () => {
       const { data, error } = await supabase!
         .from("profiles")
-        .select("avatar_url")
+        .select("avatar_url, twitter, github, discord, telegram, rank")
         .eq("wallet_address", address)
         .single();
         
-      if (data && data.avatar_url) {
-        setDisplayPhoto(data.avatar_url);
+      if (data) {
+        if (data.avatar_url) setDisplayPhoto(data.avatar_url);
+        setSocials({
+          twitter: data.twitter || "",
+          github: data.github || "",
+          discord: data.discord || "",
+          telegram: data.telegram || "",
+        });
+        if (data.rank) setRank(data.rank);
       }
     };
     
@@ -94,6 +107,15 @@ export default function ProfilePage() {
           { label: "SOL Earned", value: earned.toFixed(2) },
           { label: "Forge Score", value: forgeScore },
         ]);
+
+        // Sync forge_score to Supabase for rankings
+        if (supabase && forgeScore > 0) {
+          supabase.from("profiles").upsert({
+            wallet_address: address,
+            forge_score: forgeScore,
+            updated_at: new Date().toISOString(),
+          }).then(() => {});
+        }
       } catch (err) {
         console.error("Failed to fetch profile stats:", err);
       }
@@ -185,6 +207,29 @@ export default function ProfilePage() {
     window.open(twitterUrl, "_blank");
   };
 
+  const handleSaveSocials = async () => {
+    if (!address || !supabase) return;
+    setSavingSocials(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .upsert({
+          wallet_address: address,
+          twitter: socials.twitter,
+          github: socials.github,
+          discord: socials.discord,
+          telegram: socials.telegram,
+          updated_at: new Date().toISOString(),
+        });
+      if (error) throw error;
+      toast.success("Social accounts saved!");
+    } catch (err: any) {
+      toast.error("Failed to save: " + err.message);
+    } finally {
+      setSavingSocials(false);
+    }
+  };
+
   return (
     <div className="w-full">
       {/* Header */}
@@ -238,9 +283,17 @@ export default function ProfilePage() {
               />
 
               {/* Forge Score Badge inside Card */}
-              <div className="bg-black text-white px-3 py-2 border-2 border-black flex flex-col items-end" style={{ transform: "rotate(2deg)" }}>
-                <span className="text-[10px] font-black uppercase tracking-widest text-primary leading-none mb-1">Score</span>
-                <span className="font-black text-2xl leading-none">{stats[3].value}</span>
+              <div className="flex gap-2">
+                {rank > 0 && (
+                  <div className="bg-[#FFD700] text-black px-3 py-2 border-2 border-black flex flex-col items-center" style={{ transform: "rotate(-2deg)" }}>
+                    <span className="text-[10px] font-black uppercase tracking-widest leading-none mb-1">Rank</span>
+                    <span className="font-black text-2xl leading-none">#{rank}</span>
+                  </div>
+                )}
+                <div className="bg-black text-white px-3 py-2 border-2 border-black flex flex-col items-end" style={{ transform: "rotate(2deg)" }}>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-primary leading-none mb-1">Score</span>
+                  <span className="font-black text-2xl leading-none">{stats[3].value}</span>
+                </div>
               </div>
             </div>
 
@@ -323,9 +376,17 @@ export default function ProfilePage() {
                 {/* Main Identity */}
                 <div className="flex-1">
                   <h2 className="font-black text-3xl uppercase leading-none mb-4 italic">Dev Profile</h2>
-                  <div className="bg-black text-white px-3 py-2 border-2 border-black inline-block">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-[#FF4500] mb-1">Forge Score</p>
-                    <p className="font-black text-3xl leading-none">{stats[3].value}</p>
+                  <div className="flex gap-2">
+                    {rank > 0 && (
+                      <div className="bg-[#FFD700] text-black px-3 py-2 border-2 border-black inline-block">
+                        <p className="text-[10px] font-black uppercase tracking-widest mb-1">Rank</p>
+                        <p className="font-black text-3xl leading-none">#{rank}</p>
+                      </div>
+                    )}
+                    <div className="bg-black text-white px-3 py-2 border-2 border-black inline-block">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[#FF4500] mb-1">Forge Score</p>
+                      <p className="font-black text-3xl leading-none">{stats[3].value}</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -368,6 +429,60 @@ export default function ProfilePage() {
                 <p className="font-black text-4xl text-black tabular-nums leading-none">{s.value}</p>
               </div>
             ))}
+          </div>
+
+          {/* Social Accounts */}
+          <div className="brutalist-card bg-white p-6">
+            <h2 className="font-black text-xl uppercase tracking-tight mb-4">Social Accounts</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-black/50">X (Twitter)</label>
+                <input
+                  type="text"
+                  value={socials.twitter}
+                  onChange={(e) => setSocials({ ...socials, twitter: e.target.value })}
+                  placeholder="@username"
+                  className="border-2 border-black bg-background px-3 py-2 font-bold text-sm text-black outline-none focus:border-primary placeholder:text-black/30"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-black/50">GitHub</label>
+                <input
+                  type="text"
+                  value={socials.github}
+                  onChange={(e) => setSocials({ ...socials, github: e.target.value })}
+                  placeholder="username"
+                  className="border-2 border-black bg-background px-3 py-2 font-bold text-sm text-black outline-none focus:border-primary placeholder:text-black/30"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-black/50">Discord</label>
+                <input
+                  type="text"
+                  value={socials.discord}
+                  onChange={(e) => setSocials({ ...socials, discord: e.target.value })}
+                  placeholder="username#1234"
+                  className="border-2 border-black bg-background px-3 py-2 font-bold text-sm text-black outline-none focus:border-primary placeholder:text-black/30"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-black/50">Telegram</label>
+                <input
+                  type="text"
+                  value={socials.telegram}
+                  onChange={(e) => setSocials({ ...socials, telegram: e.target.value })}
+                  placeholder="@username"
+                  className="border-2 border-black bg-background px-3 py-2 font-bold text-sm text-black outline-none focus:border-primary placeholder:text-black/30"
+                />
+              </div>
+            </div>
+            <button
+              onClick={handleSaveSocials}
+              disabled={savingSocials}
+              className="brutalist-button px-6 py-2 bg-black text-white border-black text-xs disabled:opacity-50"
+            >
+              {savingSocials ? "Saving..." : "Save Social Accounts"}
+            </button>
           </div>
 
 

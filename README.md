@@ -27,19 +27,36 @@ Every completed task mints a non-transferable SBT to both the worker and the cli
 - **Client SBTs record**: tasks posted, successful payments, payment speed, dispute rate.
   These tokens are permanent, portable, and owned by the individual, not the platform.
 
-### 04. Task and Bounty Marketplace (Application Layer)
+### 04. Unified Professional Marketplace (Application Layer)
 
-The front-end application built on top of the three programs. Post a task with title, description, price in USDC, deadline, and required SBT level. Workers browse and apply with a proposal. Owner reviews applicants — their SBT history is visible before selection. Bounties work the same way but are open to multiple completions. Everything flows through the on-chain programs — the frontend is just the interface.
+The front-end application built on top of the three programs. Forge offers two distinct work models:
+- **Challenge Mode (Selective)**: The client sets a deadline, reviews applicants, and selects exactly **one** developer to work on the task. Funds are released only to the selected developer.
+- **Bounty Mode (Open Submission)**: Multiple developers can submit work simultaneously. The client reviews all submissions and selects the best one to receive the payout.
+
+Workers browse and apply with enriched profiles featuring **On-Chain Ranks** and **Social Proof** (X, GitHub, Discord). Everything flows through the on-chain programs — the frontend is just the interface.
 
 ## End-to-End User Flow
 
-1. **Connect wallet + One-time Profile Setup**: User connects Phantom/Backpack. On first launch, a Reputation account is initialized on-chain. In future versions, a Proof of Humanity pass will be required here. Gate opens.
-2. **Client posts a task**: Title, description, USDC price, deadline, skill tags, minimum SBT level required to apply. Transaction goes on-chain.
-3. **Workers browse and apply**: Workers see the task on the marketplace. Their SBT history is visible on their profile. They submit a proposal with a message and timeline.
-4. **Client selects worker -> Funds lock**: Client picks a worker. USDC immediately locks into the escrow PDA on-chain. Worker is notified. Work begins.
-5. **Worker submits deliverable**: Worker marks task complete and submits their work link/proof. Client receives notification to review.
-6. **Client approves -> Escrow releases**: Client clicks approve. Escrow program releases USDC to worker wallet minus Forge protocol fee. Transaction confirmed on-chain.
-7. **SBTs mint to both wallets**: `forge_sbt` mints a badge to the worker (skill + rating + completion count) and a badge to the client (payment confirmed + reliability score). Both wallets now carry permanent, verifiable proof of this interaction.
+1. **Connect wallet + Profile Setup**: User connects Phantom/Backpack. On first launch, a Reputation account is initialized. Users can link their **X, GitHub, Discord, and Telegram** to build trust.
+2. **Client posts a task**: Selects between **Challenge** or **Bounty** mode. Sets a reward in SOL, a listing deadline, difficulty level, and skill tags. Transaction goes on-chain.
+3. **Marketplace Discovery**: Tasks appear in the marketplace with **live countdown timers**. Developers can view full details, including the client's reputation and linked socials.
+4. **Accepting Challenges / Submitting Bounties**: 
+   - In **Challenge Mode**, developers "Accept the Challenge" to express interest. The client reviews the applicant list (sorted by Forge Rank) and picks a worker.
+   - In **Bounty Mode**, developers can begin work and submit their proof directly.
+5. **Worker completes work -> Funds lock**: Once a worker is selected (Challenge) or work is submitted (Bounty), funds are managed by the `forge_escrow` program.
+6. **Client approves -> Escrow releases**: Client clicks approve. Escrow program releases SOL to the worker wallet minus Forge protocol fee.
+7. **SBTs & Rankings**: `forge_sbt` mints a badge to both parties. The worker's **Forge Score** increases, and their **Global Rank** is updated on the daily leaderboard.
+
+## Features
+
+### Global Ranking & Reputation
+Forge implements a daily ranking system that scores developers based on their on-chain performance. Top-ranked developers receive a golden **Rank Badge** on their profile and exportable **Identity Card**, making them more attractive to high-paying clients.
+
+### Privacy-First Communication
+While profiles are public, sensitive **Direct Contact Info** (WhatsApp, Slack, etc.) is encrypted and only revealed to the specific developer selected for a task, ensuring zero-spam for clients.
+
+### Identity Cards
+Users can download or share their **Forge Identity Card**—a high-fidelity, neo-brutalist social card that showcases their Forge Score, Global Rank, and authenticated wallet status.
 
 ## The Bigger Picture — Onchain Professional Identity
 
@@ -54,7 +71,7 @@ Forge is not just a marketplace. The SBT system creates something the web3 space
 
 1. **`forge_identity` (Planned)**: Identity gate. Marks wallets as human-verified on-chain.
    - Status: *In Research*
-2. **`forge_escrow`**: Locks USDC into PDAs, handles task lifecycle, releases on approval.
+2. **`forge_escrow`**: Locks SOL into PDAs, handles task lifecycle, releases on approval.
    - Instructions: `create`, `accept`, `approve`, `dispute`
 3. **`forge_sbt`**: Mints non-transferable badges to both wallets on task completion.
    - Instructions: `mint_worker`, `mint_client`
@@ -63,19 +80,19 @@ Forge is not just a marketplace. The SBT system creates something the web3 space
 
 To maintain a fast, Web2-like experience while preserving Web3 trustlessness, Forge utilizes a **Hybrid State Architecture**:
 
-- **On-Chain (Solana)**: Core state (Escrow PDA, task ID, client/worker wallets, USDC amount, deadlines).
-- **Off-Chain (Supabase DB)**: Heavy metadata (Task title, description, skills, AI-generated briefs, applicant proposals).
-- **The Bridge (Integrity Hash)**: The off-chain data is hashed using SHA-256 (`content_hash`). This hash is passed into the `createTask` instruction and stored on-chain inside the `task_metadata_uri` field. Anyone can re-hash the database content and compare it to the on-chain hash to mathematically prove the task details haven't been tampered with.
+- **On-Chain (Solana)**: Core state (Escrow PDA, task ID, client/worker wallets, SOL amount, deadlines, difficulty).
+- **Off-Chain (Supabase DB)**: Heavy metadata (Task title, description, skills, AI-generated briefs, applicant tracking, social profiles, and rankings).
+- **The Bridge (Integrity Hash)**: The off-chain data is hashed using SHA-256 (`content_hash`). This hash is stored on-chain inside the `task_metadata_uri` field. Anyone can verify that the marketplace details match the on-chain record.
 
 ### Input Security & Sanitization
 All inputs passing between the client and the off-chain database go through a strict validation pipeline:
-- **Sanitization**: Deep HTML tag stripping to prevent XSS vulnerabilities without relying on heavy DOM parsers.
-- **Strict Typing**: Strict character limits (e.g., 5000 chars for descriptions) and constraint enforcement (e.g., review windows limited to 1-7 days to perfectly match smart contract bounds).
-- **PDA Verification**: The backend strictly validates Solana base58 wallet formats and PDA structures before allocating database storage.
+- **Sanitization**: Deep HTML tag stripping to prevent XSS vulnerabilities.
+- **Strict Typing**: Character limits and constraint enforcement (e.g., listing deadlines and review windows).
+- **Privacy Logic**: Database-level security ensuring private contact info is only accessible to authorized participants.
 
 ## Monetization
 
-- **Protocol fee**: ~2% cut on every completed escrow. Baked into the smart contract. Automatic.
-- **Featured listings**: Task posters pay USDC to boost their task to the top of the marketplace.
-- **SBT verification API**: Other dApps and employers pay to query Forge SBT trust scores programmatically.
-- **Premium profiles**: Workers pay for enhanced profile visibility and priority in applicant lists.
+- **Protocol fee**: ~2% cut on every completed escrow.
+- **Featured listings**: Pay to boost tasks to the top of the marketplace.
+- **Premium Identity**: Workers pay for enhanced profile cards and priority ranking.
+- **SBT API**: External protocols pay to query Forge trust scores.

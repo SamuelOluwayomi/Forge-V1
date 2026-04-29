@@ -33,6 +33,8 @@ export async function POST(req: Request) {
           amount: taskData.amount,
           difficulty: taskData.difficulty,
           contact_info: taskData.contact_info,
+          listing_deadline: taskData.listing_deadline || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          task_type: taskData.task_type || "challenge",
           skills: taskData.skills || [],
           ai_analysis: taskData.ai_analysis || null,
           content_hash: taskData.content_hash,

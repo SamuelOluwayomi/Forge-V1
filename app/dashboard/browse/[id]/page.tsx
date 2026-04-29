@@ -135,7 +135,7 @@ export default function TaskDetailPage() {
     } finally {
       setApplying(false);
     }
-
+  };
 
   if (loading) {
     return (

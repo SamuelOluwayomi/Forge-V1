@@ -146,7 +146,7 @@ export default function EscrowsPage() {
     const fetchEscrows = async () => {
       try {
         const address = wallet.account.address;
-        const allEscrows = await program.account.escrowAccount.all();
+        const allEscrows = await (program.account as any).escrowAccount.all();
         
         // Filter those where the user is either the client or the worker
         const myEscrows = allEscrows.filter(

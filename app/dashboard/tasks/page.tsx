@@ -154,7 +154,7 @@ export default function TasksPage() {
         const address = wallet.account.address;
         
         // Fetch all escrows from the blockchain
-        const allEscrows = await program.account.escrowAccount.all();
+        const allEscrows = await (program.account as any).escrowAccount.all();
         
         // Filter those where the client is the current user
         const myEscrows = allEscrows.filter(

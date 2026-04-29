@@ -80,7 +80,7 @@ export function useEscrow() {
       ], program.programId);
 
       return await (program.methods as any)
-        .createTask(taskId, amount, reviewWindowDays, difficulty, taskMetadataUri)
+        .createTask(new BN(taskId), new BN(amount.toString()), reviewWindowDays, difficulty, taskMetadataUri)
         .accounts({
           escrowAccount: escrowPda,
           client: walletPublicKey,
@@ -91,7 +91,7 @@ export function useEscrow() {
     [program, walletPublicKey]
   );
 
-  const TREASURY_PUBKEY = new web3.PublicKey("SysvarRent111111111111111111111111111111111"); // Dummy treasury for testing
+  const TREASURY_PUBKEY = new web3.PublicKey("EPpNW3G47SAJ4j1DatpjW7mJMLRTH9Z8K7LJtBfhR8Mt"); // Forge Protocol Treasury
 
   /** Accept a worker and lock SOL into the PDA */
   const acceptWorker = useCallback(

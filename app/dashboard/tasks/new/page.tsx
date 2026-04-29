@@ -44,24 +44,28 @@ export default function NewTaskPage() {
         body: JSON.stringify({ prompt: aiPrompt }),
       });
       const aiData = await aiResponse.json();
-      if (!aiResponse.ok) throw new Error(aiData.error || "AI generation failed");
+      if (!aiResponse.ok)
+        throw new Error(aiData.error || "AI generation failed");
 
       const task = aiData.task;
       setTitle(task.title || "");
-      
+
       let fullDesc = task.description || "";
       if (task.deliverables && task.deliverables.length > 0) {
         fullDesc += "\n\nDeliverables:\n- " + task.deliverables.join("\n- ");
       }
       if (task.acceptance_criteria && task.acceptance_criteria.length > 0) {
-        fullDesc += "\n\nAcceptance Criteria:\n- " + task.acceptance_criteria.join("\n- ");
+        fullDesc +=
+          "\n\nAcceptance Criteria:\n- " +
+          task.acceptance_criteria.join("\n- ");
       }
-      
+
       setDescription(fullDesc);
-      if (task.suggested_price_usdc) setAmount(task.suggested_price_usdc.toString());
+      if (task.suggested_price_usdc)
+        setAmount(task.suggested_price_usdc.toString());
       if (task.difficulty) setDifficulty(task.difficulty);
       setAiAnalysisCache(task);
-      
+
       toast.success("Task details generated! Review and post.");
     } catch (err: any) {
       console.error(err);
@@ -73,9 +77,9 @@ export default function NewTaskPage() {
 
   const generateHash = async (data: string) => {
     const msgUint8 = new TextEncoder().encode(data);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -105,17 +109,24 @@ export default function NewTaskPage() {
         title: cleanData.title,
         description: cleanData.description,
         difficulty: cleanData.difficulty,
-        aiAnalysis: aiAnalysisCache
+        aiAnalysis: aiAnalysisCache,
       };
       const contentHash = await generateHash(JSON.stringify(offChainData));
-      const finalMetadataUri = cleanData.metadataUri || `forge://hash/${contentHash.substring(0, 32)}`;
+      const finalMetadataUri =
+        cleanData.metadataUri || `forge://hash/${contentHash.substring(0, 32)}`;
 
       // 2. Post to Escrow on-chain
       setLoadingStep("Locking SOL in Escrow...");
       const taskId = Date.now(); // unique numeric ID
       // Web3.js lamports conversion (1 SOL = 1_000_000_000 lamports)
       const lamports = BigInt(Math.round(cleanData.amount * 1_000_000_000));
-      await createTask(taskId, lamports, cleanData.reviewDays, cleanData.difficulty, finalMetadataUri);
+      await createTask(
+        taskId,
+        lamports,
+        cleanData.reviewDays,
+        cleanData.difficulty,
+        finalMetadataUri
+      );
 
       // 4. Compute the PDA (Unique identifier)
       const { PublicKey } = await import("@solana/web3.js");
@@ -125,7 +136,7 @@ export default function NewTaskPage() {
         [
           Buffer.from("escrow"),
           clientPubkey.toBuffer(),
-          Buffer.from([...new BN(taskId).toArray('le', 8)]),
+          Buffer.from([...new BN(taskId).toArray("le", 8)]),
         ],
         program.programId
       );
@@ -145,19 +156,23 @@ export default function NewTaskPage() {
           difficulty: cleanData.difficulty,
           skills: aiAnalysisCache?.skills || [],
           ai_analysis: aiAnalysisCache,
-          content_hash: contentHash
+          content_hash: contentHash,
         }),
       });
-      
+
       if (!dbResponse.ok) {
-         console.warn("Failed to save to database, but on-chain task created successfully.");
+        console.warn(
+          "Failed to save to database, but on-chain task created successfully."
+        );
       }
 
       toast.success("Task posted successfully!");
       router.push("/dashboard/tasks");
     } catch (err: any) {
       console.error(err);
-      toast.error(err?.message ?? "Failed to post task. Check your wallet connection.");
+      toast.error(
+        err?.message ?? "Failed to post task. Check your wallet connection."
+      );
     } finally {
       setLoading(false);
       setLoadingStep("");
@@ -178,17 +193,22 @@ export default function NewTaskPage() {
           Post a Task
         </h1>
         <p className="font-bold text-base text-black/60 mt-3 leading-snug">
-          SOL is locked in escrow immediately. Released only when you approve the work.
+          SOL is locked in escrow immediately. Released only when you approve
+          the work.
         </p>
       </div>
 
       {/* AI Generator Box */}
       <div className="brutalist-card bg-[#e0e0e0] p-6 flex flex-col gap-3 border-dashed mb-6">
-        <label htmlFor="ai-prompt" className="font-black text-sm uppercase tracking-widest text-black flex items-center gap-2">
+        <label
+          htmlFor="ai-prompt"
+          className="font-black text-sm uppercase tracking-widest text-black flex items-center gap-2"
+        >
           ✨ Auto-fill with AI
         </label>
         <p className="text-sm font-bold text-black/60 leading-tight">
-          Describe what you need in plain English. Gemini will structure it, suggest a price, and fill the form for you.
+          Describe what you need in plain English. An AI assistant will
+          structure it, suggest a price, and fill the form for you.
         </p>
         <div className="flex flex-col sm:flex-row gap-2 mt-2">
           <input
@@ -198,7 +218,12 @@ export default function NewTaskPage() {
             onChange={(e) => setAiPrompt(e.target.value)}
             placeholder="e.g. I need a Rust developer to build an SPL token staking contract..."
             className="border-2 border-black bg-white px-4 py-3 font-bold text-sm text-black outline-none focus:border-primary flex-1 placeholder:text-black/30"
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleGenerateWithAI(); } }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleGenerateWithAI();
+              }
+            }}
           />
           <button
             type="button"
@@ -210,17 +235,22 @@ export default function NewTaskPage() {
           </button>
         </div>
       </div>
-      
+
       <div className="flex items-center gap-4 mb-6">
         <div className="flex-1 h-0.5 bg-black/10"></div>
-        <span className="font-black text-xs text-black/40 uppercase tracking-widest">OR EDIT MANUALLY</span>
+        <span className="font-black text-xs text-black/40 uppercase tracking-widest">
+          OR EDIT MANUALLY
+        </span>
         <div className="flex-1 h-0.5 bg-black/10"></div>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
         {/* Title */}
         <div className="brutalist-card bg-white p-6 flex flex-col gap-3">
-          <label htmlFor="task-title" className="font-black text-sm uppercase tracking-widest text-black/60">
+          <label
+            htmlFor="task-title"
+            className="font-black text-sm uppercase tracking-widest text-black/60"
+          >
             Task Title <span className="text-primary">*</span>
           </label>
           <input
@@ -236,7 +266,10 @@ export default function NewTaskPage() {
 
         {/* Description */}
         <div className="brutalist-card bg-white p-6 flex flex-col gap-3">
-          <label htmlFor="task-description" className="font-black text-sm uppercase tracking-widest text-black/60">
+          <label
+            htmlFor="task-description"
+            className="font-black text-sm uppercase tracking-widest text-black/60"
+          >
             Description <span className="text-primary">*</span>
           </label>
           <textarea
@@ -253,7 +286,10 @@ export default function NewTaskPage() {
         {/* Amount + Review Window */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="brutalist-card bg-white p-6 flex flex-col gap-3">
-            <label htmlFor="task-amount" className="font-black text-sm uppercase tracking-widest text-black/60">
+            <label
+              htmlFor="task-amount"
+              className="font-black text-sm uppercase tracking-widest text-black/60"
+            >
               Reward Amount <span className="text-primary">*</span>
             </label>
             <div className="flex items-center border-2 border-black bg-background">
@@ -264,7 +300,7 @@ export default function NewTaskPage() {
                 id="task-amount"
                 type="number"
                 required
-                min="1"
+                min="0.01"
                 step="0.01"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
@@ -275,7 +311,10 @@ export default function NewTaskPage() {
           </div>
 
           <div className="brutalist-card bg-white p-6 flex flex-col gap-3">
-            <label htmlFor="task-review-days" className="font-black text-sm uppercase tracking-widest text-black/60">
+            <label
+              htmlFor="task-review-days"
+              className="font-black text-sm uppercase tracking-widest text-black/60"
+            >
               Review Window
             </label>
             <div className="flex items-center border-2 border-black bg-background">
@@ -309,16 +348,24 @@ export default function NewTaskPage() {
                 id={`difficulty-${opt.value}`}
                 onClick={() => setDifficulty(opt.value)}
                 className={`flex flex-col gap-1 p-3 border-2 text-left transition-all duration-100
-                  ${difficulty === opt.value
-                    ? "bg-black text-white border-black shadow-none translate-x-0.5 translate-y-0.5"
-                    : "bg-white text-black border-black hover:bg-black hover:text-white"
+                  ${
+                    difficulty === opt.value
+                      ? "bg-black text-white border-black shadow-none translate-x-0.5 translate-y-0.5"
+                      : "bg-white text-black border-black hover:bg-black hover:text-white"
                   }`}
                 style={{
-                  boxShadow: difficulty === opt.value ? "none" : "3px 3px 0px 0px rgba(0,0,0,1)",
+                  boxShadow:
+                    difficulty === opt.value
+                      ? "none"
+                      : "3px 3px 0px 0px rgba(0,0,0,1)",
                 }}
               >
-                <span className="font-black text-sm uppercase">{opt.label}</span>
-                <span className={`text-[10px] font-bold ${difficulty === opt.value ? "text-white/60" : "text-black/50"}`}>
+                <span className="font-black text-sm uppercase">
+                  {opt.label}
+                </span>
+                <span
+                  className={`text-[10px] font-bold ${difficulty === opt.value ? "text-white/60" : "text-black/50"}`}
+                >
                   {opt.desc}
                 </span>
               </button>
@@ -328,8 +375,12 @@ export default function NewTaskPage() {
 
         {/* Metadata URI (optional) */}
         <div className="brutalist-card bg-white p-6 flex flex-col gap-3">
-          <label htmlFor="task-metadata" className="font-black text-sm uppercase tracking-widest text-black/60">
-            Metadata URI <span className="font-bold text-black/30">(optional)</span>
+          <label
+            htmlFor="task-metadata"
+            className="font-black text-sm uppercase tracking-widest text-black/60"
+          >
+            Metadata URI{" "}
+            <span className="font-bold text-black/30">(optional)</span>
           </label>
           <input
             id="task-metadata"
@@ -340,7 +391,8 @@ export default function NewTaskPage() {
             className="border-2 border-black bg-background px-4 py-3 font-bold text-sm text-black outline-none focus:border-primary transition-colors placeholder:text-black/30"
           />
           <p className="text-xs font-bold text-black/40">
-            Link to a JSON file with extended task info (requirements, links, assets). Leave blank to auto-generate.
+            Link to a JSON file with extended task info (requirements, links,
+            assets). Leave blank to auto-generate.
           </p>
         </div>
 
@@ -354,8 +406,17 @@ export default function NewTaskPage() {
           >
             {loading ? (
               <>
-                <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity="0.2" /><path d="M12 3a9 9 0 019 9" />
+                <svg
+                  className="animate-spin"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                >
+                  <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity="0.2" />
+                  <path d="M12 3a9 9 0 019 9" />
                 </svg>
                 {loadingStep || "Posting to Escrow..."}
               </>

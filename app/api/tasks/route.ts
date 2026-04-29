@@ -32,6 +32,7 @@ export async function POST(req: Request) {
           description: taskData.description,
           amount: taskData.amount,
           difficulty: taskData.difficulty,
+          contact_info: taskData.contact_info,
           skills: taskData.skills || [],
           ai_analysis: taskData.ai_analysis || null,
           content_hash: taskData.content_hash,

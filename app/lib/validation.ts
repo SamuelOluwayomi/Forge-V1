@@ -60,6 +60,7 @@ export function validateTaskInput(input: any) {
       reviewDays: numReviewDays,
       difficulty: numDifficulty,
       metadataUri: cleanUri,
+      contactInfo: sanitizeText(input.contactInfo),
     },
   };
 }
@@ -96,6 +97,7 @@ export function validateDbTaskEntry(input: any) {
       description: cleanDesc,
       amount: Number(input.amount) || 0,
       difficulty: Number(input.difficulty) || 1,
+      contact_info: sanitizeText(input.contact_info),
       skills: Array.isArray(input.skills) ? input.skills.map(sanitizeText) : [],
       ai_analysis: input.ai_analysis || null,
       content_hash: sanitizeText(input.content_hash),

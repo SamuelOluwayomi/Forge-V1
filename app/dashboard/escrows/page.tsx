@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useEscrow } from "@/app/lib/hooks/useEscrow";
 import { useWallet } from "@/app/lib/wallet/context";
+import { supabase } from "@/app/lib/supabase";
 
 type EscrowStatus = "Funded" | "In Progress" | "Submitted" | "Completed" | "Disputed";
 
@@ -14,6 +15,8 @@ interface Escrow {
   status: EscrowStatus;
   taskTitle: string;
   createdAt: string;
+  contactInfo?: string;
+  pda: string;
 }
 
 const STATUS_STYLES: Record<EscrowStatus, string> = {
@@ -92,13 +95,30 @@ function EscrowCard({ escrow }: { escrow: Escrow }) {
       {/* Counterparty */}
       <div className="flex items-center gap-3">
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-black uppercase tracking-widest text-black/40 mb-1">
+          <p className="text-[10px] font-black text-black/30 uppercase tracking-widest mb-1">
             {escrow.role === "Client" ? "Worker" : "Client"}
           </p>
-          <p className="font-mono text-xs text-black/70 truncate">{escrow.counterparty}</p>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs text-black/60 truncate max-w-[140px]">
+              {escrow.counterparty}
+            </span>
+            {escrow.counterparty !== "None yet" && (
+              <CopyButton text={escrow.counterparty} id={`copy-${escrow.id}`} />
+            )}
+          </div>
         </div>
-        <CopyButton text={escrow.counterparty} id={`copy-counterparty-${escrow.id}`} />
       </div>
+
+      {escrow.role === "Worker" && escrow.contactInfo && (
+        <div className="mt-4 p-4 bg-primary/10 border-2 border-black border-dashed">
+          <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">
+            Direct Contact (Client)
+          </p>
+          <p className="font-black text-sm text-black">
+            {escrow.contactInfo}
+          </p>
+        </div>
+      )}
 
       {/* Date */}
       <p className="text-[10px] font-bold text-black/40 uppercase tracking-widest">
@@ -159,21 +179,21 @@ export default function EscrowsPage() {
 
         const mapped: Escrow[] = myEscrows.map((e: any) => {
           const stateKeys = Object.keys(e.account.status);
-          let status = "Funded";
+          let status: EscrowStatus = "Funded";
           if (stateKeys.includes("active")) status = "In Progress";
           if (stateKeys.includes("submitted")) status = "Submitted";
           if (stateKeys.includes("completed")) status = "Completed";
           if (stateKeys.includes("disputed")) status = "Disputed";
           
           const isClient = e.account.client.toBase58() === address;
-          const counterparty = isClient 
-            ? (e.account.worker && e.account.worker.toBase58() !== "11111111111111111111111111111111" ? e.account.worker.toBase58() : "None yet") 
-            : e.account.client.toBase58();
 
           return {
              id: e.account.taskId.toString(),
+             pda: e.publicKey.toBase58(),
              role: isClient ? "Client" : "Worker",
-             counterparty,
+             counterparty: isClient 
+               ? (e.account.worker && e.account.worker.toBase58() !== "11111111111111111111111111111111" ? e.account.worker.toBase58() : "None yet") 
+               : e.account.client.toBase58(),
              amount: (Number(e.account.amount) / 1_000_000_000).toString(),
              status: status as EscrowStatus,
              taskTitle: "On-Chain Task",

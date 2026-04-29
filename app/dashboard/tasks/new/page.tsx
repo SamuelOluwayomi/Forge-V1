@@ -24,6 +24,7 @@ export default function NewTaskPage() {
   const [amount, setAmount] = useState("");
   const [reviewDays, setReviewDays] = useState(3);
   const [difficulty, setDifficulty] = useState(1);
+  const [contactInfo, setContactInfo] = useState("");
   const [metadataUri, setMetadataUri] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState("");
@@ -109,6 +110,7 @@ export default function NewTaskPage() {
         title: cleanData.title,
         description: cleanData.description,
         difficulty: cleanData.difficulty,
+        contactInfo: contactInfo,
         aiAnalysis: aiAnalysisCache,
       };
       const contentHash = await generateHash(JSON.stringify(offChainData));
@@ -154,6 +156,7 @@ export default function NewTaskPage() {
           description: cleanData.description,
           amount: cleanData.amount,
           difficulty: cleanData.difficulty,
+          contact_info: contactInfo,
           skills: aiAnalysisCache?.skills || [],
           ai_analysis: aiAnalysisCache,
           content_hash: contentHash,
@@ -281,6 +284,28 @@ export default function NewTaskPage() {
             placeholder="Describe what needs to be built, delivered, or done in detail..."
             className="border-2 border-black bg-background px-4 py-3 font-bold text-sm text-black outline-none focus:border-primary transition-colors resize-none placeholder:text-black/30"
           />
+        </div>
+
+        {/* Contact Info */}
+        <div className="brutalist-card bg-white p-6 flex flex-col gap-3">
+          <label
+            htmlFor="contact-info"
+            className="font-black text-sm uppercase tracking-widest text-black/60"
+          >
+            Direct Contact Info <span className="text-primary">*</span>
+          </label>
+          <input
+            id="contact-info"
+            type="text"
+            required
+            value={contactInfo}
+            onChange={(e) => setContactInfo(e.target.value)}
+            placeholder="WhatsApp, X (Twitter), Slack, or Email..."
+            className="border-2 border-black bg-background px-4 py-3 font-bold text-sm text-black outline-none focus:border-primary transition-colors placeholder:text-black/30"
+          />
+          <p className="text-xs font-bold text-black/40 leading-tight">
+            Workers will use this to contact you directly after seeing your task in the marketplace.
+          </p>
         </div>
 
         {/* Amount + Review Window */}

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useWallet } from "@/app/lib/wallet/context";
 import { useEscrow } from "@/app/lib/hooks/useEscrow";
+import { useBalance } from "@/app/lib/hooks/use-balance";
 import { toast } from "sonner";
 import { supabase } from "@/app/lib/supabase";
 
@@ -35,6 +36,7 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { program } = useEscrow();
+  const balance = useBalance(address);
   const [stats, setStats] = useState([
     { label: "Tasks Completed", value: 0 },
     { label: "Tasks Posted", value: 0 },
@@ -371,8 +373,13 @@ export default function ProfilePage() {
 
 
           {/* SBT Badges */}
-          <div className="brutalist-card bg-white p-6">
-            <div className="flex items-center justify-between mb-5">
+          <div className="bg-[#e0e0e0] border-4 border-black p-8 relative overflow-hidden">
+          {Number(balance) < 0.005 && (
+            <div className="bg-primary text-white border-2 border-black px-4 py-2 mb-6 font-black uppercase text-xs animate-pulse">
+               ⚠️ Insufficient Funds: You need at least 0.01 SOL to initialize your on-chain reputation.
+            </div>
+          )}
+          <div className="flex items-center justify-between mb-6">
               <h2 className="font-black text-xl uppercase tracking-tight">Soulbound Badges</h2>
               <div className="brutalist-tape text-[10px] px-2 py-0.5" style={{ transform: "rotate(2deg)" }}>
                 Non-transferable

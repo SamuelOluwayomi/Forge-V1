@@ -313,7 +313,7 @@ export default function DashboardOverview() {
                 Post a Task
               </Link>
               <Link
-                href="/dashboard/tasks"
+                href="/dashboard/browse"
                 id="quick-browse-tasks"
                 className="brutalist-button text-center px-4 py-3 text-sm bg-black text-white border-black transition-colors"
               >

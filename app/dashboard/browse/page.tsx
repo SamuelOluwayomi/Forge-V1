@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEscrow } from "@/app/lib/hooks/useEscrow";
 import { useWallet } from "@/app/lib/wallet/context";
 import { supabase } from "@/app/lib/supabase";
+import { SkeletonLoader } from "@/app/components/ForgeLoader";
 
 type TaskStatus = "Open" | "In Progress" | "Completed" | "Disputed";
 
@@ -192,7 +193,7 @@ export default function BrowseTasksPage() {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="brutalist-card bg-white p-6 animate-pulse h-56" />
+            <SkeletonLoader key={i} className="h-56" />
           ))}
         </div>
       ) : filtered.length === 0 ? (

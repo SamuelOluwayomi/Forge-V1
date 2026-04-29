@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEscrow } from "@/app/lib/hooks/useEscrow";
 import { useWallet } from "@/app/lib/wallet/context";
 import { toast } from "sonner";
+import { ForgeLoader } from "@/app/components/ForgeLoader";
 
 type TaskStatus = "Open" | "In Progress" | "Completed" | "Disputed" | "Cancelled";
 
@@ -262,9 +263,8 @@ export default function TasksPage() {
 
       {/* Task grid */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center p-20 gap-4">
-          <div className="w-12 h-12 border-4 border-black border-t-primary animate-spin" />
-          <p className="font-black uppercase tracking-widest text-black/50 animate-pulse">Fetching the forge...</p>
+        <div className="flex flex-col items-center justify-center py-20">
+          <ForgeLoader />
         </div>
       ) : filtered.length === 0 ? (
         <div className="brutalist-card bg-white p-16 text-center">

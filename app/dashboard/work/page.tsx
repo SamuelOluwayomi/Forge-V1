@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ForgeLoader } from "@/app/components/ForgeLoader";
 
 type WorkStatus = "In Progress" | "Submitted" | "Approved" | "Disputed";
 
@@ -111,6 +112,7 @@ function WorkCard({ item }: { item: WorkItem }) {
 
 export default function WorkPage() {
   const [filter, setFilter] = useState<WorkStatus | "All">("All");
+  const [loading, setLoading] = useState(false);
   const jobs: WorkItem[] = [];
   const filtered = filter === "All" ? jobs : jobs.filter((j) => j.status === filter);
   const filters: (WorkStatus | "All")[] = ["All", "In Progress", "Submitted", "Approved", "Disputed"];
@@ -144,7 +146,11 @@ export default function WorkPage() {
         ))}
       </div>
 
-      {filtered.length === 0 ? (
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20">
+          <ForgeLoader />
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="brutalist-card bg-white p-16 text-center">
           <p className="font-black text-2xl uppercase text-black/30 mb-3">No work found</p>
           <p className="font-bold text-sm text-black/40">

@@ -18,7 +18,19 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       .single();
     
     if (taskError || !task) {
-      return NextResponse.json({ error: "Task not found" }, { status: 404 });
+      // Return a partial object if not in DB, so frontend can handle on-chain only tasks
+      return NextResponse.json({ 
+        task: { 
+          pda: id, 
+          title: "On-Chain Task", 
+          description: "This task was created directly on-chain. Full details are not available.",
+          amount: 0,
+          difficulty: 1,
+          client: "Unknown",
+          is_on_chain_only: true 
+        },
+        applicants: [] 
+      });
     }
 
     // Get applicants

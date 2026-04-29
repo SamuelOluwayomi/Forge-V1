@@ -6,6 +6,7 @@ import { useEscrow } from "@/app/lib/hooks/useEscrow";
 import { useBalance } from "@/app/lib/hooks/use-balance";
 import { toast } from "sonner";
 import { supabase } from "@/app/lib/supabase";
+import { ForgeLoader } from "@/app/components/ForgeLoader";
 
 // Placeholder badge card — wire to forge_sbt program later
 function BadgeCard({ index }: { index: number }) {
@@ -41,6 +42,7 @@ export default function ProfilePage() {
   // Social accounts
   const [socials, setSocials] = useState({ twitter: "", github: "", discord: "", telegram: "" });
   const [savingSocials, setSavingSocials] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [rank, setRank] = useState<number>(0);
 
   const [stats, setStats] = useState([
@@ -58,6 +60,7 @@ export default function ProfilePage() {
     if (!address || !supabase) return;
     
     const fetchProfile = async () => {
+      setLoading(true);
       const { data, error } = await supabase!
         .from("profiles")
         .select("avatar_url, twitter, github, discord, telegram, rank")
@@ -74,6 +77,7 @@ export default function ProfilePage() {
         });
         if (data.rank) setRank(data.rank);
       }
+      setLoading(false);
     };
     
     fetchProfile();
@@ -229,6 +233,14 @@ export default function ProfilePage() {
       setSavingSocials(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="w-full flex items-center justify-center min-h-[60vh]">
+        <ForgeLoader />
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">

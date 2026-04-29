@@ -6,6 +6,7 @@ import { useEscrow } from "@/app/lib/hooks/useEscrow";
 import { useWallet } from "@/app/lib/wallet/context";
 import { toast } from "sonner";
 import Link from "next/link";
+import { ForgeLoader } from "@/app/components/ForgeLoader";
 
 interface TaskDetail {
   pda: string;
@@ -21,6 +22,7 @@ interface TaskDetail {
   status: string;
   client_avatar: string | null;
   client_twitter: string | null;
+  is_on_chain_only?: boolean;
 }
 
 interface Applicant {
@@ -100,7 +102,7 @@ export default function TaskDetailPage() {
     setLoading(true);
     try {
       const res = await fetch(`/api/tasks/${pda}`);
-      if (!res.ok) throw new Error("Task not found");
+      if (!res.ok) throw new Error("Network response was not ok");
       const data = await res.json();
       setTask(data.task);
       setApplicants(data.applicants || []);
@@ -133,12 +135,12 @@ export default function TaskDetailPage() {
     } finally {
       setApplying(false);
     }
-  };
+
 
   if (loading) {
     return (
-      <div className="w-full max-w-4xl">
-        <div className="brutalist-card bg-white p-12 animate-pulse h-96" />
+      <div className="w-full flex items-center justify-center min-h-[60vh]">
+        <ForgeLoader />
       </div>
     );
   }
@@ -163,6 +165,13 @@ export default function TaskDetailPage() {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5m0 0l7 7m-7-7l7-7"/></svg>
         Back to Marketplace
       </Link>
+
+      {task.is_on_chain_only && (
+        <div className="bg-black text-white px-4 py-3 mb-6 font-black uppercase text-[10px] tracking-widest flex items-center gap-3 border-2 border-primary">
+          <span className="bg-primary px-2 py-0.5 border border-white animate-pulse">Warning</span>
+          Limited Metadata: This task exists on-chain but has no off-chain description or skill tags.
+        </div>
+      )}
 
       {/* Header Card */}
       <div className="brutalist-card bg-primary p-8 mb-6 relative overflow-hidden">

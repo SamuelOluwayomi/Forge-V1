@@ -322,3 +322,11 @@
   pointer-events: none;
   z-index: 9999; /* Ensure it stays on top of the z-50 fire particles */
 }
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.5s infinite;
+}

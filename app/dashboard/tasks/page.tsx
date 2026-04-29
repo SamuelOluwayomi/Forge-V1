@@ -26,7 +26,7 @@ const STATUS_STYLES: Record<TaskStatus, string> = {
 
 const DIFFICULTY_LABELS = ["", "Beginner", "Intermediate", "Advanced", "Expert"];
 
-function TaskCard({ task }: { task: Task }) {
+function TaskCard({ task, onCancel }: { task: Task; onCancel: (id: string) => void }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -73,7 +73,7 @@ function TaskCard({ task }: { task: Task }) {
       </div>
 
       {/* Worker */}
-      {task.worker ? (
+      {task.worker && task.worker !== "11111111111111111111111111111111" ? (
         <div className="flex items-center gap-3">
           <div className="flex-1 min-w-0">
             <p className="text-[10px] font-black uppercase tracking-widest text-black/40 mb-1">
@@ -118,7 +118,8 @@ function TaskCard({ task }: { task: Task }) {
           {task.status === "Open" && (
             <button
               id={`cancel-task-${task.id}`}
-              className="border-2 border-black px-3 py-1 text-xs font-black uppercase hover:bg-black hover:text-white transition-all"
+              onClick={() => onCancel(task.id)}
+              className="border-2 border-black px-3 py-1 text-xs font-black uppercase hover:bg-black hover:text-white transition-all disabled:opacity-50"
               style={{ boxShadow: "2px 2px 0px 0px rgba(0,0,0,1)" }}
             >
               Cancel
@@ -141,53 +142,62 @@ function TaskCard({ task }: { task: Task }) {
 
 export default function TasksPage() {
   const [filter, setFilter] = useState<TaskStatus | "All">("All");
+  const [loading, setLoading] = useState(true);
 
-  const { program } = useEscrow();
+  const { program, cancelTask } = useEscrow();
   const { wallet } = useWallet();
   const [tasks, setTasks] = useState<Task[]>([]);
 
-  useEffect(() => {
+  const fetchTasks = async () => {
     if (!program || !wallet) return;
+    setLoading(true);
+    try {
+      const address = wallet.account.address;
+      const allEscrows = await (program.account as any).escrowAccount.all();
+      
+      const myEscrows = allEscrows.filter(
+        (e: any) => e.account.client.toBase58() === address
+      );
 
-    const fetchTasks = async () => {
-      try {
-        const address = wallet.account.address;
+      const mappedTasks: Task[] = myEscrows.map((e: any) => {
+        const stateKeys = Object.keys(e.account.status);
+        let status = "Open";
+        if (stateKeys.includes("active")) status = "In Progress";
+        if (stateKeys.includes("submitted")) status = "In Progress";
+        if (stateKeys.includes("completed")) status = "Completed";
+        if (stateKeys.includes("disputed")) status = "Disputed";
         
-        // Fetch all escrows from the blockchain
-        const allEscrows = await (program.account as any).escrowAccount.all();
-        
-        // Filter those where the client is the current user
-        const myEscrows = allEscrows.filter(
-          (e: any) => e.account.client.toBase58() === address
-        );
+        return {
+           id: e.account.taskId.toString(),
+           title: "On-Chain Task",
+           amount: (Number(e.account.amount) / 1_000_000_000).toString(),
+           status: status as TaskStatus,
+           worker: e.account.worker ? e.account.worker.toBase58() : null,
+           posted: "Just now",
+           difficulty: e.account.difficulty
+        }
+      });
+      
+      setTasks(mappedTasks.reverse());
+    } catch (err) {
+      console.error("Failed to fetch on-chain tasks:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        const mappedTasks: Task[] = myEscrows.map((e: any) => {
-          const stateKeys = Object.keys(e.account.status);
-          let status = "Open";
-          if (stateKeys.includes("active")) status = "In Progress";
-          if (stateKeys.includes("submitted")) status = "In Progress";
-          if (stateKeys.includes("completed")) status = "Completed";
-          if (stateKeys.includes("disputed")) status = "Disputed";
-          
-          return {
-             id: e.account.taskId.toString(),
-             title: "On-Chain Task", // Title isn't stored on-chain, but this serves as a placeholder until Supabase sync is added
-             amount: (Number(e.account.amount) / 1_000_000_000).toString(),
-             status: status as TaskStatus,
-             worker: e.account.worker ? e.account.worker.toBase58() : null,
-             posted: "Just now",
-             difficulty: e.account.difficulty
-          }
-        });
-        
-        setTasks(mappedTasks.reverse());
-      } catch (err) {
-        console.error("Failed to fetch on-chain tasks:", err);
-      }
-    };
-
+  useEffect(() => {
     fetchTasks();
   }, [program, wallet]);
+
+  const handleCancel = async (taskId: string) => {
+    try {
+      await cancelTask(parseInt(taskId));
+      await fetchTasks();
+    } catch (err) {
+      console.error("Failed to cancel task:", err);
+    }
+  };
 
   const filtered =
     filter === "All" ? tasks : tasks.filter((t) => t.status === filter);
@@ -238,7 +248,12 @@ export default function TasksPage() {
       </div>
 
       {/* Task grid */}
-      {filtered.length === 0 ? (
+      {loading ? (
+        <div className="flex flex-col items-center justify-center p-20 gap-4">
+          <div className="w-12 h-12 border-4 border-black border-t-primary animate-spin" />
+          <p className="font-black uppercase tracking-widest text-black/50 animate-pulse">Fetching the forge...</p>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="brutalist-card bg-white p-16 text-center">
           <p className="font-black text-2xl uppercase text-black/30 mb-3">No tasks found</p>
           <p className="font-bold text-sm text-black/40">
@@ -256,7 +271,7 @@ export default function TasksPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {filtered.map((task) => (
-            <TaskCard key={task.id} task={task} />
+            <TaskCard key={task.id} task={task} onCancel={handleCancel} />
           ))}
         </div>
       )}

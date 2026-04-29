@@ -161,6 +161,26 @@ export function useEscrow() {
     [program, walletPublicKey]
   );
 
+  const cancelTask = useCallback(
+    async (taskId: number) => {
+      if (!program || !walletPublicKey) throw new Error("Wallet not connected");
+      const [escrowPda] = await web3.PublicKey.findProgramAddress([
+        Buffer.from("escrow"),
+        walletPublicKey.toBuffer(),
+        Buffer.from([...(new BN(taskId).toArray('le', 8))]),
+      ], program.programId);
+
+      return await (program.methods as any)
+        .cancelTask()
+        .accounts({
+          escrowAccount: escrowPda,
+          client: walletPublicKey,
+        })
+        .rpc();
+    },
+    [program, walletPublicKey]
+  );
+
   // Return the program and helpers so components can import the hook.
   return {
     program,
@@ -169,6 +189,7 @@ export function useEscrow() {
     acceptWorker,
     submitWork,
     approveWork,
+    cancelTask,
     provider,
   } as const;
 }

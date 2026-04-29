@@ -136,6 +136,7 @@ function EscrowCard({ escrow }: { escrow: Escrow }) {
 
 export default function EscrowsPage() {
   const [filter, setFilter] = useState<EscrowStatus | "All">("All");
+  const [loading, setLoading] = useState(true);
   const [escrows, setEscrows] = useState<Escrow[]>([]);
   const { program } = useEscrow();
   const { wallet } = useWallet();
@@ -144,6 +145,7 @@ export default function EscrowsPage() {
     if (!program || !wallet) return;
 
     const fetchEscrows = async () => {
+      setLoading(true);
       try {
         const address = wallet.account.address;
         const allEscrows = await (program.account as any).escrowAccount.all();
@@ -163,7 +165,7 @@ export default function EscrowsPage() {
           
           const isClient = e.account.client.toBase58() === address;
           const counterparty = isClient 
-            ? (e.account.worker ? e.account.worker.toBase58() : "None yet") 
+            ? (e.account.worker && e.account.worker.toBase58() !== "11111111111111111111111111111111" ? e.account.worker.toBase58() : "None yet") 
             : e.account.client.toBase58();
 
           return {
@@ -180,6 +182,8 @@ export default function EscrowsPage() {
         setEscrows(mapped.reverse());
       } catch (err) {
         console.error("Failed to fetch on-chain escrows:", err);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -228,7 +232,12 @@ export default function EscrowsPage() {
         ))}
       </div>
 
-      {filtered.length === 0 ? (
+      {loading ? (
+        <div className="flex flex-col items-center justify-center p-20 gap-4">
+          <div className="w-12 h-12 border-4 border-black border-t-primary animate-spin" />
+          <p className="font-black uppercase tracking-widest text-black/50 animate-pulse">Scanning the ledger...</p>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="brutalist-card bg-white p-16 text-center">
           <p className="font-black text-2xl uppercase text-black/30 mb-3">No escrows found</p>
           <p className="font-bold text-sm text-black/40">

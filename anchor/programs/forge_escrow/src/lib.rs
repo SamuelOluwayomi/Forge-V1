@@ -7,6 +7,8 @@ declare_id!("AkoaVinz9Md94KsC2k6sULNdwvqh2uF16KdKiWdpr6ye"); // replace after an
 pub mod forge_escrow {
     use super::*;
 
+    pub const TREASURY_PUBKEY: Pubkey = pubkey!("EPpNW3G47SAJ4j1DatpjW7mJMLRTH9Z8K7LJtBfhR8Mt");
+
     // ─────────────────────────────────────────────
     // 1. CREATE TASK
     // ─────────────────────────────────────────────
@@ -335,10 +337,10 @@ pub struct ApproveWork<'info> {
     pub client: Signer<'info>,
     /// CHECK: Worker receives SOL
     #[account(mut)]
-    pub worker: AccountInfo<'info>,
-    /// CHECK: Treasury receives fee
-    #[account(mut)]
-    pub treasury: AccountInfo<'info>,
+    pub worker: UncheckedAccount<'info>,
+    /// CHECK: Treasury receives fee. Must match hardcoded protocol treasury.
+    #[account(mut, address = crate::forge_escrow::TREASURY_PUBKEY @ ForgeError::InvalidTreasury)]
+    pub treasury: UncheckedAccount<'info>,
 }
 
 #[derive(Accounts)]
@@ -352,10 +354,10 @@ pub struct ClaimCompletion<'info> {
     pub caller: Signer<'info>,
     /// CHECK: Worker receives SOL
     #[account(mut)]
-    pub worker: AccountInfo<'info>,
-    /// CHECK: Treasury receives fee
-    #[account(mut)]
-    pub treasury: AccountInfo<'info>,
+    pub worker: UncheckedAccount<'info>,
+    /// CHECK: Treasury receives fee. Must match hardcoded protocol treasury.
+    #[account(mut, address = crate::forge_escrow::TREASURY_PUBKEY @ ForgeError::InvalidTreasury)]
+    pub treasury: UncheckedAccount<'info>,
 }
 
 #[derive(Accounts)]
@@ -381,8 +383,8 @@ pub struct ResolveDispute<'info> {
     /// CHECK: Recipient receives SOL
     #[account(mut)]
     pub recipient: UncheckedAccount<'info>,
-    /// CHECK: Treasury receives fee
-    #[account(mut)]
+    /// CHECK: Treasury receives fee. Must match hardcoded protocol treasury.
+    #[account(mut, address = crate::forge_escrow::TREASURY_PUBKEY @ ForgeError::InvalidTreasury)]
     pub treasury: UncheckedAccount<'info>,
 }
 
@@ -427,4 +429,5 @@ pub enum ForgeError {
     #[msg("Invalid worker address")] InvalidWorker,
     #[msg("No submission found on this escrow")] NoSubmissionFound,
     #[msg("Review window has not expired yet")] ReviewWindowNotExpired,
+    #[msg("The provided treasury address does not match the protocol treasury")] InvalidTreasury,
 }

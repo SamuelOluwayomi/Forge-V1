@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useEscrow } from "@/app/lib/hooks/useEscrow";
 import { useWallet } from "@/app/lib/wallet/context";
+import { toast } from "sonner";
 
-type TaskStatus = "Open" | "In Progress" | "Completed" | "Disputed";
+type TaskStatus = "Open" | "In Progress" | "Completed" | "Disputed" | "Cancelled";
 
 interface Task {
   id: string;
@@ -22,6 +23,7 @@ const STATUS_STYLES: Record<TaskStatus, string> = {
   "In Progress": "bg-[#FFD700] text-black border-black",
   Completed: "bg-black text-white border-black",
   Disputed: "bg-[#FF4500] text-white border-black",
+  Cancelled: "bg-gray-400 text-black border-black",
 };
 
 const DIFFICULTY_LABELS = ["", "Beginner", "Intermediate", "Advanced", "Expert"];
@@ -159,6 +161,7 @@ export default function TasksPage() {
         (e: any) => e.account.client.toBase58() === address
       );
 
+      const mappedTasks: Task[] = myEscrows.map((e: any) => {
           const stateKeys = Object.keys(e.account.status);
           let status = "Open";
           if (stateKeys.includes("active")) status = "In Progress";
@@ -196,8 +199,10 @@ export default function TasksPage() {
     try {
       const signature = await cancelTask(parseInt(taskId));
       
-      // Wait for confirmation so the refresh actually shows the change
-      await program.provider.connection.confirmTransaction(signature, "confirmed");
+      if (program?.provider?.connection) {
+        // Wait for confirmation so the refresh actually shows the change
+        await program.provider.connection.confirmTransaction(signature, "confirmed");
+      }
       
       toast.success("Task cancelled successfully!", { id: tid });
       await fetchTasks();

@@ -34,13 +34,17 @@ function StatCard({
           {tag}
         </div>
       )}
-      <p className="text-xs font-black uppercase tracking-widest text-black/50">{label}</p>
-      <p className="text-4xl font-black leading-none text-black tabular-nums">{value}</p>
+      <p className="text-xs font-black uppercase tracking-widest text-black/50">
+        {label}
+      </p>
+      <p className="text-4xl font-black leading-none text-black tabular-nums">
+        {value}
+      </p>
     </div>
   );
 }
 
-// ── Recent activity item ────────────────────────────────────────────────────
+// ── Recent activity item
 function ActivityRow({
   type,
   label,
@@ -63,23 +67,55 @@ function ActivityRow({
   };
   const typeIcons: Record<string, React.ReactNode> = {
     task: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-        <path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+      >
+        <path d="M9 11l3 3L22 4" />
+        <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
       </svg>
     ),
     work: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-        <rect x="2" y="7" width="20" height="14" /><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" />
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+      >
+        <rect x="2" y="7" width="20" height="14" />
+        <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" />
       </svg>
     ),
     badge: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-        <circle cx="12" cy="8" r="6" /><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11" />
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+      >
+        <circle cx="12" cy="8" r="6" />
+        <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11" />
       </svg>
     ),
     escrow: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-        <rect x="3" y="11" width="18" height="11" /><path d="M7 11V7a5 5 0 0110 0v4" />
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+      >
+        <rect x="3" y="11" width="18" height="11" />
+        <path d="M7 11V7a5 5 0 0110 0v4" />
       </svg>
     ),
   };
@@ -90,7 +126,9 @@ function ActivityRow({
         {typeIcons[type]}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-black text-sm text-black leading-none truncate">{label}</p>
+        <p className="font-black text-sm text-black leading-none truncate">
+          {label}
+        </p>
         <p className="text-xs text-black/50 font-bold mt-0.5">{sub}</p>
       </div>
       {amount && (
@@ -128,7 +166,9 @@ export default function DashboardOverview() {
     { label: "SBT Badges", value: 0, tag: "ON-CHAIN" },
   ]);
 
-  const [activity, setActivity] = useState<React.ComponentProps<typeof ActivityRow>[]>([]);
+  const [activity, setActivity] = useState<
+    React.ComponentProps<typeof ActivityRow>[]
+  >([]);
 
   useEffect(() => {
     if (!program || !address) return;
@@ -136,26 +176,41 @@ export default function DashboardOverview() {
     const fetchDashboardData = async () => {
       try {
         const allEscrows = await (program.account as any).escrowAccount.all();
-        
+
         // 1. Stats
-        const posted = allEscrows.filter((e: any) => e.account.client.toBase58() === address).length;
-        const completedEscrows = allEscrows.filter((e: any) => 
-          e.account.worker && 
-          e.account.worker.toBase58() === address && 
-          Object.keys(e.account.status).includes("completed")
+        const posted = allEscrows.filter(
+          (e: any) => e.account.client.toBase58() === address
+        ).length;
+        const completedEscrows = allEscrows.filter(
+          (e: any) =>
+            e.account.worker &&
+            e.account.worker.toBase58() === address &&
+            Object.keys(e.account.status).includes("completed")
         );
-        const earned = completedEscrows.reduce((acc: number, e: any) => acc + Number(e.account.amount), 0) / 1_000_000_000;
-        
+        const earned =
+          completedEscrows.reduce(
+            (acc: number, e: any) => acc + Number(e.account.amount),
+            0
+          ) / 1_000_000_000;
+
         setStats([
           { label: "Tasks Posted", value: posted, tag: "CLIENT" },
-          { label: "Tasks Completed", value: completedEscrows.length, tag: "WORKER" },
+          {
+            label: "Tasks Completed",
+            value: completedEscrows.length,
+            tag: "WORKER",
+          },
           { label: "SOL Earned", value: earned.toFixed(2), accent: "#4ADE80" },
           { label: "SBT Badges", value: 0, tag: "ON-CHAIN" },
         ]);
 
         // 2. Activity (Take last 5)
         const recent = allEscrows
-          .filter((e: any) => e.account.client.toBase58() === address || (e.account.worker && e.account.worker.toBase58() === address))
+          .filter(
+            (e: any) =>
+              e.account.client.toBase58() === address ||
+              (e.account.worker && e.account.worker.toBase58() === address)
+          )
           .slice(-5)
           .map((e: any) => {
             const isClient = e.account.client.toBase58() === address;
@@ -169,10 +224,10 @@ export default function DashboardOverview() {
               label: "On-Chain Task",
               sub: isClient ? `You posted a task` : `Assigned to you`,
               status,
-              amount: `${(Number(e.account.amount) / 1_000_000_000).toFixed(1)} SOL`
+              amount: `${(Number(e.account.amount) / 1_000_000_000).toFixed(1)} SOL`,
             };
           });
-        
+
         setActivity(recent.reverse() as any);
       } catch (err) {
         console.error("Dashboard fetch error:", err);
@@ -187,7 +242,10 @@ export default function DashboardOverview() {
       {/* Page header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
         <div>
-          <div className="brutalist-tape text-xs px-3 py-1 inline-block mb-3" style={{ transform: "rotate(-1deg)" }}>
+          <div
+            className="brutalist-tape text-xs px-3 py-1 inline-block mb-3"
+            style={{ transform: "rotate(-1deg)" }}
+          >
             Dashboard
           </div>
           <h1 className="text-5xl md:text-6xl font-black uppercase leading-none text-black italic tracking-tighter">
@@ -215,14 +273,21 @@ export default function DashboardOverview() {
         {/* Recent activity */}
         <div className="lg:col-span-2 brutalist-card bg-white p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-black text-xl uppercase tracking-tight">Recent Activity</h2>
-            <div className="brutalist-tape text-[10px] px-2 py-0.5" style={{ transform: "rotate(2deg)" }}>
+            <h2 className="font-black text-xl uppercase tracking-tight">
+              Recent Activity
+            </h2>
+            <div
+              className="brutalist-tape text-[10px] px-2 py-0.5"
+              style={{ transform: "rotate(2deg)" }}
+            >
               LIVE
             </div>
           </div>
           {activity.length === 0 ? (
             <div className="border-2 border-dashed border-black/20 p-10 text-center">
-              <p className="font-black text-black/40 uppercase text-sm">No activity yet</p>
+              <p className="font-black text-black/40 uppercase text-sm">
+                No activity yet
+              </p>
               <p className="font-bold text-xs text-black/30 mt-2">
                 Post a task or accept work to get started.
               </p>
@@ -235,7 +300,9 @@ export default function DashboardOverview() {
         {/* Quick actions */}
         <div className="flex flex-col gap-4">
           <div className="brutalist-card bg-white p-6">
-            <h2 className="font-black text-xl uppercase tracking-tight mb-4">Quick Actions</h2>
+            <h2 className="font-black text-xl uppercase tracking-tight mb-4">
+              Quick Actions
+            </h2>
             <div className="flex flex-col gap-3">
               <Link
                 href="/dashboard/tasks/new"
@@ -263,7 +330,9 @@ export default function DashboardOverview() {
 
           {/* Reputation Breakdown */}
           <div className="brutalist-card bg-primary text-white p-6 border-4 border-black">
-            <h2 className="font-black text-2xl uppercase tracking-tight mb-4 drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">Reputation</h2>
+            <h2 className="font-black text-2xl uppercase tracking-tight mb-4 drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">
+              Reputation
+            </h2>
             <div className="space-y-4">
               <div className="flex flex-col gap-1">
                 <div className="flex justify-between text-xs font-black uppercase text-white">
@@ -276,13 +345,25 @@ export default function DashboardOverview() {
               </div>
               <div className="flex items-center gap-4 p-4 bg-black/20 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                 <div className="w-12 h-12 border-4 border-black bg-white flex items-center justify-center shrink-0">
-                  <svg className="text-primary" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="black" strokeWidth="2">
+                  <svg
+                    className="text-primary"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    stroke="black"
+                    strokeWidth="2"
+                  >
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                   </svg>
                 </div>
                 <div>
-                  <p className="font-black text-sm uppercase text-white">No Badges Yet</p>
-                  <p className="text-[10px] font-bold text-white/80 uppercase">Complete your first task to earn a badge.</p>
+                  <p className="font-black text-sm uppercase text-white">
+                    No Badges Yet
+                  </p>
+                  <p className="text-[10px] font-bold text-white/80 uppercase">
+                    Complete your first task to earn a badge.
+                  </p>
                 </div>
               </div>
             </div>

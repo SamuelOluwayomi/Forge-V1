@@ -150,9 +150,11 @@ export default function EscrowsPage() {
         const address = wallet.account.address;
         const allEscrows = await (program.account as any).escrowAccount.all();
         
-        // Filter those where the user is either the client or the worker
+        // Filter those where the user is part of it AND it is not cancelled
         const myEscrows = allEscrows.filter(
-          (e: any) => e.account.client.toBase58() === address || (e.account.worker && e.account.worker.toBase58() === address)
+          (e: any) => 
+            (e.account.client.toBase58() === address || (e.account.worker && e.account.worker.toBase58() === address)) &&
+            !Object.keys(e.account.status).includes("cancelled")
         );
 
         const mapped: Escrow[] = myEscrows.map((e: any) => {

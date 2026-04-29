@@ -176,12 +176,13 @@ export default function DashboardOverview() {
     const fetchDashboardData = async () => {
       try {
         const allEscrows = await (program.account as any).escrowAccount.all();
+        const activeEscrows = allEscrows.filter((e: any) => !Object.keys(e.account.status).includes("cancelled"));
 
         // 1. Stats
-        const posted = allEscrows.filter(
+        const posted = activeEscrows.filter(
           (e: any) => e.account.client.toBase58() === address
         ).length;
-        const completedEscrows = allEscrows.filter(
+        const completedEscrows = activeEscrows.filter(
           (e: any) =>
             e.account.worker &&
             e.account.worker.toBase58() === address &&
@@ -205,7 +206,7 @@ export default function DashboardOverview() {
         ]);
 
         // 2. Activity (Take last 5)
-        const recent = allEscrows
+        const recent = activeEscrows
           .filter(
             (e: any) =>
               e.account.client.toBase58() === address ||

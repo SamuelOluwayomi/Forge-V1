@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useWallet } from "@/app/lib/wallet/context";
+import { useEscrow } from "@/app/lib/hooks/useEscrow";
 import { toast } from "sonner";
 import { supabase } from "@/app/lib/supabase";
 
@@ -33,13 +34,13 @@ export default function ProfilePage() {
   const [displayPhoto, setDisplayPhoto] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Placeholder stats — wire to forge_sbt ReputationAccount later
-  const stats = [
+  const { program } = useEscrow();
+  const [stats, setStats] = useState([
     { label: "Tasks Completed", value: 0 },
     { label: "Tasks Posted", value: 0 },
     { label: "SOL Earned", value: "0.00" },
     { label: "Forge Score", value: 0 },
-  ];
+  ]);
 
   const badges: number[] = []; // replace with on-chain SBT fetch
   const achievements: string[] = []; // Example: ["First Task Completed", "Top Rated Developer"]
@@ -62,6 +63,42 @@ export default function ProfilePage() {
     
     fetchProfile();
   }, [address]);
+
+  // Fetch real on-chain stats
+  useEffect(() => {
+    if (!program || !address) return;
+
+    const fetchOnChainStats = async () => {
+      try {
+        const allEscrows = await (program.account as any).escrowAccount.all();
+        
+        const posted = allEscrows.filter((e: any) => e.account.client.toBase58() === address).length;
+        
+        const completedEscrows = allEscrows.filter((e: any) => 
+          e.account.worker && 
+          e.account.worker.toBase58() === address && 
+          Object.keys(e.account.status).includes("completed")
+        );
+        
+        const completedCount = completedEscrows.length;
+        const earned = completedEscrows.reduce((acc: number, e: any) => acc + Number(e.account.amount), 0) / 1_000_000_000;
+        
+        // Simple Forge Score formula for now: 100 points per completed task
+        const forgeScore = completedCount * 100;
+
+        setStats([
+          { label: "Tasks Completed", value: completedCount },
+          { label: "Tasks Posted", value: posted },
+          { label: "SOL Earned", value: earned.toFixed(2) },
+          { label: "Forge Score", value: forgeScore },
+        ]);
+      } catch (err) {
+        console.error("Failed to fetch profile stats:", err);
+      }
+    };
+
+    fetchOnChainStats();
+  }, [program, address]);
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -105,26 +142,40 @@ export default function ProfilePage() {
     }
   };
 
-  const handleDownloadCard = () => {
-    toast.success("Profile card download started!");
-    // In production, use html2canvas or similar to render the #profile-card div to an image
+  const handleDownloadCard = async () => {
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+      const card = document.getElementById("profile-card");
+      if (!card) return;
+
+      toast.loading("Rendering card...", { id: "download" });
+      
+      const canvas = await html2canvas(card, {
+        backgroundColor: "#FF4500", // Match primary color
+        scale: 2, // Higher resolution
+        useCORS: true, // Allow loading cross-origin images (like avatar)
+        logging: false,
+      });
+
+      const link = document.createElement("a");
+      link.download = `forge-profile-${address.slice(0, 8)}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      
+      toast.success("Profile card downloaded!", { id: "download" });
+    } catch (err) {
+      console.error("Download failed:", err);
+      toast.error("Failed to render card. Try again.", { id: "download" });
+    }
   };
 
   const handleShareCard = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'My Forge Profile',
-          text: `Check out my Forge Developer Profile! Forge Score: ${stats[3].value}`,
-          url: window.location.href,
-        });
-      } catch (err) {
-        console.error("Share failed:", err);
-      }
-    } else {
-      await navigator.clipboard.writeText(window.location.href);
-      toast.success("Profile link copied to clipboard!");
-    }
+    const shareText = `Check out my Forge Developer Profile! 🛠️\n\nForge Score: ${stats[3].value}\nWallet: ${address.slice(0, 4)}...${address.slice(-4)}\n\nBuilt on @Solana #ForgeProtocol`;
+    const shareUrl = window.location.href;
+    
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+    
+    window.open(twitterUrl, "_blank");
   };
 
   return (
@@ -184,6 +235,14 @@ export default function ProfilePage() {
                 <span className="text-[10px] font-black uppercase tracking-widest text-primary leading-none mb-1">Score</span>
                 <span className="font-black text-2xl leading-none">{stats[3].value}</span>
               </div>
+            </div>
+
+            {/* Wallet Address in Card */}
+            <div className="relative z-10 mt-6">
+               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/40 mb-1">Authenticated Wallet</p>
+               <p className="font-mono text-xs font-black text-black bg-white/20 border-2 border-black/10 px-2 py-1 inline-block truncate max-w-full">
+                {address || "Not Connected"}
+               </p>
             </div>
 
             {/* Achievements List */}

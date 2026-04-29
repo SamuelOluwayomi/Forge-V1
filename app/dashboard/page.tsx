@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useWallet } from "@/app/lib/wallet/context";
+import { useEscrow } from "@/app/lib/hooks/useEscrow";
 import { useBalance } from "@/app/lib/hooks/use-balance";
 import { lamportsToSolString } from "@/app/lib/lamports";
 import { ellipsify } from "@/app/lib/explorer";
@@ -119,15 +120,67 @@ export default function DashboardOverview() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Placeholder stats — wire to real on-chain data via useEscrow later
-  const stats = [
+  const { program } = useEscrow();
+  const [stats, setStats] = useState([
     { label: "Tasks Posted", value: 0, tag: "CLIENT" },
     { label: "Tasks Completed", value: 0, tag: "WORKER" },
-    { label: "USDC Earned", value: "0.00", accent: "#4ADE80" },
+    { label: "SOL Earned", value: "0.00", accent: "#4ADE80" },
     { label: "SBT Badges", value: 0, tag: "ON-CHAIN" },
-  ];
+  ]);
 
-  const activity: React.ComponentProps<typeof ActivityRow>[] = [];
+  const [activity, setActivity] = useState<React.ComponentProps<typeof ActivityRow>[]>([]);
+
+  useEffect(() => {
+    if (!program || !address) return;
+
+    const fetchDashboardData = async () => {
+      try {
+        const allEscrows = await (program.account as any).escrowAccount.all();
+        
+        // 1. Stats
+        const posted = allEscrows.filter((e: any) => e.account.client.toBase58() === address).length;
+        const completedEscrows = allEscrows.filter((e: any) => 
+          e.account.worker && 
+          e.account.worker.toBase58() === address && 
+          Object.keys(e.account.status).includes("completed")
+        );
+        const earned = completedEscrows.reduce((acc: number, e: any) => acc + Number(e.account.amount), 0) / 1_000_000_000;
+        
+        setStats([
+          { label: "Tasks Posted", value: posted, tag: "CLIENT" },
+          { label: "Tasks Completed", value: completedEscrows.length, tag: "WORKER" },
+          { label: "SOL Earned", value: earned.toFixed(2), accent: "#4ADE80" },
+          { label: "SBT Badges", value: 0, tag: "ON-CHAIN" },
+        ]);
+
+        // 2. Activity (Take last 5)
+        const recent = allEscrows
+          .filter((e: any) => e.account.client.toBase58() === address || (e.account.worker && e.account.worker.toBase58() === address))
+          .slice(-5)
+          .map((e: any) => {
+            const isClient = e.account.client.toBase58() === address;
+            const statusKeys = Object.keys(e.account.status);
+            let status = "Open";
+            if (statusKeys.includes("active")) status = "In Progress";
+            if (statusKeys.includes("completed")) status = "Completed";
+
+            return {
+              type: isClient ? "task" : "work",
+              label: "On-Chain Task",
+              sub: isClient ? `You posted a task` : `Assigned to you`,
+              status,
+              amount: `${(Number(e.account.amount) / 1_000_000_000).toFixed(1)} SOL`
+            };
+          });
+        
+        setActivity(recent.reverse() as any);
+      } catch (err) {
+        console.error("Dashboard fetch error:", err);
+      }
+    };
+
+    fetchDashboardData();
+  }, [program, address]);
 
   return (
     <div className="w-full">

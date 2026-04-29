@@ -159,26 +159,27 @@ export default function TasksPage() {
         (e: any) => e.account.client.toBase58() === address
       );
 
-      const mappedTasks: Task[] = myEscrows.map((e: any) => {
-        const stateKeys = Object.keys(e.account.status);
-        let status = "Open";
-        if (stateKeys.includes("active")) status = "In Progress";
-        if (stateKeys.includes("submitted")) status = "In Progress";
-        if (stateKeys.includes("completed")) status = "Completed";
-        if (stateKeys.includes("disputed")) status = "Disputed";
+          const stateKeys = Object.keys(e.account.status);
+          let status = "Open";
+          if (stateKeys.includes("active")) status = "In Progress";
+          if (stateKeys.includes("submitted")) status = "In Progress";
+          if (stateKeys.includes("completed")) status = "Completed";
+          if (stateKeys.includes("disputed")) status = "Disputed";
+          if (stateKeys.includes("cancelled")) status = "Cancelled";
+          
+          return {
+             id: e.account.taskId.toString(),
+             title: "On-Chain Task",
+             amount: (Number(e.account.amount) / 1_000_000_000).toString(),
+             status: status as TaskStatus,
+             worker: e.account.worker ? e.account.worker.toBase58() : null,
+             posted: "Just now",
+             difficulty: e.account.difficulty
+          }
+        });
         
-        return {
-           id: e.account.taskId.toString(),
-           title: "On-Chain Task",
-           amount: (Number(e.account.amount) / 1_000_000_000).toString(),
-           status: status as TaskStatus,
-           worker: e.account.worker ? e.account.worker.toBase58() : null,
-           posted: "Just now",
-           difficulty: e.account.difficulty
-        }
-      });
-      
-      setTasks(mappedTasks.reverse());
+        // Filter out cancelled tasks from the main dashboard view
+        setTasks(mappedTasks.filter(t => t.status !== "Cancelled").reverse());
     } catch (err) {
       console.error("Failed to fetch on-chain tasks:", err);
     } finally {
@@ -191,11 +192,18 @@ export default function TasksPage() {
   }, [program, wallet]);
 
   const handleCancel = async (taskId: string) => {
+    const tid = toast.loading("Canceling task on-chain...");
     try {
-      await cancelTask(parseInt(taskId));
+      const signature = await cancelTask(parseInt(taskId));
+      
+      // Wait for confirmation so the refresh actually shows the change
+      await program.provider.connection.confirmTransaction(signature, "confirmed");
+      
+      toast.success("Task cancelled successfully!", { id: tid });
       await fetchTasks();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to cancel task:", err);
+      toast.error("Cancel failed: " + (err.message || "Unknown error"), { id: tid });
     }
   };
 

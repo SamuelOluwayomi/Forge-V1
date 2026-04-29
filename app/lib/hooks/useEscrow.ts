@@ -10,7 +10,7 @@ import forgeSbtIdl from "@/app/lib/idl/forge_sbt.json";
 
 export type ForgeEscrowProgram = Program<any>;
 
-
+const TREASURY_PUBKEY = new web3.PublicKey("EPpNW3G47SAJ4j1DatpjW7mJMLRTH9Z8K7LJtBfhR8Mt"); // Forge Protocol Treasury
 export function useEscrow() {
   const { connection } = useSolanaClient(); // Solana RPC connection
   const { wallet } = useWallet();

@@ -1,26 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useEscrow } from "@/app/lib/hooks/useEscrow";
+import { useWallet } from "@/app/lib/wallet/context";
+import { supabase } from "@/app/lib/supabase";
+import { toast } from "sonner";
 import { ForgeLoader } from "@/app/components/ForgeLoader";
+import Link from "next/link";
 
-type WorkStatus = "In Progress" | "Submitted" | "Approved" | "Disputed";
+type WorkStatus = "Approved" | "In Progress" | "Submitted" | "Completed" | "Disputed";
 
 interface WorkItem {
   id: string;
+  pda: string;
   title: string;
   client: string;
   amount: string;
   status: WorkStatus;
-  submittedAt: string | null;
-  deadline: string;
+  difficulty: number;
 }
 
 const STATUS_STYLES: Record<WorkStatus, string> = {
+  Approved: "bg-[#4ADE80] text-black border-black",
   "In Progress": "bg-[#FFD700] text-black border-black",
   Submitted: "bg-[#60A5FA] text-black border-black",
-  Approved: "bg-[#4ADE80] text-black border-black",
+  Completed: "bg-black text-white border-black",
   Disputed: "bg-[#FF4500] text-white border-black",
 };
+
+const DIFFICULTY_LABELS = ["", "Beginner", "Intermediate", "Advanced", "Expert"];
 
 function CopyButton({ text, id }: { text: string; id: string }) {
   const [copied, setCopied] = useState(false);
@@ -37,30 +45,20 @@ function CopyButton({ text, id }: { text: string; id: string }) {
         ${copied ? "bg-[#4ADE80] border-[#4ADE80] text-black scale-95" : "bg-white text-black hover:bg-black hover:text-white"}`}
       style={{ boxShadow: copied ? "none" : "2px 2px 0px 0px rgba(0,0,0,1)" }}
     >
-      {copied ? (
-        <>
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-            <path d="M20 6L9 17l-5-5" />
-          </svg>
-          Copied
-        </>
-      ) : (
-        <>
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <rect x="9" y="9" width="13" height="13" />
-            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-          </svg>
-          Copy
-        </>
-      )}
+      {copied ? "✓ Copied" : "Copy"}
     </button>
   );
 }
 
-function WorkCard({ item }: { item: WorkItem }) {
+function WorkCard({ item, onSubmit, submitting }: { item: WorkItem; onSubmit: (id: string) => void; submitting: string | null }) {
   return (
     <div className="brutalist-card bg-white p-6 flex flex-col gap-4 relative">
-      <div className="flex items-start justify-between gap-3">
+      {/* Difficulty tape */}
+      <div className="brutalist-tape absolute -top-3 -left-2 text-[10px] px-2 py-0.5" style={{ transform: "rotate(-3deg)" }}>
+        {DIFFICULTY_LABELS[item.difficulty] ?? "Unknown"}
+      </div>
+
+      <div className="flex items-start justify-between gap-3 pt-2">
         <div className="flex-1 min-w-0">
           <p className="font-black text-[10px] uppercase tracking-widest text-black/40 mb-1">Work #{item.id}</p>
           <h3 className="font-black text-lg uppercase leading-tight text-black truncate">{item.title}</h3>
@@ -70,10 +68,17 @@ function WorkCard({ item }: { item: WorkItem }) {
         </span>
       </div>
 
+      {/* Approved banner */}
+      {item.status === "Approved" && (
+        <div className="bg-[#4ADE80] border-2 border-black px-4 py-2 text-center">
+          <p className="font-black text-xs uppercase">You&apos;ve been approved! Start working and submit when ready.</p>
+        </div>
+      )}
+
       <div className="border-t-2 border-b-2 border-black/10 py-3 flex items-center justify-between">
         <p className="text-xs font-black uppercase tracking-widest text-black/50">Reward</p>
         <p className="font-black text-xl text-black tabular-nums">
-          {item.amount}<span className="text-xs font-bold text-black/50 ml-1">USDC</span>
+          {item.amount}<span className="text-xs font-bold text-black/50 ml-1">SOL</span>
         </p>
       </div>
 
@@ -85,26 +90,21 @@ function WorkCard({ item }: { item: WorkItem }) {
         <CopyButton text={item.client} id={`copy-client-${item.id}`} />
       </div>
 
-      <div className="flex gap-6">
-        <div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-black/40">Deadline</p>
-          <p className="font-bold text-xs text-black">{item.deadline}</p>
-        </div>
-        {item.submittedAt && (
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-black/40">Submitted</p>
-            <p className="font-bold text-xs text-black">{item.submittedAt}</p>
-          </div>
-        )}
-      </div>
-
-      {item.status === "In Progress" && (
+      {(item.status === "Approved" || item.status === "In Progress") && (
         <button
           id={`submit-work-${item.id}`}
-          className="brutalist-button w-full py-2.5 text-sm bg-primary text-white border-black"
+          onClick={() => onSubmit(item.id)}
+          disabled={submitting === item.id}
+          className="brutalist-button w-full py-2.5 text-sm bg-primary text-white border-black disabled:opacity-50"
         >
-          Submit Work
+          {submitting === item.id ? "Submitting..." : "Submit Work"}
         </button>
+      )}
+
+      {item.status === "Completed" && (
+        <div className="bg-black text-white px-4 py-2 text-center border-2 border-black">
+          <p className="font-black text-xs uppercase">Completed — Payment Released</p>
+        </div>
       )}
     </div>
   );
@@ -112,10 +112,89 @@ function WorkCard({ item }: { item: WorkItem }) {
 
 export default function WorkPage() {
   const [filter, setFilter] = useState<WorkStatus | "All">("All");
-  const [loading, setLoading] = useState(false);
-  const jobs: WorkItem[] = [];
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState<string | null>(null);
+
+  const { program, submitWork } = useEscrow();
+  const { wallet } = useWallet();
+  const [jobs, setJobs] = useState<WorkItem[]>([]);
+
+  const fetchWork = async () => {
+    if (!program || !wallet) return;
+    setLoading(true);
+    try {
+      const address = wallet.account.address;
+      const allEscrows = await (program.account as any).escrowAccount.all();
+      
+      // Find escrows where this wallet is the worker
+      const myWork = allEscrows.filter((e: any) => {
+        const worker = e.account.worker;
+        return worker && worker.toBase58() !== "11111111111111111111111111111111" && worker.toBase58() === address;
+      });
+
+      // Fetch titles from DB
+      const pdas = myWork.map((e: any) => e.publicKey.toBase58());
+      let dbTasks: any[] = [];
+      if (supabase && pdas.length > 0) {
+        const { data } = await supabase.from("tasks").select("pda, title").in("pda", pdas);
+        dbTasks = data || [];
+      }
+
+      const mapped: WorkItem[] = myWork.map((e: any) => {
+        const stateKeys = Object.keys(e.account.status);
+        let status: WorkStatus = "Approved";
+        if (stateKeys.includes("active")) status = "In Progress";
+        if (stateKeys.includes("submitted")) status = "Submitted";
+        if (stateKeys.includes("completed")) status = "Completed";
+        if (stateKeys.includes("disputed")) status = "Disputed";
+
+        // If status is active and worker is set, that means "Approved"
+        if (stateKeys.includes("active")) status = "Approved";
+
+        const pdaStr = e.publicKey.toBase58();
+        const dbTask = dbTasks.find((t: any) => t.pda === pdaStr);
+
+        return {
+          id: e.account.taskId.toString(),
+          pda: pdaStr,
+          title: dbTask?.title || "On-Chain Task",
+          client: e.account.client.toBase58(),
+          amount: (Number(e.account.amount) / 1_000_000_000).toString(),
+          status,
+          difficulty: e.account.difficulty,
+        };
+      });
+
+      setJobs(mapped.filter(j => j.status !== "Completed" || true).reverse());
+    } catch (err) {
+      console.error("Failed to fetch work:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchWork(); }, [program, wallet]);
+
+  const handleSubmit = async (taskId: string) => {
+    setSubmitting(taskId);
+    const tid = toast.loading("Submitting work on-chain...");
+    try {
+      const sig = await submitWork(parseInt(taskId), "submission-pending");
+      if (program?.provider?.connection) {
+        await program.provider.connection.confirmTransaction(sig, "confirmed");
+      }
+      toast.success("Work submitted! Waiting for client review.", { id: tid });
+      await fetchWork();
+    } catch (err: any) {
+      console.error("Submit failed:", err);
+      toast.error("Failed: " + (err.message || "Unknown error"), { id: tid });
+    } finally {
+      setSubmitting(null);
+    }
+  };
+
   const filtered = filter === "All" ? jobs : jobs.filter((j) => j.status === filter);
-  const filters: (WorkStatus | "All")[] = ["All", "In Progress", "Submitted", "Approved", "Disputed"];
+  const filters: (WorkStatus | "All")[] = ["All", "Approved", "In Progress", "Submitted", "Completed"];
 
   return (
     <div className="w-full">
@@ -156,10 +235,16 @@ export default function WorkPage() {
           <p className="font-bold text-sm text-black/40">
             {filter === "All" ? "You have not been assigned any work yet." : `No work with status "${filter}".`}
           </p>
+          <Link
+            href="/dashboard/browse"
+            className="brutalist-button inline-block mt-6 px-8 py-3 bg-primary text-white border-black text-sm"
+          >
+            Browse Available Tasks
+          </Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {filtered.map((item) => <WorkCard key={item.id} item={item} />)}
+          {filtered.map((item) => <WorkCard key={item.id} item={item} onSubmit={handleSubmit} submitting={submitting} />)}
         </div>
       )}
     </div>

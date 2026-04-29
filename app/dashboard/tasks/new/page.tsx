@@ -6,6 +6,7 @@ import { useWallet } from "@/app/lib/wallet/context";
 import { useEscrow } from "@/app/lib/hooks/useEscrow";
 import { toast } from "sonner";
 import { validateTaskInput } from "@/app/lib/validation";
+import { useBalance } from "@/app/lib/hooks/use-balance";
 
 const DIFFICULTY_OPTIONS = [
   { value: 1, label: "Beginner", desc: "Simple tasks, clear scope" },
@@ -18,6 +19,8 @@ export default function NewTaskPage() {
   const router = useRouter();
   const { wallet } = useWallet();
   const { createTask, program } = useEscrow();
+  const address = wallet?.account.address ?? "";
+  const balance = useBalance(address || undefined);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -101,6 +104,13 @@ export default function NewTaskPage() {
 
     if (!validation.isValid) {
       validation.errors.forEach((err) => toast.error(err));
+      return;
+    }
+
+    // Balance check: ensure wallet has amount + 0.01 SOL buffer for tx fees
+    const requiredLamports = (parseFloat(amount) + 0.01) * 1_000_000_000;
+    if (balance.lamports != null && balance.lamports < requiredLamports) {
+      toast.error(`Insufficient balance. You need at least ${(parseFloat(amount) + 0.01).toFixed(2)} SOL (${amount} SOL + fees).`);
       return;
     }
 

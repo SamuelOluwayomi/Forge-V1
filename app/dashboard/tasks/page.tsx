@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useEscrow } from "@/app/lib/hooks/useEscrow";
 import { useWallet } from "@/app/lib/wallet/context";
+import { supabase } from "@/app/lib/supabase";
 import { toast } from "sonner";
 import { ForgeLoader } from "@/app/components/ForgeLoader";
 
@@ -11,12 +12,14 @@ type TaskStatus = "Open" | "In Progress" | "Completed" | "Disputed" | "Cancelled
 
 interface Task {
   id: string;
+  pda: string;
   title: string;
   amount: string;
   status: TaskStatus;
   worker: string | null;
   posted: string;
   difficulty: number;
+  applicant_count: number;
 }
 
 const STATUS_STYLES: Record<TaskStatus, string> = {
@@ -109,7 +112,14 @@ function TaskCard({ task, onCancel }: { task: Task; onCancel: (id: string) => vo
           </button>
         </div>
       ) : (
-        <p className="text-xs font-bold text-black/40 italic">No worker assigned yet</p>
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-bold text-black/40 italic">No worker assigned yet</p>
+          {task.applicant_count > 0 && (
+            <span className="bg-primary/10 text-primary border border-primary px-2 py-0.5 text-[10px] font-black uppercase">
+              {task.applicant_count} applicant{task.applicant_count !== 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
       )}
 
       {/* Footer */}
@@ -119,23 +129,32 @@ function TaskCard({ task, onCancel }: { task: Task; onCancel: (id: string) => vo
         </p>
         <div className="flex gap-2">
           {task.status === "Open" && (
-            <button
-              id={`cancel-task-${task.id}`}
-              onClick={() => onCancel(task.id)}
-              className="border-2 border-black px-3 py-1 text-xs font-black uppercase hover:bg-black hover:text-white transition-all disabled:opacity-50"
-              style={{ boxShadow: "2px 2px 0px 0px rgba(0,0,0,1)" }}
-            >
-              Cancel
-            </button>
+            <>
+              <Link
+                href={`/dashboard/tasks/${task.pda}`}
+                className="border-2 border-black bg-primary text-white px-3 py-1 text-xs font-black uppercase hover:bg-black transition-all"
+                style={{ boxShadow: "2px 2px 0px 0px rgba(0,0,0,1)" }}
+              >
+                {task.applicant_count > 0 ? "Review Applicants" : "Manage"}
+              </Link>
+              <button
+                id={`cancel-task-${task.id}`}
+                onClick={() => onCancel(task.id)}
+                className="border-2 border-black px-3 py-1 text-xs font-black uppercase hover:bg-black hover:text-white transition-all disabled:opacity-50"
+                style={{ boxShadow: "2px 2px 0px 0px rgba(0,0,0,1)" }}
+              >
+                Cancel
+              </button>
+            </>
           )}
           {task.status === "In Progress" && (
-            <button
-              id={`approve-task-${task.id}`}
-              className="border-2 border-black bg-[#4ADE80] px-3 py-1 text-xs font-black uppercase hover:bg-black hover:text-white transition-all"
+            <Link
+              href={`/dashboard/tasks/${task.pda}`}
+              className="border-2 border-black bg-[#FFD700] px-3 py-1 text-xs font-black uppercase hover:bg-black hover:text-white transition-all"
               style={{ boxShadow: "2px 2px 0px 0px rgba(0,0,0,1)" }}
             >
-              Approve Work
-            </button>
+              Manage Task
+            </Link>
           )}
         </div>
       </div>
@@ -162,6 +181,29 @@ export default function TasksPage() {
         (e: any) => e.account.client.toBase58() === address
       );
 
+      // Fetch titles from Supabase
+      const pdas = myEscrows.map((e: any) => e.publicKey.toBase58());
+      let dbTasks: any[] = [];
+      let applicantCounts: Record<string, number> = {};
+
+      if (supabase && pdas.length > 0) {
+        const { data: taskData } = await supabase
+          .from("tasks")
+          .select("pda, title")
+          .in("pda", pdas);
+        dbTasks = taskData || [];
+
+        // Get applicant counts
+        const { data: appData } = await supabase
+          .from("task_applicants")
+          .select("task_pda")
+          .in("task_pda", pdas);
+        
+        (appData || []).forEach((a: any) => {
+          applicantCounts[a.task_pda] = (applicantCounts[a.task_pda] || 0) + 1;
+        });
+      }
+
       const mappedTasks: Task[] = myEscrows.map((e: any) => {
           const stateKeys = Object.keys(e.account.status);
           let status = "Open";
@@ -170,15 +212,20 @@ export default function TasksPage() {
           if (stateKeys.includes("completed")) status = "Completed";
           if (stateKeys.includes("disputed")) status = "Disputed";
           if (stateKeys.includes("cancelled")) status = "Cancelled";
-          
+
+          const pdaStr = e.publicKey.toBase58();
+          const dbTask = dbTasks.find((t: any) => t.pda === pdaStr);
+
           return {
              id: e.account.taskId.toString(),
-             title: "On-Chain Task",
+             pda: pdaStr,
+             title: dbTask?.title || "On-Chain Task",
              amount: (Number(e.account.amount) / 1_000_000_000).toString(),
              status: status as TaskStatus,
              worker: e.account.worker ? e.account.worker.toBase58() : null,
              posted: "Just now",
-             difficulty: e.account.difficulty
+             difficulty: e.account.difficulty,
+             applicant_count: applicantCounts[pdaStr] || 0,
           }
         });
         
@@ -201,7 +248,6 @@ export default function TasksPage() {
       const signature = await cancelTask(parseInt(taskId));
       
       if (program?.provider?.connection) {
-        // Wait for confirmation so the refresh actually shows the change
         await program.provider.connection.confirmTransaction(signature, "confirmed");
       }
       

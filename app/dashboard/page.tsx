@@ -8,6 +8,7 @@ import { useBalance } from "@/app/lib/hooks/use-balance";
 import { lamportsToSolString } from "@/app/lib/lamports";
 import { ellipsify } from "@/app/lib/explorer";
 import { useCluster } from "@/app/components/cluster-context";
+import { supabase } from "@/app/lib/supabase";
 
 // ── Stat card ──────────────────────────────────────────────────────────────
 function StatCard({
@@ -206,12 +207,21 @@ export default function DashboardOverview() {
         ]);
 
         // 2. Activity (Take last 5)
-        const recent = activeEscrows
-          .filter(
-            (e: any) =>
-              e.account.client.toBase58() === address ||
-              (e.account.worker && e.account.worker.toBase58() === address)
-          )
+        const relevantEscrows = activeEscrows.filter(
+          (e: any) =>
+            e.account.client.toBase58() === address ||
+            (e.account.worker && e.account.worker.toBase58() === address)
+        );
+
+        // Fetch titles from DB
+        const pdas = relevantEscrows.map((e: any) => e.publicKey.toBase58());
+        let dbTitles: Record<string, string> = {};
+        if (supabase && pdas.length > 0) {
+          const { data } = await supabase.from("tasks").select("pda, title").in("pda", pdas);
+          (data || []).forEach((t: any) => { dbTitles[t.pda] = t.title; });
+        }
+
+        const recent = relevantEscrows
           .slice(-5)
           .map((e: any) => {
             const isClient = e.account.client.toBase58() === address;
@@ -220,9 +230,11 @@ export default function DashboardOverview() {
             if (statusKeys.includes("active")) status = "In Progress";
             if (statusKeys.includes("completed")) status = "Completed";
 
+            const pdaStr = e.publicKey.toBase58();
+
             return {
               type: isClient ? "task" : "work",
-              label: "On-Chain Task",
+              label: dbTitles[pdaStr] || "On-Chain Task",
               sub: isClient ? `You posted a task` : `Assigned to you`,
               status,
               amount: `${(Number(e.account.amount) / 1_000_000_000).toFixed(1)} SOL`,

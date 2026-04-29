@@ -21,11 +21,16 @@ export async function POST(req: NextRequest) {
           role: "user",
           content: `A client described their task as: "${prompt}"
 
-Generate a structured task brief. Respond ONLY with valid JSON, no markdown formatting blocks, no explanation:
+Generate a structured task brief. The description MUST be written as direct instructions to the developer, NOT from the client's perspective. 
+Do NOT say "the client wants" or "the client requires". Instead write it as if you are directly telling the developer what to build.
+Example good style: "Create a GitHub repository named 'task 3' with a well-structured README file. The README should cover any topic of your choice..."
+Example bad style: "The client requires a GitHub repository to be created..."
+
+Respond ONLY with valid JSON, no markdown formatting blocks, no explanation:
 
 {
   "title": "clear concise task title under 60 characters",
-  "description": "detailed description of what needs to be done, 2-3 paragraphs",
+  "description": "detailed task description written as direct instructions to the developer, 2-3 paragraphs. Use imperative voice: Build, Create, Implement, Design, etc.",
   "skills": ["skill1", "skill2"],
   "difficulty": 2,
   "difficulty_label": "Journeyman",

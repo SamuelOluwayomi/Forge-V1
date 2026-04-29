@@ -44,6 +44,8 @@ export default function ProfilePage() {
   const [savingSocials, setSavingSocials] = useState(false);
   const [loading, setLoading] = useState(true);
   const [rank, setRank] = useState<number>(0);
+  const [totalDevs, setTotalDevs] = useState<number>(0);
+  const [rankCountdown, setRankCountdown] = useState("");
 
   const [stats, setStats] = useState([
     { label: "Tasks Completed", value: 0 },
@@ -81,7 +83,34 @@ export default function ProfilePage() {
     };
     
     fetchProfile();
+
+    // Fetch total dev count for ranking context
+    const fetchTotalDevs = async () => {
+      if (!supabase) return;
+      const { count } = await supabase
+        .from("profiles")
+        .select("*", { count: "exact", head: true });
+      if (count) setTotalDevs(count);
+    };
+    fetchTotalDevs();
   }, [address]);
+
+  // Countdown to midnight UTC (ranking refresh)
+  useEffect(() => {
+    const update = () => {
+      const now = new Date();
+      const midnight = new Date(now);
+      midnight.setUTCHours(24, 0, 0, 0);
+      const diff = midnight.getTime() - now.getTime();
+      const h = Math.floor(diff / (1000 * 60 * 60));
+      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const s = Math.floor((diff % (1000 * 60)) / 1000);
+      setRankCountdown(`${h}h ${m}m ${s}s`);
+    };
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Fetch real on-chain stats
   useEffect(() => {
@@ -441,6 +470,37 @@ export default function ProfilePage() {
                 <p className="font-black text-4xl text-black tabular-nums leading-none">{s.value}</p>
               </div>
             ))}
+          </div>
+
+          {/* Ranking Standing */}
+          <div className="brutalist-card bg-[#FFD700] p-6 border-4 border-black relative overflow-hidden">
+            <div className="absolute inset-0 opacity-10 mix-blend-overlay pointer-events-none"
+              style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")` }} />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-black text-xl uppercase tracking-tight text-black">Your Ranking</h2>
+                <div className="bg-black text-white px-2 py-0.5 text-[10px] font-black uppercase border border-black">
+                  Global
+                </div>
+              </div>
+              <div className="flex items-center gap-6">
+                <div className="bg-black text-white px-5 py-4 border-2 border-black flex flex-col items-center" style={{ transform: "rotate(-2deg)" }}>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[#FFD700] leading-none mb-1">Rank</span>
+                  <span className="font-black text-4xl leading-none">{rank > 0 ? `#${rank}` : "—"}</span>
+                </div>
+                <div className="flex-1">
+                  <p className="font-black text-sm text-black/80">
+                    {rank > 0
+                      ? `You are ranked #${rank} out of ${totalDevs || "?"} developers`
+                      : "Complete tasks to earn your ranking"}
+                  </p>
+                  <div className="flex items-center gap-2 mt-3">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-black/60">Next refresh in {rankCountdown}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Social Accounts */}

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
+import { useEscrow } from "@/app/lib/hooks/useEscrow";
 import { ForgeLoader } from "@/app/components/ForgeLoader";
 import { ellipsify } from "@/app/lib/explorer";
 
@@ -18,26 +19,70 @@ interface Developer {
 export default function DevelopersPage() {
   const [developers, setDevelopers] = useState<Developer[]>([]);
   const [loading, setLoading] = useState(true);
+  const { program } = useEscrow();
 
   useEffect(() => {
     const fetchDevs = async () => {
+      if (!program) return;
       setLoading(true);
-      if (supabase) {
-        // Fetch all profiles, ordered by forge_score
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("wallet_address, name, title, avatar_url, forge_score, rank")
-          .order("forge_score", { ascending: false });
+      
+      try {
+        let dbProfiles: any[] = [];
+        if (supabase) {
+          const { data, error } = await supabase
+            .from("profiles")
+            .select("wallet_address, name, title, avatar_url");
 
-        if (!error && data) {
-          setDevelopers(data);
+          if (!error && data) {
+            dbProfiles = data;
+          } else if (error) {
+            console.error("Supabase profiles fetch error:", error);
+          }
         }
+
+        // Fetch on-chain escrows to calculate stats
+        const allEscrows = await (program.account as any).escrowAccount.all();
+        const activeEscrows = allEscrows.filter((e: any) => !Object.keys(e.account.status).includes("cancelled"));
+
+        // Build a map of wallet_address -> forge_score
+        const workerScores: Record<string, number> = {};
+        
+        for (const escrow of activeEscrows) {
+          if (escrow.account.worker && Object.keys(escrow.account.status).includes("completed")) {
+            const workerAddr = escrow.account.worker.toBase58();
+            // Ignore the default system program address
+            if (workerAddr !== "11111111111111111111111111111111") {
+              workerScores[workerAddr] = (workerScores[workerAddr] || 0) + 100; // 100 points per completion
+            }
+          }
+        }
+
+        const combined: Developer[] = dbProfiles.map(p => ({
+          wallet_address: p.wallet_address,
+          name: p.name,
+          title: p.title,
+          avatar_url: p.avatar_url,
+          forge_score: workerScores[p.wallet_address] || 0,
+          rank: null
+        }));
+
+        // Sort descending by score
+        combined.sort((a, b) => (b.forge_score || 0) - (a.forge_score || 0));
+
+        // Assign ranks (1-based)
+        combined.forEach((dev, idx) => {
+          dev.rank = idx + 1;
+        });
+
+        setDevelopers(combined);
+      } catch (err) {
+        console.error("Failed to fetch developers:", err);
       }
       setLoading(false);
     };
 
     fetchDevs();
-  }, []);
+  }, [program]);
 
   return (
     <div className="w-full max-w-6xl mx-auto pb-20">

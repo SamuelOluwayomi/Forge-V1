@@ -164,7 +164,7 @@ export default function ManageTaskPage() {
   const pda = params.id as string;
   const { wallet } = useWallet();
   const address = wallet?.account.address;
-  const { program, acceptWorker, approveWork } = useEscrow();
+  const { program, acceptWorker, approveWork, raiseDispute } = useEscrow();
 
   const [task, setTask] = useState<TaskDetail | null>(null);
   const [applicants, setApplicants] = useState<Applicant[]>([]);
@@ -175,6 +175,9 @@ export default function ManageTaskPage() {
   const [submissionUri, setSubmissionUri] = useState<string | null>(null);
   const [onChainStatus, setOnChainStatus] = useState<string | null>(null);
   const [approving, setApproving] = useState(false);
+  const [showRevisionModal, setShowRevisionModal] = useState(false);
+  const [revisionReason, setRevisionReason] = useState("");
+  const [requestingRevision, setRequestingRevision] = useState(false);
 
   const fetchTask = async () => {
     setLoading(true);
@@ -308,6 +311,35 @@ export default function ManageTaskPage() {
     }
   };
 
+  const handleRequestRevision = async () => {
+    if (!program || !address || onChainTaskId === null) return;
+    if (!revisionReason.trim()) {
+      toast.error("Please provide a reason for the revision.");
+      return;
+    }
+    
+    setRequestingRevision(true);
+    const tid = toast.loading("Submitting revision request on-chain...");
+    try {
+      const clientPubkey = new PublicKey(address);
+      const sig = await raiseDispute(onChainTaskId, clientPubkey, revisionReason);
+      
+      if (program?.provider?.connection) {
+        await program.provider.connection.confirmTransaction(sig, "confirmed");
+      }
+      
+      toast.success("Revision requested! The task is now disputed/paused.", { id: tid });
+      setShowRevisionModal(false);
+      setOnChainStatus("disputed"); // Or fetch again
+      await fetchTask();
+    } catch (err: any) {
+      console.error("Revision failed:", err);
+      toast.error("Failed: " + (err.message || "Unknown error"), { id: tid });
+    } finally {
+      setRequestingRevision(false);
+    }
+  };
+
   return (
     <div className="w-full max-w-4xl">
       {/* Applicant Profile Modal */}
@@ -370,19 +402,26 @@ export default function ManageTaskPage() {
       </div>
 
       {/* Submission Review Box */}
-      {(onChainStatus === "submitted" || onChainStatus === "completed") && submissionUri && (
+      {(onChainStatus === "submitted" || onChainStatus === "completed" || onChainStatus === "disputed") && submissionUri && (
         <div className="brutalist-card bg-[#e0e0e0] border-dashed p-6 mb-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className={`p-2 border-2 border-black ${onChainStatus === "completed" ? "bg-[#4ADE80]" : "bg-[#60A5FA]"}`}>
+            <div className={`p-2 border-2 border-black ${
+              onChainStatus === "completed" ? "bg-[#4ADE80]" : 
+              onChainStatus === "disputed" ? "bg-[#FF4500]" : "bg-[#60A5FA]"
+            }`}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
                 <path d="M22 4L12 14.01l-3-3" />
               </svg>
             </div>
             <div>
-              <h3 className="font-black text-xl uppercase italic">Worker Submission</h3>
+              <h3 className="font-black text-xl uppercase italic">
+                {onChainStatus === "disputed" ? "Revision Requested" : "Worker Submission"}
+              </h3>
               <p className="text-xs font-bold text-black/50">
-                {onChainStatus === "completed" ? "You have approved this work." : "The developer has submitted their work for review."}
+                {onChainStatus === "completed" ? "You have approved this work." : 
+                 onChainStatus === "disputed" ? "You have paused this task for revisions." :
+                 "The developer has submitted their work for review."}
               </p>
             </div>
           </div>
@@ -410,7 +449,8 @@ export default function ManageTaskPage() {
                 {approving ? "Releasing Funds..." : "✓ Approve Work & Release Funds"}
               </button>
               <button
-                disabled={approving}
+                onClick={() => setShowRevisionModal(true)}
+                disabled={approving || requestingRevision}
                 className="brutalist-button px-6 py-4 bg-[#FF4500] text-white border-black text-sm disabled:opacity-50"
               >
                 Request Revisions
@@ -491,6 +531,49 @@ export default function ManageTaskPage() {
           </div>
         )}
       </div>
+
+      {/* Request Revision Modal */}
+      {showRevisionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="brutalist-card bg-white w-full max-w-md p-6 animate-in zoom-in-95 duration-200">
+            <h3 className="text-2xl font-black uppercase italic tracking-tighter mb-2 text-[#FF4500]">Request Revision</h3>
+            <p className="text-xs font-bold text-black/60 mb-6">
+              The worker will be notified that the work requires changes. This will pause the auto-release timer.
+            </p>
+
+            <div className="flex flex-col gap-3 mb-8">
+              <label htmlFor="revision-reason" className="font-black text-xs uppercase tracking-widest text-black/40">
+                Reason / Feedback <span className="text-primary">*</span>
+              </label>
+              <textarea
+                id="revision-reason"
+                rows={4}
+                value={revisionReason}
+                onChange={(e) => setRevisionReason(e.target.value)}
+                placeholder="The UI looks good, but the API endpoint returns a 500 error on edge cases..."
+                className="border-2 border-black bg-background px-4 py-3 font-bold text-sm text-black outline-none focus:border-primary placeholder:text-black/30 resize-none"
+              />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleRequestRevision}
+                disabled={requestingRevision}
+                className="brutalist-button flex-1 py-3 bg-[#FF4500] text-white border-black text-sm disabled:opacity-50"
+              >
+                {requestingRevision ? "Submitting..." : "Confirm Request"}
+              </button>
+              <button
+                onClick={() => setShowRevisionModal(false)}
+                disabled={requestingRevision}
+                className="brutalist-button px-6 py-3 bg-white text-black border-black text-sm hover:bg-black/5"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

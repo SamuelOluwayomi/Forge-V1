@@ -113,7 +113,9 @@ function WorkCard({ item, onSubmit, submitting }: { item: WorkItem; onSubmit: (i
 export default function WorkPage() {
   const [filter, setFilter] = useState<WorkStatus | "All">("All");
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState<string | null>(null);
+  const [submittingId, setSubmittingId] = useState<string | null>(null);
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [submissionUri, setSubmissionUri] = useState("");
 
   const { program, submitWork } = useEscrow();
   const { wallet } = useWallet();
@@ -175,21 +177,32 @@ export default function WorkPage() {
 
   useEffect(() => { fetchWork(); }, [program, wallet]);
 
-  const handleSubmit = async (taskId: string) => {
-    setSubmitting(taskId);
+  const handleSubmitClick = (taskId: string) => {
+    setSubmittingId(taskId);
+    setSubmissionUri("");
+    setShowSubmitModal(true);
+  };
+
+  const handleConfirmSubmit = async () => {
+    if (!submittingId) return;
+    if (!submissionUri.trim()) {
+      toast.error("Please provide a link or description of your work.");
+      return;
+    }
+
     const tid = toast.loading("Submitting work on-chain...");
     try {
-      const sig = await submitWork(parseInt(taskId), "submission-pending");
+      const sig = await submitWork(parseInt(submittingId), submissionUri);
       if (program?.provider?.connection) {
         await program.provider.connection.confirmTransaction(sig, "confirmed");
       }
       toast.success("Work submitted! Waiting for client review.", { id: tid });
+      setShowSubmitModal(false);
+      setSubmittingId(null);
       await fetchWork();
     } catch (err: any) {
       console.error("Submit failed:", err);
       toast.error("Failed: " + (err.message || "Unknown error"), { id: tid });
-    } finally {
-      setSubmitting(null);
     }
   };
 
@@ -244,7 +257,51 @@ export default function WorkPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {filtered.map((item) => <WorkCard key={item.id} item={item} onSubmit={handleSubmit} submitting={submitting} />)}
+          {filtered.map((item) => <WorkCard key={item.id} item={item} onSubmit={handleSubmitClick} submitting={submittingId} />)}
+        </div>
+      )}
+
+      {/* Submission Modal */}
+      {showSubmitModal && submittingId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="brutalist-card bg-white w-full max-w-md p-6 animate-in zoom-in-95 duration-200">
+            <h3 className="text-2xl font-black uppercase italic tracking-tighter mb-2">Submit Work</h3>
+            <p className="text-xs font-bold text-black/60 mb-6">
+              Provide a link to your completed work (e.g., GitHub PR, Google Doc, Figma file) so the client can review it.
+            </p>
+
+            <div className="flex flex-col gap-3 mb-8">
+              <label htmlFor="submission-uri" className="font-black text-xs uppercase tracking-widest text-black/40">
+                Submission Link / Details <span className="text-primary">*</span>
+              </label>
+              <textarea
+                id="submission-uri"
+                rows={3}
+                value={submissionUri}
+                onChange={(e) => setSubmissionUri(e.target.value)}
+                placeholder="https://github.com/..."
+                className="border-2 border-black bg-background px-4 py-3 font-bold text-sm text-black outline-none focus:border-primary placeholder:text-black/30 resize-none"
+              />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleConfirmSubmit}
+                className="brutalist-button flex-1 py-3 bg-black text-white border-black text-sm"
+              >
+                Submit Delivery
+              </button>
+              <button
+                onClick={() => {
+                  setShowSubmitModal(false);
+                  setSubmittingId(null);
+                }}
+                className="brutalist-button px-6 py-3 bg-white text-black border-black text-sm hover:bg-black/5"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

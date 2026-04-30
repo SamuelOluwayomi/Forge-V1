@@ -22,6 +22,8 @@ interface TaskDetail {
   status: string;
   client_avatar: string | null;
   client_twitter: string | null;
+  worker: string | null;
+  expected_days: number | null;
   is_on_chain_only?: boolean;
 }
 
@@ -35,6 +37,8 @@ interface Applicant {
   discord: string | null;
   rank: number;
   forge_score: number;
+  status: string;
+  estimated_days: number | null;
 }
 
 const DIFFICULTY_LABELS = ["", "Beginner", "Intermediate", "Advanced", "Expert"];
@@ -93,6 +97,8 @@ export default function TaskDetailPage() {
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
   const [activeTab, setActiveTab] = useState<"details" | "applicants">("details");
+  const [estimatedDays, setEstimatedDays] = useState("");
+  const [showApplyModal, setShowApplyModal] = useState(false);
 
   const hasApplied = applicants.some(a => a.worker_address === address);
   const isClient = task?.client === address;
@@ -120,14 +126,20 @@ export default function TaskDetailPage() {
     if (!address) return toast.error("Connect your wallet first");
     setApplying(true);
     try {
+      const payload: any = { worker_address: address };
+      if (estimatedDays && parseInt(estimatedDays) > 0) {
+        payload.estimated_days = parseInt(estimatedDays);
+      }
+
       const res = await fetch(`/api/tasks/${pda}/apply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ worker_address: address }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       toast.success("You've accepted the challenge!");
+      setShowApplyModal(false);
       await fetchTask();
       setActiveTab("applicants");
     } catch (err: any) {
@@ -158,8 +170,37 @@ export default function TaskDetailPage() {
     );
   }
 
+  const isOwner = task.client === address;
+  const isWorker = task.worker === address;
+  const acceptedApplicant = applicants.find(a => a.status === "accepted" || a.worker_address === task.worker);
+
   return (
     <div className="w-full max-w-4xl">
+      {/* Chosen Banner for Worker */}
+      {isWorker && task.status === "active" && (
+        <div className="bg-[#4ADE80] border-4 border-black p-4 mb-6 animate-bounce" style={{ boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)" }}>
+          <div className="flex items-center gap-3">
+            <div className="bg-black p-1">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+            </div>
+            <p className="font-black uppercase text-sm tracking-tight text-black">
+              You have been chosen for this task! Time to get to work.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Selected Banner for Others */}
+      {!isWorker && !isClient && task.worker && (
+        <div className="bg-black text-white border-2 border-black p-4 mb-6 font-bold text-xs uppercase tracking-widest flex items-center gap-3">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+          This task has already been assigned to a developer.
+        </div>
+      )}
       {/* Back link */}
       <Link href="/dashboard/browse" className="inline-flex items-center gap-2 font-black text-xs uppercase tracking-widest text-black/50 hover:text-primary mb-6 transition-colors">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5m0 0l7 7m-7-7l7-7"/></svg>
@@ -193,6 +234,12 @@ export default function TaskDetailPage() {
               <span className="bg-black text-white px-2 py-0.5 text-[10px] font-black uppercase border border-black">
                 {DIFFICULTY_LABELS[task.difficulty]}
               </span>
+              {task.expected_days && (
+                <span className="bg-[#4ADE80] text-black px-2 py-0.5 text-[10px] font-black uppercase border border-black flex items-center gap-1">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                  {task.expected_days} Days Expected
+                </span>
+              )}
               {task.listing_deadline && (
                 <CountdownTimer deadline={task.listing_deadline} />
               )}
@@ -319,6 +366,11 @@ export default function TaskDetailPage() {
                     <span className="text-[10px] font-black text-black/40 uppercase">
                       Score: {applicant.forge_score}
                     </span>
+                    {applicant.estimated_days && (
+                      <span className="text-[10px] font-black text-black/60 uppercase border-l-2 border-black/10 pl-3 ml-1">
+                        Est: {applicant.estimated_days} days
+                      </span>
+                    )}
                   </div>
                   {/* Socials */}
                   <div className="flex items-center gap-2 mt-2">
@@ -340,10 +392,18 @@ export default function TaskDetailPage() {
 
                 {/* Applied timestamp */}
                 <div className="text-right shrink-0">
-                  <p className="text-[10px] font-black text-black/30 uppercase">Applied</p>
-                  <p className="text-xs font-bold text-black/50">
-                    {new Date(applicant.applied_at).toLocaleDateString()}
-                  </p>
+                  {applicant.worker_address === task.worker || applicant.status === "accepted" ? (
+                    <span className="bg-[#4ADE80] text-black px-3 py-1 text-[10px] font-black uppercase border-2 border-black block">
+                      SELECTED
+                    </span>
+                  ) : (
+                    <>
+                      <p className="text-[10px] font-black text-black/30 uppercase">Applied</p>
+                      <p className="text-xs font-bold text-black/50">
+                        {new Date(applicant.applied_at).toLocaleDateString()}
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
             ))
@@ -354,8 +414,12 @@ export default function TaskDetailPage() {
       {/* Action Bar (sticky bottom) */}
       <div className="mt-8 brutalist-card bg-white p-6 flex items-center justify-between gap-4">
         <div>
-          {isExpired ? (
+          {isWorker ? (
+            <p className="text-xs font-black uppercase text-[#4ADE80]">You are working on this task</p>
+          ) : isExpired ? (
             <p className="text-xs font-black uppercase text-red-500">Listing Expired — Applications Closed</p>
+          ) : task.worker ? (
+            <p className="text-xs font-black uppercase text-black/40">Worker has been selected</p>
           ) : (
             <p className="text-xs font-bold text-black/40">
               {applicants.length} developer{applicants.length !== 1 ? "s" : ""} interested
@@ -363,18 +427,24 @@ export default function TaskDetailPage() {
           )}
         </div>
         
-        {!isClient && !isExpired && (
+        {!isClient && !isExpired && !task.worker && (
           <button
-            onClick={handleApply}
-            disabled={applying || hasApplied}
+            onClick={() => setShowApplyModal(true)}
+            disabled={hasApplied}
             className={`brutalist-button px-8 py-3 text-sm ${
               hasApplied 
                 ? "bg-[#4ADE80] text-black border-black cursor-default" 
-                : "bg-primary text-white border-black disabled:opacity-50"
+                : "bg-primary text-white border-black"
             }`}
           >
-            {applying ? "Submitting..." : hasApplied ? "✓ Challenge Accepted" : "Accept Challenge"}
+            {hasApplied ? "✓ Challenge Accepted" : "Accept Challenge"}
           </button>
+        )}
+
+        {isWorker && (
+          <Link href="/dashboard/accepted-work" className="brutalist-button px-8 py-3 text-sm bg-[#4ADE80] text-black border-black">
+            Go to My Work
+          </Link>
         )}
 
         {isClient && (
@@ -383,6 +453,55 @@ export default function TaskDetailPage() {
           </Link>
         )}
       </div>
+
+      {/* Apply Modal */}
+      {showApplyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="brutalist-card bg-white w-full max-w-md p-6 animate-in zoom-in-95 duration-200">
+            <h3 className="text-2xl font-black uppercase italic tracking-tighter mb-2">Accept Challenge</h3>
+            <p className="text-xs font-bold text-black/60 mb-6">
+              Let the client know how long you estimate this will take you.
+            </p>
+
+            <div className="flex flex-col gap-3 mb-8">
+              <label htmlFor="est-days" className="font-black text-xs uppercase tracking-widest text-black/40">
+                Estimated Time Needed (Days) <span className="font-bold lowercase">(optional)</span>
+              </label>
+              <input
+                id="est-days"
+                type="number"
+                min="1"
+                value={estimatedDays}
+                onChange={(e) => setEstimatedDays(e.target.value)}
+                placeholder="e.g. 5"
+                className="border-2 border-black bg-background px-4 py-3 font-bold text-sm text-black outline-none focus:border-primary placeholder:text-black/30"
+              />
+              {task.expected_days && (
+                <p className="text-[10px] font-black uppercase text-primary tracking-wider">
+                  Client is expecting delivery in about {task.expected_days} days.
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleApply}
+                disabled={applying}
+                className="brutalist-button flex-1 py-3 bg-black text-white border-black disabled:opacity-50 text-sm"
+              >
+                {applying ? "Submitting..." : "Confirm Application"}
+              </button>
+              <button
+                onClick={() => setShowApplyModal(false)}
+                disabled={applying}
+                className="brutalist-button px-6 py-3 bg-white text-black border-black text-sm hover:bg-black/5"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -21,6 +21,7 @@ interface TaskDetail {
   task_type: string;
   contact_info: string | null;
   skills: string[];
+  expected_days: number | null;
 }
 
 interface Applicant {
@@ -34,6 +35,7 @@ interface Applicant {
   telegram: string | null;
   rank: number;
   forge_score: number;
+  estimated_days: number | null;
 }
 
 const DIFFICULTY_LABELS = ["", "Beginner", "Intermediate", "Advanced", "Expert"];
@@ -84,6 +86,11 @@ function ApplicantModal({ applicant, onClose, onAccept, accepting }: {
                 <span className="bg-black text-white px-2 py-0.5 text-[10px] font-black border border-black">
                   SCORE {applicant.forge_score}
                 </span>
+                {applicant.estimated_days && (
+                  <span className="bg-[#4ADE80] text-black px-2 py-0.5 text-[10px] font-black border border-black uppercase">
+                    EST: {applicant.estimated_days} DAYS
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -157,7 +164,7 @@ export default function ManageTaskPage() {
   const pda = params.id as string;
   const { wallet } = useWallet();
   const address = wallet?.account.address;
-  const { program, acceptWorker } = useEscrow();
+  const { program, acceptWorker, approveWork } = useEscrow();
 
   const [task, setTask] = useState<TaskDetail | null>(null);
   const [applicants, setApplicants] = useState<Applicant[]>([]);
@@ -165,6 +172,9 @@ export default function ManageTaskPage() {
   const [accepting, setAccepting] = useState(false);
   const [selectedApplicant, setSelectedApplicant] = useState<Applicant | null>(null);
   const [onChainTaskId, setOnChainTaskId] = useState<number | null>(null);
+  const [submissionUri, setSubmissionUri] = useState<string | null>(null);
+  const [onChainStatus, setOnChainStatus] = useState<string | null>(null);
+  const [approving, setApproving] = useState(false);
 
   const fetchTask = async () => {
     setLoading(true);
@@ -190,6 +200,17 @@ export default function ManageTaskPage() {
         const escrowPubkey = new PublicKey(pda);
         const data = await (program.account as any).escrowAccount.fetch(escrowPubkey);
         setOnChainTaskId(Number(data.taskId));
+        
+        if (data.submissionUri) {
+          setSubmissionUri(data.submissionUri);
+        }
+
+        const stateKeys = Object.keys(data.status);
+        if (stateKeys.includes("submitted")) setOnChainStatus("submitted");
+        else if (stateKeys.includes("completed")) setOnChainStatus("completed");
+        else if (stateKeys.includes("active")) setOnChainStatus("active");
+        else setOnChainStatus("open");
+
       } catch (err) {
         console.error("Could not fetch on-chain escrow:", err);
       }
@@ -257,6 +278,36 @@ export default function ManageTaskPage() {
 
   const isOwner = task.client === address;
 
+  const handleApproveWork = async () => {
+    if (!program || !address || onChainTaskId === null) return;
+    setApproving(true);
+    const tid = toast.loading("Approving work and releasing funds...");
+    try {
+      const sig = await approveWork(onChainTaskId);
+      if (program?.provider?.connection) {
+        await program.provider.connection.confirmTransaction(sig, "confirmed");
+      }
+      
+      // Update DB status
+      try {
+        await fetch(`/api/tasks/${pda}/status`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "completed" }),
+        });
+      } catch (_) { /* non-critical */ }
+
+      toast.success("Work approved! Funds have been released to the developer.", { id: tid });
+      setOnChainStatus("completed");
+      await fetchTask();
+    } catch (err: any) {
+      console.error("Approve failed:", err);
+      toast.error("Failed: " + (err.message || "Unknown error"), { id: tid });
+    } finally {
+      setApproving(false);
+    }
+  };
+
   return (
     <div className="w-full max-w-4xl">
       {/* Applicant Profile Modal */}
@@ -287,6 +338,11 @@ export default function ManageTaskPage() {
             <span className="bg-white text-black px-2 py-0.5 text-[10px] font-black uppercase border border-black">
               {task.task_type === "bounty" ? "Bounty" : "Challenge"}
             </span>
+            {task.expected_days && (
+              <span className="bg-[#4ADE80] text-black px-2 py-0.5 text-[10px] font-black uppercase border border-black">
+                {task.expected_days} Days Expected
+              </span>
+            )}
           </div>
           <h1 className="text-3xl md:text-4xl font-black uppercase leading-tight text-black italic">
             {task.title}
@@ -312,6 +368,57 @@ export default function ManageTaskPage() {
           </div>
         )}
       </div>
+
+      {/* Submission Review Box */}
+      {(onChainStatus === "submitted" || onChainStatus === "completed") && submissionUri && (
+        <div className="brutalist-card bg-[#e0e0e0] border-dashed p-6 mb-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className={`p-2 border-2 border-black ${onChainStatus === "completed" ? "bg-[#4ADE80]" : "bg-[#60A5FA]"}`}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+                <path d="M22 4L12 14.01l-3-3" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="font-black text-xl uppercase italic">Worker Submission</h3>
+              <p className="text-xs font-bold text-black/50">
+                {onChainStatus === "completed" ? "You have approved this work." : "The developer has submitted their work for review."}
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white border-2 border-black p-4 mb-6 relative group">
+            <div className="brutalist-tape absolute -top-3 -right-2 text-[10px] px-2 py-0.5" style={{ transform: "rotate(3deg)" }}>
+              Provided Link / Notes
+            </div>
+            <p className="font-mono text-sm text-black break-words whitespace-pre-wrap">
+              {submissionUri.startsWith("http") ? (
+                <a href={submissionUri} target="_blank" className="text-blue-600 hover:underline">{submissionUri}</a>
+              ) : (
+                submissionUri
+              )}
+            </p>
+          </div>
+
+          {onChainStatus === "submitted" && (
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handleApproveWork}
+                disabled={approving}
+                className="brutalist-button flex-1 py-4 bg-[#4ADE80] text-black border-black text-sm disabled:opacity-50"
+              >
+                {approving ? "Releasing Funds..." : "✓ Approve Work & Release Funds"}
+              </button>
+              <button
+                disabled={approving}
+                className="brutalist-button px-6 py-4 bg-[#FF4500] text-white border-black text-sm disabled:opacity-50"
+              >
+                Request Revisions
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Applicants Section */}
       <div className="brutalist-card bg-white p-6">
@@ -359,6 +466,11 @@ export default function ManageTaskPage() {
                     <span className="text-[10px] font-black text-black/40 uppercase">
                       Score: {applicant.forge_score}
                     </span>
+                    {applicant.estimated_days && (
+                      <span className="text-[10px] font-black text-[#4ADE80] uppercase ml-1">
+                        [{applicant.estimated_days} days]
+                      </span>
+                    )}
                     {applicant.twitter && (
                       <span className="text-[10px] font-bold text-black/30">{applicant.twitter}</span>
                     )}

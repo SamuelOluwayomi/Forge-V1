@@ -10,7 +10,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
 
   try {
-    const { worker_address } = await req.json();
+    const { worker_address, estimated_days } = await req.json();
     
     if (!worker_address) {
       return NextResponse.json({ error: "Worker address is required" }, { status: 400 });
@@ -43,6 +43,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       .insert([{
         task_pda: id,
         worker_address,
+        estimated_days: estimated_days ? parseInt(estimated_days, 10) : null,
       }])
       .select();
 

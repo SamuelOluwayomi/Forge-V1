@@ -9,7 +9,7 @@ import { useEscrow } from "../lib/hooks/useEscrow";
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { wallet } = useWallet();
+  const { wallet, status } = useWallet();
   const { program, sbtProgram } = useEscrow();
   console.log(
     "Available SBT methods:",
@@ -24,12 +24,12 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   );
   const [initPending, setInitPending] = useState(false);
 
-  // Step 1 — redirect if no wallet
+  // Step 1 — redirect if no wallet and not connecting
   useEffect(() => {
-    if (!address) {
+    if (!address && status === "disconnected") {
       router.replace("/");
     }
-  }, [address, router]);
+  }, [address, status, router]);
 
   useEffect(() => {
     if (!address) return;
@@ -93,6 +93,20 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       setInitPending(false);
     }
   };
+
+  // Guard 0: Connecting
+  if (status === "connecting") {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <svg className="animate-spin text-primary" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M12 3a9 9 0 019 9" />
+          </svg>
+          <p className="font-black text-sm uppercase tracking-widest text-black/40">Reconnecting wallet...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Guard 1: no wallet
   if (!address) {

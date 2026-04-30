@@ -26,6 +26,7 @@ export default function NewTaskPage() {
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [reviewDays, setReviewDays] = useState(3);
+  const [expectedDays, setExpectedDays] = useState("");
   const [difficulty, setDifficulty] = useState(1);
   const [contactInfo, setContactInfo] = useState("");
   const [listingDeadline, setListingDeadline] = useState("");
@@ -97,6 +98,7 @@ export default function NewTaskPage() {
       title,
       description,
       amount,
+      expectedDays,
       reviewDays,
       difficulty,
       metadataUri,
@@ -167,6 +169,7 @@ export default function NewTaskPage() {
           title: cleanData.title,
           description: cleanData.description,
           amount: cleanData.amount,
+          expected_days: cleanData.expectedDays,
           difficulty: cleanData.difficulty,
           contact_info: contactInfo,
           listing_deadline: listingDeadline 
@@ -435,6 +438,31 @@ export default function NewTaskPage() {
 
           <div className="brutalist-card bg-white p-6 flex flex-col gap-3">
             <label
+              htmlFor="expected-days"
+              className="font-black text-sm uppercase tracking-widest text-black/60"
+            >
+              Expected Time Needed <span className="font-bold text-black/30">(optional)</span>
+            </label>
+            <div className="flex items-center border-2 border-black bg-background">
+              <input
+                id="expected-days"
+                type="number"
+                min="1"
+                value={expectedDays}
+                onChange={(e) => setExpectedDays(e.target.value)}
+                placeholder="e.g. 5"
+                className="flex-1 px-4 py-3 font-black text-sm text-black bg-transparent outline-none placeholder:text-black/30"
+              />
+              <span className="px-4 py-3 font-black text-sm bg-black text-white border-l-2 border-black">
+                DAYS
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Review Window */}
+        <div className="brutalist-card bg-white p-6 flex flex-col gap-3">
+            <label
               htmlFor="task-review-days"
               className="font-black text-sm uppercase tracking-widest text-black/60"
             >
@@ -456,7 +484,7 @@ export default function NewTaskPage() {
               </span>
             </div>
           </div>
-        </div>
+
 
         {/* Difficulty */}
         <div className="brutalist-card bg-white p-6 flex flex-col gap-3">

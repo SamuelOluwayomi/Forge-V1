@@ -263,10 +263,12 @@ export default function BrowseTasksPage() {
                 className={`w-full text-center py-2.5 font-black text-xs uppercase tracking-widest border-2 border-black transition-all block ${
                   task.client === address
                     ? "bg-white text-black/30 cursor-default"
+                    : task.worker === address
+                    ? "bg-[#4ADE80] text-black hover:bg-black hover:text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none"
                     : "bg-black text-white hover:bg-primary hover:text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1"
                 }`}
               >
-                {task.client === address ? "Your Task" : "View Details"}
+                {task.client === address ? "Your Task" : task.worker === address ? "You Were Chosen" : "View Details"}
               </Link>
             </div>
           ))}

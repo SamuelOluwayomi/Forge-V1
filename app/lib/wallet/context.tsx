@@ -48,9 +48,12 @@ export function WalletProvider({ children }: PropsWithChildren) {
     typeof window === "undefined" ? [] : discoverWallets()
   );
   const [session, setSession] = useState<WalletSession | undefined>();
-  const [status, setStatus] = useState<WalletStatus>(
-    WALLET_STATUS.DISCONNECTED
-  );
+  const [status, setStatus] = useState<WalletStatus>(() => {
+    if (typeof window !== "undefined" && localStorage.getItem(STORAGE_KEY)) {
+      return WALLET_STATUS.CONNECTING;
+    }
+    return WALLET_STATUS.DISCONNECTED;
+  });
   const [error, setError] = useState<unknown>();
   const isReady = typeof window !== "undefined";
 

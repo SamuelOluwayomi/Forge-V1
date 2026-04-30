@@ -61,6 +61,7 @@ export function validateTaskInput(input: any) {
       difficulty: numDifficulty,
       metadataUri: cleanUri,
       contactInfo: sanitizeText(input.contactInfo),
+      expectedDays: input.expectedDays ? parseInt(input.expectedDays, 10) : null,
     },
   };
 }
@@ -100,6 +101,7 @@ export function validateDbTaskEntry(input: any) {
       contact_info: sanitizeText(input.contact_info),
       listing_deadline: input.listing_deadline || null,
       task_type: input.task_type || "challenge",
+      expected_days: input.expected_days ? parseInt(input.expected_days, 10) : null,
       skills: Array.isArray(input.skills) ? input.skills.map(sanitizeText) : [],
       ai_analysis: input.ai_analysis || null,
       content_hash: sanitizeText(input.content_hash),

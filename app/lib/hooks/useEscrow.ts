@@ -181,6 +181,75 @@ export function useEscrow() {
     [program, walletPublicKey]
   );
 
+  /** Worker claims funds after review window expires */
+  const claimCompletion = useCallback(
+    async (taskId: number, clientPubkey: web3.PublicKey) => {
+      if (!program || !walletPublicKey) throw new Error("Wallet not connected");
+      const [escrowPda] = await web3.PublicKey.findProgramAddress([
+        Buffer.from("escrow"),
+        clientPubkey.toBuffer(),
+        Buffer.from([...(new BN(taskId).toArray('le', 8))]),
+      ], program.programId);
+
+      const escrowData = await (program.account as any).escrowAccount.fetch(escrowPda);
+
+      return await (program.methods as any)
+        .claimCompletion()
+        .accounts({
+          escrowAccount: escrowPda,
+          caller: walletPublicKey,
+          worker: escrowData.worker,
+          treasury: TREASURY_PUBKEY,
+        })
+        .rpc();
+    },
+    [program, walletPublicKey]
+  );
+
+  /** Raise a dispute on a submitted task */
+  const raiseDispute = useCallback(
+    async (taskId: number, clientPubkey: web3.PublicKey, reasonUri: string) => {
+      if (!program || !walletPublicKey) throw new Error("Wallet not connected");
+      const [escrowPda] = await web3.PublicKey.findProgramAddress([
+        Buffer.from("escrow"),
+        clientPubkey.toBuffer(),
+        Buffer.from([...(new BN(taskId).toArray('le', 8))]),
+      ], program.programId);
+
+      return await (program.methods as any)
+        .raiseDispute(reasonUri)
+        .accounts({
+          escrowAccount: escrowPda,
+          caller: walletPublicKey,
+        })
+        .rpc();
+    },
+    [program, walletPublicKey]
+  );
+
+  /** Arbitrator resolves a dispute */
+  const resolveDispute = useCallback(
+    async (taskId: number, clientPubkey: web3.PublicKey, recipientPubkey: web3.PublicKey, releaseToWorker: boolean) => {
+      if (!program || !walletPublicKey) throw new Error("Wallet not connected");
+      const [escrowPda] = await web3.PublicKey.findProgramAddress([
+        Buffer.from("escrow"),
+        clientPubkey.toBuffer(),
+        Buffer.from([...(new BN(taskId).toArray('le', 8))]),
+      ], program.programId);
+
+      return await (program.methods as any)
+        .resolveDispute(releaseToWorker)
+        .accounts({
+          escrowAccount: escrowPda,
+          arbitrator: walletPublicKey,
+          recipient: recipientPubkey,
+          treasury: TREASURY_PUBKEY,
+        })
+        .rpc();
+    },
+    [program, walletPublicKey]
+  );
+
   // Return the program and helpers so components can import the hook.
   return {
     program,
@@ -190,6 +259,9 @@ export function useEscrow() {
     submitWork,
     approveWork,
     cancelTask,
+    claimCompletion,
+    raiseDispute,
+    resolveDispute,
     provider,
   } as const;
 }

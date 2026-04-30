@@ -54,36 +54,6 @@
           "signer": true
         },
         {
-          "name": "client_token_account",
-          "writable": true
-        },
-        {
-          "name": "vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "escrow_account"
-              }
-            ]
-          }
-        },
-        {
-          "name": "token_program",
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-        },
-        {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
@@ -144,20 +114,13 @@
           ]
         },
         {
-          "name": "vault",
-          "writable": true
-        },
-        {
-          "name": "worker_token_account",
+          "name": "worker",
           "writable": true
         },
         {
           "name": "treasury",
-          "writable": true
-        },
-        {
-          "name": "token_program",
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+          "writable": true,
+          "address": "EPpNW3G47SAJ4j1DatpjW7mJMLRTH9Z8K7LJtBfhR8Mt"
         }
       ],
       "args": []
@@ -168,7 +131,7 @@
         69,
         228,
         134,
-        187,
+        170,
         134,
         105,
         238,
@@ -260,20 +223,13 @@
           "signer": true
         },
         {
-          "name": "vault",
-          "writable": true
-        },
-        {
-          "name": "worker_token_account",
+          "name": "worker",
           "writable": true
         },
         {
           "name": "treasury",
-          "writable": true
-        },
-        {
-          "name": "token_program",
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+          "writable": true,
+          "address": "EPpNW3G47SAJ4j1DatpjW7mJMLRTH9Z8K7LJtBfhR8Mt"
         }
       ],
       "args": []
@@ -452,20 +408,13 @@
           "signer": true
         },
         {
-          "name": "vault",
-          "writable": true
-        },
-        {
-          "name": "recipient_token_account",
+          "name": "recipient",
           "writable": true
         },
         {
           "name": "treasury",
-          "writable": true
-        },
-        {
-          "name": "token_program",
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+          "writable": true,
+          "address": "EPpNW3G47SAJ4j1DatpjW7mJMLRTH9Z8K7LJtBfhR8Mt"
         }
       ],
       "args": [
@@ -710,6 +659,11 @@
       "code": 6008,
       "name": "ReviewWindowNotExpired",
       "msg": "Review window has not expired yet"
+    },
+    {
+      "code": 6009,
+      "name": "InvalidTreasury",
+      "msg": "The provided treasury address does not match the protocol treasury"
     }
   ],
   "types": [

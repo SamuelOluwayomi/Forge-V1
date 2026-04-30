@@ -4,8 +4,9 @@ import { DashboardNav } from "@/app/components/dashboard/nav";
 import { AuthGate } from "@/app/components/AuthGate";
 
 export const metadata: Metadata = {
-  title: "Dashboard — Forge",
-  description: "Manage your tasks, escrows, reputation, and wallet on Forge.",
+  title: "Dashboard",
+  description:
+    "Manage your Forge tasks, active escrows, developer profile, and onchain reputation — all in one place.",
 };
 
 export default function DashboardLayout({

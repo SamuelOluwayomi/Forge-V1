@@ -27,24 +27,33 @@ export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
 
   title: {
-    default: "Forge — Permanent Pro Identity on Solana",
+    default: "Forge — Trustless Developer Marketplace on Solana",
     template: "%s | Forge",
   },
   description:
-    "Forge is an onchain professional identity network for developers. Earn USDC through escrow-secured tasks, mint Soulbound Tokens as permanent proof of your work, and build a verifiable reputation that no platform can take away.",
+    "Forge is a trustless developer marketplace built on Solana. Get paid in SOL through escrow-secured tasks, earn Soulbound Tokens as permanent proof of your work, and build a verifiable onchain reputation that follows you everywhere.",
 
   keywords: [
     "Forge",
     "Solana",
-    "onchain identity",
+    "developer marketplace",
+    "trustless escrow",
+    "SOL payment",
+    "onchain reputation",
     "soulbound tokens",
     "SBT",
-    "developer reputation",
-    "USDC escrow",
-    "web3 freelance",
+    "web3 jobs",
+    "blockchain freelance",
     "decentralized marketplace",
-    "Solana Frontier Hackathon",
-    "blockchain developer",
+    "Solana devnet",
+    "smart contract escrow",
+    "developer identity",
+    "crypto bounties",
+    "Solana Colosseum",
+    "solana hackathon",
+    "onchain work",
+    "proof of work NFT",
+    "open source bounties",
   ],
 
   authors: [{ name: "Samuel Oluwayomi", url: "https://github.com/SamuelOluwayomi" }],
@@ -55,15 +64,15 @@ export const metadata: Metadata = {
     type: "website",
     url: BASE_URL,
     siteName: "Forge",
-    title: "Forge — Permanent Pro Identity on Solana",
+    title: "Forge — Trustless Developer Marketplace on Solana",
     description:
-      "You do the work. You get paid. Your reputation stays with you — forever. Forge puts USDC in escrow, releases it when work is done, and mints an onchain badge to both wallets.",
+      "Find work, get paid in SOL, and permanently forge your onchain reputation. Forge uses smart contract escrow to protect both clients and developers — no middlemen, no disputes, just code.",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Forge — Permanent Pro Identity on Solana",
+        alt: "Forge — Trustless Developer Marketplace on Solana",
       },
     ],
     locale: "en_US",
@@ -71,9 +80,9 @@ export const metadata: Metadata = {
 
   twitter: {
     card: "summary_large_image",
-    title: "Forge — Permanent Pro Identity on Solana",
+    title: "Forge — Trustless Developer Marketplace on Solana",
     description:
-      "Earn USDC. Prove your skills. Forge your permanent onchain reputation with Soulbound Tokens on Solana.",
+      "Get paid in SOL. Prove your skills. Build a permanent onchain reputation with Soulbound Tokens — all secured by smart contract escrow on Solana.",
     images: ["/og-image.png"],
     creator: "@The_devsam",
     site: "@The_devsam",

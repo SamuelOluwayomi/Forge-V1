@@ -102,7 +102,7 @@ export default function Home() {
                 <p className="font-bold text-lg leading-relaxed relative z-15">
                   You do the work. You get paid. Your reputation stays with you — forever.
                   <br /><br />
-                  Forge puts USDC in escrow before work starts. Releases it when work is done. Mints an onchain badge to both wallets proving it happened.
+                  Forge locks SOL in escrow before work starts. Releases it when work is done. Mints an onchain badge to both wallets proving it happened.
                   <br /><br />
                   Your skills. Your proof. Your wallet.
                 </p>
@@ -159,16 +159,16 @@ export default function Home() {
             {/* Step 2 */}
             <StaggerChild variant="scaleIn" className="col-span-1 brutalist-card bg-white relative flex flex-col group mt-4">
               <div className="w-full aspect-[4/3] relative bg-[#FFD700] border-b-4 border-black overflow-hidden">
-                <Image draggable={false} src="/graphic.png" alt="USDC Escrow" fill sizes="(max-width: 768px) 100vw, 50vw" className="object-contain p-8 group-hover:scale-105 transition-transform" />
+                <Image draggable={false} src="/graphic.png" alt="SOL Escrow" fill sizes="(max-width: 768px) 100vw, 50vw" className="object-contain p-8 group-hover:scale-105 transition-transform" />
               </div>
               <div className="relative z-20 -mt-6 mx-auto w-11/12 max-w-[90%]">
                 <div className="bg-[#4ADE80] absolute inset-0 translate-x-1.5 translate-y-1.5 border-2 border-black"></div>
                 <div className="bg-black text-white px-2 py-3 relative border-2 border-black font-black text-lg md:text-xl uppercase text-center whitespace-nowrap overflow-hidden text-ellipsis">
-                  2. Lock USDC In Escrow
+                  2. Lock SOL In Escrow
                 </div>
               </div>
               <div className="p-8 pt-8 flex-1 flex items-center">
-                <p className="font-bold text-base leading-relaxed text-center w-full">Task is posted. USDC locks into a Solana PDA smart contract when a worker is selected. It only releases on approval.</p>
+                <p className="font-bold text-base leading-relaxed text-center w-full">Task is posted. SOL locks into a Solana PDA smart contract when a worker is selected. It only releases on approval.</p>
               </div>
             </StaggerChild>
 

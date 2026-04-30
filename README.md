@@ -40,8 +40,8 @@ Workers browse and apply with enriched profiles featuring **On-Chain Ranks** and
 1. **Connect wallet + Profile Setup**: User connects Phantom/Backpack. On first launch, a Reputation account is initialized. Users can link their **X, GitHub, Discord, and Telegram** to build trust.
 2. **Client posts a task**: Selects between **Challenge** or **Bounty** mode. Sets a reward in SOL, a listing deadline, difficulty level, and skill tags. Transaction goes on-chain.
 3. **Marketplace Discovery**: Tasks appear in the marketplace with **live countdown timers**. Developers can view full details, including the client's reputation and linked socials.
-4. **Accepting Challenges / Submitting Bounties**: 
-   - In **Challenge Mode**, developers "Accept the Challenge" to express interest. The client reviews the applicant list (sorted by Forge Rank) and picks a worker.
+4. **Accepting Challenges**: 
+   - In **Challenge Mode**, developers "Apply" to express interest. They must provide an **estimated time to completion**, which the client sees alongside their profile. The client reviews the applicant list and picks a worker.
    - In **Bounty Mode**, developers can begin work and submit their proof directly.
 5. **Worker completes work -> Funds lock**: Once a worker is selected (Challenge) or work is submitted (Bounty), funds are managed by the `forge_escrow` program.
 6. **Client approves -> Escrow releases**: Client clicks approve. Escrow program releases SOL to the worker wallet minus Forge protocol fee.
@@ -72,7 +72,7 @@ Forge is not just a marketplace. The SBT system creates something the web3 space
 1. **`forge_identity` (Planned)**: Identity gate. Marks wallets as human-verified on-chain.
    - Status: *In Research*
 2. **`forge_escrow`**: Locks SOL into PDAs, handles task lifecycle, releases on approval.
-   - Instructions: `create`, `accept`, `approve`, `dispute`
+   - Instructions: `create`, `accept`, `submit_work`, `approve`, `dispute`, `resolve_dispute`, `claim_completion`
 3. **`forge_sbt`**: Mints non-transferable badges to both wallets on task completion.
    - Instructions: `mint_worker`, `mint_client`
 

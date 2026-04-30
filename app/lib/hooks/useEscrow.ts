@@ -117,11 +117,11 @@ export function useEscrow() {
 
   /** Worker submits work */
   const submitWork = useCallback(
-    async (taskId: number, submissionUri: string, aiReportHash?: Uint8Array) => {
+    async (taskId: number, clientPubkey: web3.PublicKey, submissionUri: string, aiReportHash?: Uint8Array) => {
       if (!program || !walletPublicKey) throw new Error("Wallet not connected");
       const [escrowPda] = await web3.PublicKey.findProgramAddress([
         Buffer.from("escrow"),
-        walletPublicKey.toBuffer(),
+        clientPubkey.toBuffer(),
         Buffer.from([...(new BN(taskId).toArray('le', 8))]),
       ], program.programId);
 

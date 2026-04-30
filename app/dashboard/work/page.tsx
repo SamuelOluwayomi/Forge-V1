@@ -50,7 +50,7 @@ function CopyButton({ text, id }: { text: string; id: string }) {
   );
 }
 
-function WorkCard({ item, onSubmit, submitting }: { item: WorkItem; onSubmit: (id: string) => void; submitting: string | null }) {
+function WorkCard({ item, onSubmit, submitting }: { item: WorkItem; onSubmit: (id: string, client: string) => void; submitting: string | null }) {
   return (
     <div className="brutalist-card bg-white p-6 flex flex-col gap-4 relative">
       {/* Difficulty tape */}
@@ -93,7 +93,7 @@ function WorkCard({ item, onSubmit, submitting }: { item: WorkItem; onSubmit: (i
       {(item.status === "Approved" || item.status === "In Progress") && (
         <button
           id={`submit-work-${item.id}`}
-          onClick={() => onSubmit(item.id)}
+          onClick={() => onSubmit(item.id, item.client)}
           disabled={submitting === item.id}
           className="brutalist-button w-full py-2.5 text-sm bg-primary text-white border-black disabled:opacity-50"
         >
@@ -114,6 +114,7 @@ export default function WorkPage() {
   const [filter, setFilter] = useState<WorkStatus | "All">("All");
   const [loading, setLoading] = useState(true);
   const [submittingId, setSubmittingId] = useState<string | null>(null);
+  const [submittingClient, setSubmittingClient] = useState<string | null>(null);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [submissionUri, setSubmissionUri] = useState("");
 
@@ -177,14 +178,15 @@ export default function WorkPage() {
 
   useEffect(() => { fetchWork(); }, [program, wallet]);
 
-  const handleSubmitClick = (taskId: string) => {
+  const handleSubmitClick = (taskId: string, clientStr: string) => {
     setSubmittingId(taskId);
+    setSubmittingClient(clientStr);
     setSubmissionUri("");
     setShowSubmitModal(true);
   };
 
   const handleConfirmSubmit = async () => {
-    if (!submittingId) return;
+    if (!submittingId || !submittingClient) return;
     if (!submissionUri.trim()) {
       toast.error("Please provide a link or description of your work.");
       return;
@@ -192,13 +194,17 @@ export default function WorkPage() {
 
     const tid = toast.loading("Submitting work on-chain...");
     try {
-      const sig = await submitWork(parseInt(submittingId), submissionUri);
+      const { PublicKey } = await import("@solana/web3.js");
+      const clientPubkey = new PublicKey(submittingClient);
+      const sig = await submitWork(parseInt(submittingId), clientPubkey, submissionUri);
+      
       if (program?.provider?.connection) {
         await program.provider.connection.confirmTransaction(sig, "confirmed");
       }
       toast.success("Work submitted! Waiting for client review.", { id: tid });
       setShowSubmitModal(false);
       setSubmittingId(null);
+      setSubmittingClient(null);
       await fetchWork();
     } catch (err: any) {
       console.error("Submit failed:", err);

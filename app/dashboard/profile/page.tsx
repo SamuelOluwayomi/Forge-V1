@@ -119,10 +119,11 @@ export default function ProfilePage() {
     const fetchOnChainStats = async () => {
       try {
         const allEscrows = await (program.account as any).escrowAccount.all();
+        const activeEscrows = allEscrows.filter((e: any) => !Object.keys(e.account.status).includes("cancelled"));
         
-        const posted = allEscrows.filter((e: any) => e.account.client.toBase58() === address).length;
+        const posted = activeEscrows.filter((e: any) => e.account.client.toBase58() === address).length;
         
-        const completedEscrows = allEscrows.filter((e: any) => 
+        const completedEscrows = activeEscrows.filter((e: any) => 
           e.account.worker && 
           e.account.worker.toBase58() === address && 
           Object.keys(e.account.status).includes("completed")

@@ -7,7 +7,7 @@ import { useBalance } from "@/app/lib/hooks/use-balance";
 import { toast } from "sonner";
 import { supabase } from "@/app/lib/supabase";
 import { ForgeLoader } from "@/app/components/ForgeLoader";
-import { useMintProfileSBT } from "@/app/lib/hooks/useMintProfileSBT";
+import { PublicKey, SystemProgram } from "@solana/web3.js";
 
 // Placeholder badge card — wire to forge_sbt program later
 function BadgeCard({ index }: { index: number }) {
@@ -38,7 +38,7 @@ export default function ProfilePage() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { program } = useEscrow();
+  const { program, sbtProgram } = useEscrow();
   const balance = useBalance(address || undefined);
 
   // Profile details
@@ -50,8 +50,7 @@ export default function ProfilePage() {
   const [totalDevs, setTotalDevs] = useState<number>(0);
   const [rankCountdown, setRankCountdown] = useState("");
   const [sbtMint, setSbtMint] = useState<string | null>(null);
-
-  const { mintProfileSBT, minting: sbtMinting } = useMintProfileSBT();
+  const [sbtMinting, setSbtMinting] = useState(false);
 
   const [stats, setStats] = useState([
     { label: "Tasks Completed", value: 0 },
@@ -293,31 +292,76 @@ export default function ProfilePage() {
       toast.error("Please set your Name and Title before minting your identity.");
       return;
     }
+    
+    if (!sbtProgram || !address) {
+      toast.error("Program not loaded or wallet not connected.");
+      return;
+    }
 
-    const tid = toast.loading("Forging your on-chain identity... This involves IPFS uploads and a Metaplex mint.");
+    setSbtMinting(true);
+    const tid = toast.loading("Forging your on-chain identity via Forge SBT Program...");
     
     try {
-      const mintAddress = await mintProfileSBT({
-        name: profileData.name,
-        title: profileData.title,
-        avatarUrl: displayPhoto || "",
-        avatarFile: avatarFile || undefined
+      // 1. Upload to Pinata IPFS to get metadata URI
+      const formData = new FormData();
+      formData.append("type", "metadata");
+      formData.append("metadata", JSON.stringify({
+        name: `${profileData.name} — Forge Identity`,
+        description: profileData.bio || "Forge Developer",
+        image: displayPhoto || "",
+        attributes: [
+          { trait_type: "Title", value: profileData.title }
+        ]
+      }));
+
+      const res = await fetch("/api/upload-to-ipfs", {
+        method: "POST",
+        body: formData,
       });
 
-      if (mintAddress) {
-        // Save to Supabase
-        await supabase!
-          .from("profiles")
-          .update({ profile_sbt_mint: mintAddress })
-          .eq("wallet_address", address);
-        
-        setSbtMint(mintAddress);
-        toast.success("Your on-chain identity has been forged! 🔥", { id: tid });
-      } else {
-        throw new Error("Minting failed");
-      }
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed to upload metadata to IPFS");
+      const metadataUri = result.uri;
+
+      // 2. Compute PDAs
+      const ownerPubkey = new PublicKey(address);
+      const [profileSbtPda] = await PublicKey.findProgramAddress(
+        [Buffer.from("profile_sbt"), ownerPubkey.toBuffer()],
+        sbtProgram.programId
+      );
+      const [reputationPda] = await PublicKey.findProgramAddress(
+        [Buffer.from("reputation"), ownerPubkey.toBuffer()],
+        sbtProgram.programId
+      );
+
+      // 3. Send Anchor transaction
+      const tx = await (sbtProgram.methods as any)
+        .mintProfileSbt(
+          profileData.name,
+          profileData.bio,
+          profileData.title,
+          metadataUri
+        )
+        .accounts({
+          profileSbt: profileSbtPda,
+          reputation: reputationPda,
+          owner: ownerPubkey,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+
+      // 4. Save to Supabase
+      await supabase!
+        .from("profiles")
+        .update({ profile_sbt_mint: profileSbtPda.toString() })
+        .eq("wallet_address", address);
+      
+      setSbtMint(profileSbtPda.toString());
+      toast.success("Your on-chain identity has been forged! 🔥", { id: tid });
     } catch (err: any) {
       toast.error("Mint failed: " + (err.message || "Unknown error"), { id: tid });
+    } finally {
+      setSbtMinting(false);
     }
   };
 

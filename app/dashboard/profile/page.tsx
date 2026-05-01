@@ -150,11 +150,19 @@ export default function ProfilePage() {
 
         // Sync forge_score to Supabase for rankings
         if (supabase && forgeScore > 0) {
-          supabase.from("profiles").upsert({
+          await supabase.from("profiles").upsert({
             wallet_address: address,
             forge_score: forgeScore,
             updated_at: new Date().toISOString(),
-          }).then(() => {});
+          });
+
+          // Calculate dynamic rank: count of users with higher score + 1
+          const { count } = await supabase
+            .from("profiles")
+            .select("*", { count: "exact", head: true })
+            .gt("forge_score", forgeScore);
+          
+          setRank((count || 0) + 1);
         }
       } catch (err) {
         console.error("Failed to fetch profile stats:", err);

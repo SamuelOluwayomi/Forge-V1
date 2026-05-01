@@ -31,7 +31,7 @@ export default function DevelopersPage() {
         if (supabase) {
           const { data, error } = await supabase
             .from("profiles")
-            .select("wallet_address, avatar_url, twitter, github, discord, telegram");
+            .select("wallet_address, avatar_url, twitter, github, discord, telegram, name, title, bio");
 
           if (!error && data) {
             dbProfiles = data;
@@ -59,8 +59,8 @@ export default function DevelopersPage() {
 
         const combined: Developer[] = dbProfiles.map(p => ({
           wallet_address: p.wallet_address,
-          name: p.twitter ? `@${p.twitter.split('/').pop()}` : null,
-          title: "Forge Developer",
+          name: p.name || (p.twitter ? `@${p.twitter.split('/').pop()}` : null),
+          title: p.title || "Forge Developer",
           avatar_url: p.avatar_url,
           forge_score: workerScores[p.wallet_address] || 0,
           rank: null

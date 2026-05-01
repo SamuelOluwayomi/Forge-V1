@@ -39,9 +39,10 @@ export default function ProfilePage() {
   const { program } = useEscrow();
   const balance = useBalance(address || undefined);
 
-  // Social accounts
+  // Profile details
+  const [profileData, setProfileData] = useState({ name: "", title: "", bio: "" });
   const [socials, setSocials] = useState({ twitter: "", github: "", discord: "", telegram: "" });
-  const [savingSocials, setSavingSocials] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
   const [loading, setLoading] = useState(true);
   const [rank, setRank] = useState<number>(0);
   const [totalDevs, setTotalDevs] = useState<number>(0);
@@ -65,12 +66,17 @@ export default function ProfilePage() {
       setLoading(true);
       const { data, error } = await supabase!
         .from("profiles")
-        .select("avatar_url, twitter, github, discord, telegram, rank")
+        .select("avatar_url, twitter, github, discord, telegram, rank, name, title, bio")
         .eq("wallet_address", address)
         .single();
         
       if (data) {
         if (data.avatar_url) setDisplayPhoto(data.avatar_url);
+        setProfileData({
+          name: data.name || "",
+          title: data.title || "",
+          bio: data.bio || "",
+        });
         setSocials({
           twitter: data.twitter || "",
           github: data.github || "",
@@ -241,14 +247,17 @@ export default function ProfilePage() {
     window.open(twitterUrl, "_blank");
   };
 
-  const handleSaveSocials = async () => {
+  const handleSaveProfile = async () => {
     if (!address || !supabase) return;
-    setSavingSocials(true);
+    setSavingProfile(true);
     try {
       const { error } = await supabase
         .from("profiles")
         .upsert({
           wallet_address: address,
+          name: profileData.name,
+          title: profileData.title,
+          bio: profileData.bio,
           twitter: socials.twitter,
           github: socials.github,
           discord: socials.discord,
@@ -256,11 +265,11 @@ export default function ProfilePage() {
           updated_at: new Date().toISOString(),
         });
       if (error) throw error;
-      toast.success("Social accounts saved!");
+      toast.success("Profile updated!");
     } catch (err: any) {
       toast.error("Failed to save: " + err.message);
     } finally {
-      setSavingSocials(false);
+      setSavingProfile(false);
     }
   };
 
@@ -340,7 +349,13 @@ export default function ProfilePage() {
             </div>
 
             {/* Wallet Address in Card */}
-            <div className="relative z-10 mt-6">
+            <div className="relative z-10 mt-4">
+              <h2 className="font-black text-2xl uppercase italic text-black leading-tight">
+                {profileData.name || "Anonymous Dev"}
+              </h2>
+              <p className="font-bold text-xs uppercase text-black/60 mb-3">
+                {profileData.title || "Forge Developer"}
+              </p>
                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/40 mb-1">Authenticated Wallet</p>
                <p className="font-mono text-xs font-black text-black bg-white/20 border-2 border-black/10 px-2 py-1 inline-block truncate max-w-full">
                 {address || "Not Connected"}
@@ -417,7 +432,8 @@ export default function ProfilePage() {
 
                 {/* Main Identity */}
                 <div className="flex-1">
-                  <h2 className="font-black text-3xl uppercase leading-none mb-4 italic">Dev Profile</h2>
+                  <h2 className="font-black text-2xl uppercase leading-none mb-1 italic">{profileData.name || "Dev Profile"}</h2>
+                  <p className="font-bold text-[10px] uppercase text-black/60 mb-4">{profileData.title || "Forge Developer"}</p>
                   <div className="flex gap-2">
                     {rank > 0 && (
                       <div className="bg-[#FFD700] text-black px-3 py-2 border-2 border-black inline-block">
@@ -504,9 +520,43 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Social Accounts */}
+          {/* Profile Details */}
           <div className="brutalist-card bg-white p-6">
-            <h2 className="font-black text-xl uppercase tracking-tight mb-4">Social Accounts</h2>
+            <h2 className="font-black text-xl uppercase tracking-tight mb-4">Profile Details</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-black/50">Full Name</label>
+                <input
+                  type="text"
+                  value={profileData.name}
+                  onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                  placeholder="John Doe"
+                  className="border-2 border-black bg-background px-3 py-2 font-bold text-sm text-black outline-none focus:border-primary placeholder:text-black/30"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-black/50">Title / Role</label>
+                <input
+                  type="text"
+                  value={profileData.title}
+                  onChange={(e) => setProfileData({ ...profileData, title: e.target.value })}
+                  placeholder="Full Stack Engineer"
+                  className="border-2 border-black bg-background px-3 py-2 font-bold text-sm text-black outline-none focus:border-primary placeholder:text-black/30"
+                />
+              </div>
+            </div>
+            <div className="flex flex-col gap-1 mb-4">
+              <label className="text-[10px] font-black uppercase tracking-widest text-black/50">Bio / About</label>
+              <textarea
+                value={profileData.bio}
+                onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
+                placeholder="Tell the world about yourself..."
+                rows={4}
+                className="border-2 border-black bg-background px-3 py-2 font-bold text-sm text-black outline-none focus:border-primary placeholder:text-black/30 resize-none"
+              />
+            </div>
+
+            <h2 className="font-black text-xl uppercase tracking-tight mb-4 mt-8">Social Accounts</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               <div className="flex flex-col gap-1">
                 <label className="text-[10px] font-black uppercase tracking-widest text-black/50">X (Twitter)</label>
@@ -550,11 +600,11 @@ export default function ProfilePage() {
               </div>
             </div>
             <button
-              onClick={handleSaveSocials}
-              disabled={savingSocials}
-              className="brutalist-button px-6 py-2 bg-black text-white border-black text-xs disabled:opacity-50"
+              onClick={handleSaveProfile}
+              disabled={savingProfile}
+              className="brutalist-button px-8 py-3 bg-black text-white border-black text-sm disabled:opacity-50"
             >
-              {savingSocials ? "Saving..." : "Save Social Accounts"}
+              {savingProfile ? "Saving..." : "Save Profile Details"}
             </button>
           </div>
 

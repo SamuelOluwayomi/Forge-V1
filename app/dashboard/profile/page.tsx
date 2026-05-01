@@ -7,6 +7,7 @@ import { useBalance } from "@/app/lib/hooks/use-balance";
 import { toast } from "sonner";
 import { supabase } from "@/app/lib/supabase";
 import { ForgeLoader } from "@/app/components/ForgeLoader";
+import { useMintProfileSBT } from "@/app/lib/hooks/useMintProfileSBT";
 
 // Placeholder badge card — wire to forge_sbt program later
 function BadgeCard({ index }: { index: number }) {
@@ -34,6 +35,7 @@ export default function ProfilePage() {
   const address = wallet?.account.address ?? "";
   
   const [displayPhoto, setDisplayPhoto] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { program } = useEscrow();
@@ -47,6 +49,9 @@ export default function ProfilePage() {
   const [rank, setRank] = useState<number>(0);
   const [totalDevs, setTotalDevs] = useState<number>(0);
   const [rankCountdown, setRankCountdown] = useState("");
+  const [sbtMint, setSbtMint] = useState<string | null>(null);
+
+  const { mintProfileSBT, minting: sbtMinting } = useMintProfileSBT();
 
   const [stats, setStats] = useState([
     { label: "Tasks Completed", value: 0 },
@@ -66,12 +71,13 @@ export default function ProfilePage() {
       setLoading(true);
       const { data, error } = await supabase!
         .from("profiles")
-        .select("avatar_url, twitter, github, discord, telegram, rank, name, title, bio")
+        .select("avatar_url, twitter, github, discord, telegram, rank, name, title, bio, profile_sbt_mint")
         .eq("wallet_address", address)
         .single();
         
       if (data) {
         if (data.avatar_url) setDisplayPhoto(data.avatar_url);
+        setSbtMint(data.profile_sbt_mint || null);
         setProfileData({
           name: data.name || "",
           title: data.title || "",
@@ -175,6 +181,7 @@ export default function ProfilePage() {
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !address || !supabase) return;
+    setAvatarFile(file);
 
     try {
       toast.loading("Uploading photo...", { id: "upload" });
@@ -281,6 +288,39 @@ export default function ProfilePage() {
     }
   };
 
+  const handleMintSBT = async () => {
+    if (!profileData.name || !profileData.title) {
+      toast.error("Please set your Name and Title before minting your identity.");
+      return;
+    }
+
+    const tid = toast.loading("Forging your on-chain identity... This involves IPFS uploads and a Metaplex mint.");
+    
+    try {
+      const mintAddress = await mintProfileSBT({
+        name: profileData.name,
+        title: profileData.title,
+        avatarUrl: displayPhoto || "",
+        avatarFile: avatarFile || undefined
+      });
+
+      if (mintAddress) {
+        // Save to Supabase
+        await supabase!
+          .from("profiles")
+          .update({ profile_sbt_mint: mintAddress })
+          .eq("wallet_address", address);
+        
+        setSbtMint(mintAddress);
+        toast.success("Your on-chain identity has been forged! 🔥", { id: tid });
+      } else {
+        throw new Error("Minting failed");
+      }
+    } catch (err: any) {
+      toast.error("Mint failed: " + (err.message || "Unknown error"), { id: tid });
+    }
+  };
+
   if (loading) {
     return (
       <div className="w-full flex items-center justify-center min-h-[60vh]">
@@ -365,9 +405,30 @@ export default function ProfilePage() {
                 {profileData.title || "Forge Developer"}
               </p>
                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/40 mb-1">Authenticated Wallet</p>
-               <p className="font-mono text-xs font-black text-black bg-white/20 border-2 border-black/10 px-2 py-1 inline-block truncate max-w-full">
+               <p className="font-mono text-[9px] font-black text-black bg-white/20 border-2 border-black/10 px-2 py-1 inline-block truncate max-w-full mb-3">
                 {address || "Not Connected"}
                </p>
+
+               {sbtMint ? (
+                 <a 
+                   href={`https://explorer.solana.com/address/${sbtMint}?cluster=devnet`} 
+                   target="_blank" 
+                   className="flex items-center gap-2 text-[10px] font-black uppercase text-black hover:underline"
+                 >
+                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                     <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/>
+                   </svg>
+                   On-Chain Identity Forged
+                 </a>
+               ) : (
+                 <button 
+                   onClick={handleMintSBT}
+                   disabled={sbtMinting}
+                   className="flex items-center gap-2 text-[10px] font-black uppercase text-white bg-black px-2 py-1 border-2 border-black hover:bg-primary hover:text-black transition-colors disabled:opacity-50"
+                 >
+                   {sbtMinting ? "Forging..." : "★ Forge On-Chain Identity"}
+                 </button>
+               )}
             </div>
 
             {/* Achievements List */}

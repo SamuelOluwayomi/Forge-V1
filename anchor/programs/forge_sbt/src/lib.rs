@@ -9,17 +9,13 @@ use anchor_spl::{
     associated_token::AssociatedToken,
 };
 
-declare_id!("B563uW8guVAhSasPR5S6MgMGHcYwtbaiwVv9kofkwZKZ"); // replaced after anchor keys sync
+declare_id!("B563uW8guVAhSasPR5S6MgMGHcYwtbaiwVv9kofkwZKZ");
 
 #[program]
 pub mod forge_sbt {
     use super::*;
 
-    // ─────────────────────────────────────────────
     // 1. INITIALIZE REPUTATION ACCOUNT
-    // Called once per user when they first join Forge.
-    // Creates their on-chain reputation record.
-    // ─────────────────────────────────────────────
     pub fn initialize_reputation(ctx: Context<InitializeReputation>) -> Result<()> {
         let reputation = &mut ctx.accounts.reputation;
         let clock = Clock::get()?;
@@ -301,6 +297,48 @@ pub mod forge_sbt {
 
         Ok(())
     }
+
+    // ─────────────────────────────────────────────
+    // 5. MINT PROFILE SBT
+    // Called once when user creates their profile.
+    // Mints a non-transferable identity badge to their wallet.
+    // ─────────────────────────────────────────────
+    pub fn mint_profile_sbt(
+        ctx: Context<MintProfileSbt>,
+        name: String,
+        bio: String,
+        title: String,
+        metadata_uri: String,  // IPFS or Supabase URL
+    ) -> Result<()> {
+        require!(name.len() <= 50, SbtError::StringTooLong);
+        require!(bio.len() <= 200, SbtError::StringTooLong);
+        require!(title.len() <= 100, SbtError::StringTooLong);
+        require!(metadata_uri.len() <= 200, SbtError::StringTooLong);
+
+        let profile = &mut ctx.accounts.profile_sbt;
+        let clock = Clock::get()?;
+
+        profile.owner = ctx.accounts.owner.key();
+        profile.name = name.clone();
+        profile.bio = bio.clone();
+        profile.title = title.clone();
+        profile.metadata_uri = metadata_uri;
+        profile.minted_at = clock.unix_timestamp;
+        profile.bump = ctx.bumps.profile_sbt;
+
+        // Update reputation account
+        let reputation = &mut ctx.accounts.reputation;
+        reputation.world_id_verified = true; // profile creation = verified human
+
+        emit!(ProfileSbtMinted {
+            owner: ctx.accounts.owner.key(),
+            name,
+            bio,
+            minted_at: clock.unix_timestamp,
+        });
+
+        Ok(())
+    }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -368,6 +406,29 @@ impl BadgeRecord {
         + 32   // mint
         + 1;   // bump
 }
+
+#[account]
+pub struct ProfileSbt {
+    pub owner: Pubkey,
+    pub name: String,       // max 50
+    pub bio: String,        // max 200
+    pub title: String,      // max 100
+    pub metadata_uri: String, // max 200
+    pub minted_at: i64,
+    pub bump: u8,
+}
+
+impl ProfileSbt {
+    pub const LEN: usize = 8   // discriminator
+        + 32   // owner
+        + 4+50 // name
+        + 4+200 // bio
+        + 4+100 // title
+        + 4+200 // metadata_uri
+        + 8    // minted_at
+        + 1;   // bump
+}
+
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
 pub enum BadgeType {
@@ -523,6 +584,32 @@ pub struct MintClientBadge<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
+#[derive(Accounts)]
+pub struct MintProfileSbt<'info> {
+    #[account(
+        init,
+        payer = owner,
+        space = ProfileSbt::LEN,
+        seeds = [b"profile_sbt", owner.key().as_ref()],
+        bump
+    )]
+    pub profile_sbt: Account<'info, ProfileSbt>,
+
+    #[account(
+        mut,
+        seeds = [b"reputation", owner.key().as_ref()],
+        bump = reputation.bump,
+        has_one = owner,
+    )]
+    pub reputation: Account<'info, ReputationAccount>,
+
+    #[account(mut)]
+    pub owner: Signer<'info>,
+
+    pub system_program: Program<'info, System>,
+}
+
+
 // ─────────────────────────────────────────────────────────────
 // EVENTS
 // ─────────────────────────────────────────────────────────────
@@ -557,6 +644,15 @@ pub struct ClientBadgeMinted {
     pub approved_on_time: bool,
     pub total_posted: u32,
 }
+
+#[event]
+pub struct ProfileSbtMinted {
+    pub owner: Pubkey,
+    pub name: String,
+    pub bio: String,
+    pub minted_at: i64,
+}
+
 
 // ─────────────────────────────────────────────────────────────
 // ERRORS

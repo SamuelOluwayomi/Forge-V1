@@ -6,6 +6,7 @@ import { supabase } from "@/app/lib/supabase";
 import { useEscrow } from "@/app/lib/hooks/useEscrow";
 import { ForgeLoader } from "@/app/components/ForgeLoader";
 import { ellipsify } from "@/app/lib/explorer";
+import { XLogo, GithubLogo, DiscordLogo, TelegramLogo } from "@phosphor-icons/react";
 
 // Placeholder badge card
 function BadgeCard({ index }: { index: number }) {
@@ -221,18 +222,78 @@ export default function DeveloperProfilePage() {
               Social Accounts
             </h3>
             <div className="space-y-4">
-              {['twitter', 'github', 'discord', 'telegram'].map(network => {
-                const link = profile[network];
-                if (!link) return null;
-                return (
-                  <div key={network}>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-black/40 mb-1">{network}</p>
-                    <a href={link} target="_blank" rel="noreferrer" className="font-mono text-xs font-bold truncate block hover:text-primary hover:underline">
-                      {link}
-                    </a>
+              {profile.twitter && (
+                <a
+                  href={`https://x.com/${profile.twitter.replace("@", "")}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-3 p-3 border-2 border-black/10 hover:border-black hover:bg-black/5 transition-all group"
+                >
+                  <XLogo className="w-5 h-5 group-hover:text-[#1DA1F2]" weight="bold" />
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-black/40 mb-0.5">
+                      X (Twitter)
+                    </p>
+                    <p className="font-mono text-xs font-bold truncate block group-hover:underline">
+                      {profile.twitter}
+                    </p>
                   </div>
-                );
-              })}
+                </a>
+              )}
+              {profile.github && (
+                <a
+                  href={`https://github.com/${profile.github.replace("@", "")}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-3 p-3 border-2 border-black/10 hover:border-black hover:bg-black/5 transition-all group"
+                >
+                  <GithubLogo className="w-5 h-5 group-hover:text-[#333]" weight="bold" />
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-black/40 mb-0.5">
+                      GitHub
+                    </p>
+                    <p className="font-mono text-xs font-bold truncate block group-hover:underline">
+                      {profile.github}
+                    </p>
+                  </div>
+                </a>
+              )}
+              {profile.discord && (
+                <div
+                  className="flex items-center gap-3 p-3 border-2 border-black/10 hover:border-black hover:bg-black/5 transition-all group cursor-pointer"
+                  onClick={() => {
+                    navigator.clipboard.writeText(profile.discord);
+                  }}
+                >
+                  <DiscordLogo className="w-5 h-5 group-hover:text-[#5865F2]" weight="bold" />
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-black/40 mb-0.5">
+                      Discord
+                    </p>
+                    <p className="font-mono text-xs font-bold truncate block group-hover:underline">
+                      {profile.discord}
+                    </p>
+                  </div>
+                </div>
+              )}
+              {profile.telegram && (
+                <a
+                  href={`https://t.me/${profile.telegram.replace("@", "")}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-3 p-3 border-2 border-black/10 hover:border-black hover:bg-black/5 transition-all group"
+                >
+                  <TelegramLogo className="w-5 h-5 group-hover:text-[#0088cc]" weight="bold" />
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-black/40 mb-0.5">
+                      Telegram
+                    </p>
+                    <p className="font-mono text-xs font-bold truncate block group-hover:underline">
+                      {profile.telegram}
+                    </p>
+                  </div>
+                </a>
+              )}
               {!profile.twitter && !profile.github && !profile.discord && !profile.telegram && (
                 <p className="text-xs font-bold text-black/40 italic">No social accounts linked.</p>
               )}

@@ -451,9 +451,9 @@ export default function ProfilePage() {
         </h1>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left — Interactive Profile Card */}
-        <div className="lg:col-span-1 flex flex-col gap-6">
+      <div className="flex flex-col gap-8">
+        {/* Top — Interactive Profile Card */}
+        <div className="w-full flex flex-col gap-6">
           <div
             id="profile-card"
             className="brutalist-card bg-primary p-6 border-[3px] border-black relative overflow-hidden"
@@ -466,241 +466,147 @@ export default function ProfilePage() {
               }}
             ></div>
 
-            <div className="relative z-10 flex items-start justify-between">
-              {/* Display Photo */}
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="w-24 h-24 bg-white border-[3px] border-black flex flex-col items-center justify-center relative cursor-pointer hover:bg-gray-100 transition-colors overflow-hidden group"
-              >
-                {displayPhoto ? (
-                  <>
-                    <img
-                      src={displayPhoto}
-                      alt="Profile"
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span className="text-white font-black text-[10px] uppercase tracking-widest">
-                        Change
-                      </span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <span className="font-black text-3xl text-black/20 group-hover:text-black/50 transition-colors">
-                      +
-                    </span>
-                    <span className="text-[10px] font-black uppercase text-black/40 mt-1">
-                      Photo
-                    </span>
-                  </>
-                )}
-              </div>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handlePhotoUpload}
-                accept="image/*"
-                className="hidden"
-              />
-
-              {/* Forge Score Badge inside Card */}
-              <div className="flex gap-2">
-                {rank > 0 && (
-                  <div
-                    className="bg-[#FFD700] text-black px-3 py-2 border-2 border-black flex flex-col items-center"
-                    style={{ transform: "rotate(-2deg)" }}
-                  >
-                    <span className="text-[10px] font-black uppercase tracking-widest leading-none mb-1">
-                      Rank
-                    </span>
-                    <span className="font-black text-2xl leading-none">
-                      #{rank}
-                    </span>
-                  </div>
-                )}
+            <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start justify-between">
+              {/* Left Side: Photo & Actions */}
+              <div className="flex flex-col gap-4 items-center shrink-0 w-full md:w-auto">
                 <div
-                  className="bg-black text-white px-3 py-2 border-2 border-black flex flex-col items-end"
-                  style={{ transform: "rotate(2deg)" }}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-32 h-32 bg-white border-[3px] border-black flex flex-col items-center justify-center relative cursor-pointer hover:bg-gray-100 transition-colors overflow-hidden group"
                 >
-                  <span className="text-[10px] font-black uppercase tracking-widest text-primary leading-none mb-1">
-                    Score
-                  </span>
-                  <span className="font-black text-2xl leading-none">
-                    {stats[3].value}
-                  </span>
+                  {displayPhoto ? (
+                    <>
+                      <img src={displayPhoto} alt="Profile" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-white font-black text-[10px] uppercase tracking-widest">Change</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-black text-4xl text-black/20 group-hover:text-black/50 transition-colors">+</span>
+                      <span className="text-[10px] font-black uppercase text-black/40 mt-1">Photo</span>
+                    </>
+                  )}
+                </div>
+                <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} accept="image/*" className="hidden" />
+
+                {/* Action Buttons */}
+                <div className="flex flex-col w-full md:w-32 gap-2 mt-2">
+                  <button onClick={handleDownloadCard} className="w-full bg-white border-2 border-black py-2 font-black text-[10px] uppercase tracking-widest hover:bg-black hover:text-white transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5">
+                    Download
+                  </button>
+                  <button onClick={handleShareCard} className="w-full bg-black text-white border-2 border-black py-2 font-black text-[10px] uppercase tracking-widest hover:bg-primary hover:text-black transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5">
+                    Share
+                  </button>
                 </div>
               </div>
-            </div>
 
-            {/* Wallet Address in Card */}
-            <div className="relative z-10 mt-4">
-              <h2 className="font-black text-2xl uppercase italic text-black leading-tight">
-                {profileData.name || "Anonymous Dev"}
-              </h2>
-              <p className="font-bold text-xs uppercase text-black/60 mb-3">
-                {profileData.title || "Forge Developer"}
-              </p>
-
-              {/* Achievements Section */}
-              <div className="mt-8 border-t-2 border-dashed border-black/10 pt-6">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/40 mb-4">
-                  Achievements
+              {/* Middle Side: Identity & Achievements */}
+              <div className="flex-1 flex flex-col w-full">
+                <h2 className="font-black text-4xl uppercase italic text-black leading-none mb-1">
+                  {profileData.name || "Anonymous Dev"}
+                </h2>
+                <p className="font-bold text-sm uppercase text-black/60 mb-6">
+                  {profileData.title || "Forge Developer"}
                 </p>
-                {(!sbtMint && !hasPioneer && !hasFounder) ? (
-                  <div className="border-2 border-dashed border-black/10 p-4 text-center">
-                    <p className="font-bold text-[10px] text-black/30 uppercase tracking-widest">
-                      None
-                    </p>
-                  </div>
-                ) : (
-                  <div className="flex gap-2 flex-wrap">
-                    {/* Founder NFT Minified Card */}
-                    {hasFounder && (
-                      <div className="border-2 border-black bg-white p-1.5 flex flex-col gap-1 shadow-[2px_2px_0px_0px_rgba(255,69,0,1)] hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_rgba(255,69,0,1)] transition-all cursor-pointer" style={{ width: 80 }} title="Forge Founder (1 of 1)">
-                        <div className="relative w-full border border-black overflow-hidden" style={{ height: 50 }}>
-                          <Image src="https://amber-important-primate-357.mypinata.cloud/ipfs/bafybeiaaxfuvglz5is7pmn5m2lthoyyit7rjzlt6irabyrgd5byy3esg5i" alt="Founder" fill className="object-cover" unoptimized />
-                          <div className="absolute top-0 right-0 bg-black text-white text-[6px] font-black px-1 border-l border-b border-black">1/1</div>
+
+                {/* Achievements Section */}
+                <div className="mb-8">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/40 mb-3">Achievements</p>
+                  {(!sbtMint && !hasPioneer && !hasFounder) ? (
+                    <div className="border-2 border-dashed border-black/10 p-3 text-center w-full md:w-64">
+                      <p className="font-bold text-[10px] text-black/30 uppercase tracking-widest">None</p>
+                    </div>
+                  ) : (
+                    <div className="flex gap-3 flex-wrap">
+                      {hasFounder && (
+                        <div className="border-2 border-black bg-white p-1.5 flex flex-col gap-1 shadow-[2px_2px_0px_0px_rgba(255,69,0,1)] hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_rgba(255,69,0,1)] transition-all cursor-pointer" style={{ width: 80 }} title="Forge Founder (1 of 1)">
+                          <div className="relative w-full border border-black overflow-hidden" style={{ height: 50 }}>
+                            <Image src="https://amber-important-primate-357.mypinata.cloud/ipfs/bafybeiaaxfuvglz5is7pmn5m2lthoyyit7rjzlt6irabyrgd5byy3esg5i" alt="Founder" fill className="object-cover" unoptimized />
+                            <div className="absolute top-0 right-0 bg-black text-white text-[6px] font-black px-1 border-l border-b border-black">1/1</div>
+                          </div>
+                          <p className="font-black text-[7px] uppercase text-center leading-tight whitespace-nowrap overflow-hidden text-ellipsis">Genesis</p>
                         </div>
-                        <p className="font-black text-[7px] uppercase text-center leading-tight whitespace-nowrap overflow-hidden text-ellipsis">Genesis</p>
-                      </div>
-                    )}
-                    
-                    {/* Pioneer NFT Minified Card */}
-                    {hasPioneer && (
-                      <div className="border-2 border-black bg-white p-1.5 flex flex-col gap-1 shadow-[2px_2px_0px_0px_rgba(255,215,0,1)] hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_rgba(255,215,0,1)] transition-all cursor-pointer" style={{ width: 80 }} title="Forge Pioneer (Early Adopter)">
-                        <div className="relative w-full border border-black overflow-hidden" style={{ height: 50 }}>
-                          <Image src="https://amber-important-primate-357.mypinata.cloud/ipfs/bafybeigjn3cdrocvxavacumjnz6ic6mdzghuxvzvzojkrxilijsnzzlqyi" alt="Pioneer" fill className="object-cover" unoptimized />
-                          <div className="absolute top-0 right-0 bg-[#FFD700] text-black text-[6px] font-black px-1 border-l border-b border-black">RARE</div>
+                      )}
+                      
+                      {hasPioneer && (
+                        <div className="border-2 border-black bg-white p-1.5 flex flex-col gap-1 shadow-[2px_2px_0px_0px_rgba(255,215,0,1)] hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_rgba(255,215,0,1)] transition-all cursor-pointer" style={{ width: 80 }} title="Forge Pioneer (Early Adopter)">
+                          <div className="relative w-full border border-black overflow-hidden" style={{ height: 50 }}>
+                            <Image src="https://amber-important-primate-357.mypinata.cloud/ipfs/bafybeigjn3cdrocvxavacumjnz6ic6mdzghuxvzvzojkrxilijsnzzlqyi" alt="Pioneer" fill className="object-cover" unoptimized />
+                            <div className="absolute top-0 right-0 bg-[#FFD700] text-black text-[6px] font-black px-1 border-l border-b border-black">RARE</div>
+                          </div>
+                          <p className="font-black text-[7px] uppercase text-center leading-tight whitespace-nowrap overflow-hidden text-ellipsis">Pioneer</p>
                         </div>
-                        <p className="font-black text-[7px] uppercase text-center leading-tight whitespace-nowrap overflow-hidden text-ellipsis">Pioneer</p>
-                      </div>
+                      )}
+
+                      {sbtMint && (
+                        <div className="border-2 border-black bg-white px-3 py-2 flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] h-[81px]">
+                          <span className="font-black text-[10px] uppercase tracking-widest text-black flex items-center gap-2">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                              <path d="M22 11.08V12a10 10 0 11-5.93-9.14M22 4L12 14.01l-3-3" />
+                            </svg>
+                            Soulbound
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Wallet Details */}
+                <div className="border-t-2 border-dashed border-black/10 pt-5">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/40 mb-2">Authenticated Wallet</p>
+                  <p className="font-mono text-[10px] font-black text-black bg-white/20 border-2 border-black/10 px-3 py-1.5 inline-block truncate w-full md:max-w-md mb-3">
+                    {address || "Not Connected"}
+                  </p>
+
+                  <div className="flex gap-2 flex-wrap items-center">
+                    {address && (
+                      <>
+                        <a href={`https://solscan.io/account/${address}?cluster=devnet`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[9px] font-black uppercase border-2 border-black px-2 py-1 bg-white hover:bg-black hover:text-white transition-colors">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
+                          </svg>
+                          Solscan
+                        </a>
+                        <a href={`https://explorer.solana.com/address/${address}?cluster=devnet`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[9px] font-black uppercase border-2 border-black px-2 py-1 bg-white hover:bg-black hover:text-white transition-colors">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
+                          </svg>
+                          Explorer
+                        </a>
+                      </>
                     )}
 
-                    {/* Standard Profile SBT Minified View */}
-                    {sbtMint && (
-                      <div className="border-2 border-black bg-white px-2 py-1.5 flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                         <span className="font-black text-[9px] uppercase tracking-widest text-black flex items-center gap-1.5">
-                           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                             <path d="M22 11.08V12a10 10 0 11-5.93-9.14M22 4L12 14.01l-3-3" />
-                           </svg>
-                           Soulbound
-                         </span>
-                      </div>
+                    {sbtMint ? (
+                      <a href={`https://explorer.solana.com/address/${sbtMint}?cluster=devnet`} target="_blank" className="flex items-center gap-2 text-[9px] font-black uppercase text-black hover:underline ml-2">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                          <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
+                        </svg>
+                        On-Chain Identity
+                      </a>
+                    ) : (
+                      <button onClick={handleMintSBT} disabled={sbtMinting} className="flex items-center gap-2 text-[9px] font-black uppercase text-white bg-black px-3 py-1 border-2 border-black hover:bg-primary hover:text-black transition-colors disabled:opacity-50 ml-0 md:ml-2">
+                        {sbtMinting ? "Forging..." : "★ Forge Identity"}
+                      </button>
                     )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Side: Score/Rank Badges */}
+              <div className="flex flex-row md:flex-col gap-3 shrink-0 mt-6 md:mt-0 items-end">
+                {rank > 0 && (
+                  <div className="bg-[#FFD700] text-black px-4 py-3 border-[3px] border-black flex flex-col items-center" style={{ transform: "rotate(-2deg)" }}>
+                    <span className="text-[10px] font-black uppercase tracking-widest leading-none mb-1">Rank</span>
+                    <span className="font-black text-3xl leading-none">#{rank}</span>
                   </div>
                 )}
+                <div className="bg-black text-white px-4 py-3 border-[3px] border-black flex flex-col items-center" style={{ transform: "rotate(2deg)" }}>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-primary leading-none mb-1">Score</span>
+                  <span className="font-black text-3xl leading-none">{stats[3].value}</span>
+                </div>
               </div>
-              
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/40 mt-6 mb-1">
-                Authenticated Wallet
-              </p>
-              <p className="font-mono text-[9px] font-black text-black bg-white/20 border-2 border-black/10 px-2 py-1 inline-block truncate max-w-full mb-2">
-                {address || "Not Connected"}
-              </p>
-
-              {/* On-chain explorer links */}
-              {address && (
-                <div className="flex gap-2 mb-3 flex-wrap">
-                  <a
-                    href={`https://solscan.io/account/${address}?cluster=devnet`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 text-[9px] font-black uppercase border-2 border-black px-2 py-1 bg-white hover:bg-black hover:text-white transition-colors"
-                  >
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                      <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
-                    </svg>
-                    Solscan
-                  </a>
-                  <a
-                    href={`https://explorer.solana.com/address/${address}?cluster=devnet`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 text-[9px] font-black uppercase border-2 border-black px-2 py-1 bg-white hover:bg-black hover:text-white transition-colors"
-                  >
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                      <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
-                    </svg>
-                    Explorer
-                  </a>
-                </div>
-              )}
-
-              {sbtMint ? (
-                <a
-                  href={`https://explorer.solana.com/address/${sbtMint}?cluster=devnet`}
-                  target="_blank"
-                  className="flex items-center gap-2 text-[10px] font-black uppercase text-black hover:underline"
-                >
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                  >
-                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
-                  </svg>
-                  On-Chain Identity Forged
-                </a>
-              ) : (
-                <button
-                  onClick={handleMintSBT}
-                  disabled={sbtMinting}
-                  className="flex items-center gap-2 text-[10px] font-black uppercase text-white bg-black px-2 py-1 border-2 border-black hover:bg-primary hover:text-black transition-colors disabled:opacity-50"
-                >
-                  {sbtMinting ? "Forging..." : "★ Forge On-Chain Identity"}
-                </button>
-              )}
             </div>
-
-            {/* Achievements List */}
-            <div className="relative z-10 mt-8">
-              <h3 className="font-black text-sm uppercase tracking-widest text-black/80 border-b-2 border-black/20 pb-2 mb-4">
-                Achievements
-              </h3>
-              {achievements.length === 0 ? (
-                <div className="bg-black/5 border-2 border-dashed border-black/20 py-4 text-center">
-                  <p className="font-black text-xs uppercase text-black/40">
-                    None
-                  </p>
-                </div>
-              ) : (
-                <ul className="flex flex-col gap-2">
-                  {achievements.map((ach, idx) => (
-                    <li
-                      key={idx}
-                      className="font-bold text-xs uppercase bg-white border-2 border-black px-3 py-2 flex items-center gap-2"
-                    >
-                      <span className="text-primary text-base leading-none">
-                        ★
-                      </span>{" "}
-                      {ach}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-3">
-            <button
-              onClick={handleDownloadCard}
-              className="flex-1 bg-white border-2 border-black py-3 font-black text-xs uppercase tracking-widest hover:bg-black hover:text-white transition-colors"
-              style={{ boxShadow: "3px 3px 0px 0px rgba(0,0,0,1)" }}
-            >
-              Download Card
-            </button>
-            <button
-              onClick={handleShareCard}
-              className="flex-1 bg-black text-white border-2 border-black py-3 font-black text-xs uppercase tracking-widest hover:bg-primary hover:text-black transition-colors"
-              style={{ boxShadow: "3px 3px 0px 0px rgba(0,0,0,1)" }}
-            >
-              Share Profile
-            </button>
           </div>
 
           {/* HIDDEN EXPORTABLE CARD (Standard Hex only for html2canvas compatibility) */}
@@ -805,8 +711,8 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Right — stats + badges */}
-        <div className="lg:col-span-2 flex flex-col gap-6">
+        {/* Bottom — stats + badges */}
+        <div className="w-full flex flex-col gap-6">
           {/* Stats grid */}
           <div className="grid grid-cols-2 gap-4">
             {stats.map((s) => (

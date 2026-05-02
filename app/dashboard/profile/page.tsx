@@ -41,7 +41,6 @@ export default function ProfilePage() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { program, sbtProgram } = useEscrow();
   const balance = useBalance(address || undefined);
 
   // Profile details
@@ -76,7 +75,13 @@ export default function ProfilePage() {
   const [userRewards, setUserRewards] = useState<{ hasPioneer: boolean; hasFounder: boolean }>({ hasPioneer: false, hasFounder: false });
   const [claimingReward, setClaimingReward] = useState(false);
 
-  const { sbtProgram, mintPioneerNft, mintFounderNft, initializeMintTracker } = useEscrow();
+  const { 
+    program, 
+    sbtProgram, 
+    mintPioneerNft, 
+    mintFounderNft, 
+    initializeMintTracker 
+  } = useEscrow();
   const FORGE_FOUNDER = "4taXpwcd3YA26w6BqrwRMgEoka33eFtEGQ3KiU41MS81";
 
   const badges: number[] = [];

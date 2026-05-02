@@ -1,12 +1,1 @@
-{
-  "name": "Forge Founder",
-  "symbol": "FORGE",
-  "description": "The original builder of Forge — the trustless freelance marketplace on Solana. This credential is permanent, non-transferable, and held by exactly one wallet.",
-  "image": "https://amber-important-primate-357.mypinata.cloud/ipfs/bafybeiaaxfuvglz5is7pmn5m2lthoyyit7rjzlt6irabyrgd5byy3esg5i",
-  "attributes": [
-    { "trait_type": "Type", "value": "Founder" },
-    { "trait_type": "Edition", "value": "1 of 1" },
-    { "trait_type": "Platform", "value": "Forge" },
-    { "trait_type": "Rarity", "value": "Unique" }
-  ]
-}
+{}

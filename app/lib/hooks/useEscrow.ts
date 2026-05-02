@@ -10,8 +10,25 @@ import forgeSbtIdl from "@/app/lib/idl/forge_sbt.json";
 
 export type ForgeEscrowProgram = Program<any>;
 
+export interface UseEscrowReturn {
+  program: ForgeEscrowProgram | null;
+  sbtProgram: Program<Idl> | null;
+  createTask: (taskId: number, amount: bigint, reviewWindowDays: number, difficulty: number, taskMetadataUri: string) => Promise<string>;
+  acceptWorker: (taskId: number, workerPubkey: web3.PublicKey) => Promise<string>;
+  submitWork: (taskId: number, clientPubkey: web3.PublicKey, submissionUri: string, aiReportHash?: Uint8Array) => Promise<string>;
+  approveWork: (taskId: number) => Promise<string>;
+  cancelTask: (taskId: number) => Promise<string>;
+  claimCompletion: (taskId: number, clientPubkey: web3.PublicKey) => Promise<string>;
+  raiseDispute: (taskId: number, clientPubkey: web3.PublicKey, reasonUri: string) => Promise<string>;
+  resolveDispute: (taskId: number, clientPubkey: web3.PublicKey, recipientPubkey: web3.PublicKey, releaseToWorker: boolean) => Promise<string>;
+  provider: AnchorProvider | null;
+  initializeMintTracker: () => Promise<string>;
+  mintFounderNft: (recipient: web3.PublicKey, metadataUri: string) => Promise<string>;
+  mintPioneerNft: (recipient: web3.PublicKey, metadataUri: string) => Promise<string>;
+}
+
 const TREASURY_PUBKEY = new web3.PublicKey("EPpNW3G47SAJ4j1DatpjW7mJMLRTH9Z8K7LJtBfhR8Mt"); // Forge Protocol Treasury
-export function useEscrow() {
+export function useEscrow(): UseEscrowReturn {
   const { connection } = useSolanaClient(); // Solana RPC connection
   const { wallet } = useWallet();
   const walletPublicKey = useMemo(() => wallet ? new PublicKey(wallet.account.address) : null, [wallet]);
@@ -250,8 +267,7 @@ export function useEscrow() {
     [program, walletPublicKey]
   );
 
-  // Return the program and helpers so components can import the hook.
-  return {
+  const result = {
     program,
     sbtProgram,
     createTask,
@@ -319,5 +335,7 @@ export function useEscrow() {
         })
         .rpc();
     }, [sbtProgram, walletPublicKey]),
-  } as const;
+  };
+
+  return result;
 }

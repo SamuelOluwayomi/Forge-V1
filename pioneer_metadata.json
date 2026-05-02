@@ -1,12 +1,1 @@
-{
-  "name": "Forge Pioneer",
-  "symbol": "FORGE",
-  "description": "One of the first 100 users to forge their onchain identity on Forge. A permanent credential marking early adoption.",
-  "image": "https://amber-important-primate-357.mypinata.cloud/ipfs/bafybeiaaxfuvglz5is7pmn5m2lthoyyit7rjzlt6irabyrgd5byy3esg5i",
-  "attributes": [
-    { "trait_type": "Type", "value": "Pioneer" },
-    { "trait_type": "Edition", "value": "1 of 100" },
-    { "trait_type": "Platform", "value": "Forge" },
-    { "trait_type": "Rarity", "value": "Rare" }
-  ]
-}
+{}

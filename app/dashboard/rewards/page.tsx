@@ -190,25 +190,27 @@ export default function RewardsPage() {
 
       {/* Cards Grid */}
       {status.loading ? (
-        <div className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-black/50 flex-shrink-0">
-        <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-        </svg>
-        Fetching on-chain data…
-      </div>
-      <div className="grid grid-cols-2 gap-6 flex-1">
-        {[0, 1].map((i) => (
-          <div key={i} className="border-4 border-black flex flex-col overflow-hidden shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]"
-            style={{ background: "repeating-linear-gradient(45deg, #e5e5e5, #e5e5e5 10px, #f0f0f0 10px, #f0f0f0 20px)" }}>
-            <div className="border-b-4 border-black bg-black/10 animate-pulse" style={{ height: 200 }} />
-            <div className="p-4 flex flex-col gap-3 flex-1 bg-white">
-              <div className="h-4 bg-black/10 animate-pulse w-3/4" />
-              <div className="h-3 bg-black/10 animate-pulse w-1/2" />
-              <div className="mt-auto h-8 bg-black/10 animate-pulse" />
-            </div>
+        <>
+          <div className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-black/50 flex-shrink-0">
+            <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+            </svg>
+            Fetching on-chain data…
           </div>
-        ))}
-      </div>
+          <div className="grid grid-cols-2 gap-6 flex-1">
+            {[0, 1].map((i) => (
+              <div key={i} className="border-4 border-black flex flex-col overflow-hidden shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]"
+                style={{ background: "repeating-linear-gradient(45deg, #e5e5e5, #e5e5e5 10px, #f0f0f0 10px, #f0f0f0 20px)" }}>
+                <div className="border-b-4 border-black bg-black/10 animate-pulse" style={{ height: 200 }} />
+                <div className="p-4 flex flex-col gap-3 flex-1 bg-white">
+                  <div className="h-4 bg-black/10 animate-pulse w-3/4" />
+                  <div className="h-3 bg-black/10 animate-pulse w-1/2" />
+                  <div className="mt-auto h-8 bg-black/10 animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       ) : (
         <div className="grid grid-cols-2 gap-6 flex-1">
           {CARDS.map((card) => {

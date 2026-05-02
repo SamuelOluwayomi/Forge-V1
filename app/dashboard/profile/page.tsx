@@ -65,6 +65,7 @@ export default function ProfilePage() {
   const [sbtMinting, setSbtMinting] = useState(false);
   const [hasPioneer, setHasPioneer] = useState(false);
   const [hasFounder, setHasFounder] = useState(false);
+  const [selectedNft, setSelectedNft] = useState<{ type: 'founder' | 'pioneer' | 'sbt', uri?: string } | null>(null);
 
   const [stats, setStats] = useState([
     { label: "Tasks Completed", value: 0 },
@@ -519,7 +520,7 @@ export default function ProfilePage() {
                   ) : (
                     <div className="flex gap-3 flex-wrap">
                       {hasFounder && (
-                        <div className="border-2 border-black bg-white p-1.5 flex flex-col gap-1 shadow-[2px_2px_0px_0px_rgba(255,69,0,1)] hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_rgba(255,69,0,1)] transition-all cursor-pointer" style={{ width: 80 }} title="Forge Founder (1 of 1)">
+                        <div onClick={() => setSelectedNft({ type: 'founder' })} className="border-2 border-black bg-white p-1.5 flex flex-col gap-1 shadow-[2px_2px_0px_0px_rgba(255,69,0,1)] hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_rgba(255,69,0,1)] transition-all cursor-pointer" style={{ width: 80 }} title="Forge Founder (1 of 1)">
                           <div className="relative w-full border border-black overflow-hidden" style={{ height: 50 }}>
                             <Image src="https://amber-important-primate-357.mypinata.cloud/ipfs/bafybeiaaxfuvglz5is7pmn5m2lthoyyit7rjzlt6irabyrgd5byy3esg5i" alt="Founder" fill className="object-cover" unoptimized />
                             <div className="absolute top-0 right-0 bg-black text-white text-[6px] font-black px-1 border-l border-b border-black">1/1</div>
@@ -529,7 +530,7 @@ export default function ProfilePage() {
                       )}
                       
                       {hasPioneer && (
-                        <div className="border-2 border-black bg-white p-1.5 flex flex-col gap-1 shadow-[2px_2px_0px_0px_rgba(255,215,0,1)] hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_rgba(255,215,0,1)] transition-all cursor-pointer" style={{ width: 80 }} title="Forge Pioneer (Early Adopter)">
+                        <div onClick={() => setSelectedNft({ type: 'pioneer' })} className="border-2 border-black bg-white p-1.5 flex flex-col gap-1 shadow-[2px_2px_0px_0px_rgba(255,215,0,1)] hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_rgba(255,215,0,1)] transition-all cursor-pointer" style={{ width: 80 }} title="Forge Pioneer (Early Adopter)">
                           <div className="relative w-full border border-black overflow-hidden" style={{ height: 50 }}>
                             <Image src="https://amber-important-primate-357.mypinata.cloud/ipfs/bafybeigjn3cdrocvxavacumjnz6ic6mdzghuxvzvzojkrxilijsnzzlqyi" alt="Pioneer" fill className="object-cover" unoptimized />
                             <div className="absolute top-0 right-0 bg-[#FFD700] text-black text-[6px] font-black px-1 border-l border-b border-black">RARE</div>
@@ -539,7 +540,7 @@ export default function ProfilePage() {
                       )}
 
                       {sbtMint && (
-                        <div className="border-2 border-black bg-white px-3 py-2 flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] h-[81px]">
+                        <div onClick={() => setSelectedNft({ type: 'sbt', uri: sbtMint })} className="border-2 border-black bg-white px-3 py-2 flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] h-[81px] cursor-pointer hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-all">
                           <span className="font-black text-[10px] uppercase tracking-widest text-black flex items-center gap-2">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                               <path d="M22 11.08V12a10 10 0 11-5.93-9.14M22 4L12 14.01l-3-3" />
@@ -1071,6 +1072,67 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* NFT details modal */}
+      {selectedNft && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setSelectedNft(null)}>
+          <div className="bg-white border-4 border-black p-6 w-full max-w-md shadow-[8px_8px_0px_0px_rgba(255,69,0,1)] animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-black text-2xl uppercase italic">Achievement</h3>
+              <button onClick={() => setSelectedNft(null)} className="font-black text-2xl hover:text-[#FF4500]">×</button>
+            </div>
+            
+            {selectedNft.type === 'founder' && (
+              <div className="flex flex-col gap-4">
+                <div className="w-full aspect-square relative border-4 border-black">
+                  <Image src="https://amber-important-primate-357.mypinata.cloud/ipfs/bafybeiaaxfuvglz5is7pmn5m2lthoyyit7rjzlt6irabyrgd5byy3esg5i" alt="Founder" fill className="object-cover" unoptimized />
+                </div>
+                <div>
+                  <h4 className="font-black text-2xl uppercase text-[#FF4500]">Forge Founder</h4>
+                  <p className="font-bold text-sm text-black/60 uppercase tracking-widest">1 of 1 — Genesis</p>
+                  <p className="mt-4 font-bold text-sm text-black/80 border-l-4 border-black pl-3 py-1">The original builder of Forge — the trustless freelance marketplace on Solana. Permanent, non-transferable, held by exactly one wallet.</p>
+                </div>
+              </div>
+            )}
+
+            {selectedNft.type === 'pioneer' && (
+              <div className="flex flex-col gap-4">
+                <div className="w-full aspect-square relative border-4 border-black">
+                  <Image src="https://amber-important-primate-357.mypinata.cloud/ipfs/bafybeigjn3cdrocvxavacumjnz6ic6mdzghuxvzvzojkrxilijsnzzlqyi" alt="Pioneer" fill className="object-cover" unoptimized />
+                </div>
+                <div>
+                  <h4 className="font-black text-2xl uppercase text-[#FFD700] drop-shadow-[1px_1px_0px_rgba(0,0,0,1)]">Forge Pioneer</h4>
+                  <p className="font-bold text-sm text-black/60 uppercase tracking-widest">Early Adopter</p>
+                  <p className="mt-4 font-bold text-sm text-black/80 border-l-4 border-black pl-3 py-1">Awarded to the first 100 developers who forged their identity on the platform. A symbol of early belief and commitment to trustless work.</p>
+                </div>
+              </div>
+            )}
+
+            {selectedNft.type === 'sbt' && (
+              <div className="flex flex-col gap-4 items-center text-center py-8">
+                <div className="w-24 h-24 bg-black text-white flex items-center justify-center rounded-full mb-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]">
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14M22 4L12 14.01l-3-3" />
+                  </svg>
+                </div>
+                <div>
+                  <h4 className="font-black text-2xl uppercase">Soulbound Identity</h4>
+                  <p className="font-bold text-sm text-black/60 uppercase tracking-widest mb-4">On-Chain Profile</p>
+                  <p className="font-bold text-sm text-black/80 max-w-sm mx-auto">This developer has minted their core identity to the Solana blockchain. Their reputation, completed tasks, and score are permanently anchored on-chain.</p>
+                  <a href={`https://explorer.solana.com/address/${selectedNft.uri}?cluster=devnet`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 mt-6 px-6 py-3 bg-black text-white font-black text-xs uppercase hover:bg-primary transition-colors border-2 border-black hover:text-black">
+                    View on Explorer
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" /></svg>
+                  </a>
+                </div>
+              </div>
+            )}
+            
+            <button onClick={() => setSelectedNft(null)} className="w-full mt-6 py-3 border-2 border-black font-black uppercase text-xs hover:bg-black hover:text-white transition-colors">
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

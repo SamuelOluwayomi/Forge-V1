@@ -6,6 +6,8 @@ import { supabase } from "@/app/lib/supabase";
 import { useEscrow } from "@/app/lib/hooks/useEscrow";
 import { ForgeLoader } from "@/app/components/ForgeLoader";
 import { ellipsify } from "@/app/lib/explorer";
+import { PublicKey, SystemProgram } from "@solana/web3.js";
+import Image from "next/image";
 import { XLogo, GithubLogo, DiscordLogo, TelegramLogo } from "@phosphor-icons/react";
 
 // Placeholder badge card
@@ -33,7 +35,7 @@ export default function DeveloperProfilePage() {
   const router = useRouter();
   const address = params.address as string;
 
-  const { program } = useEscrow();
+  const { program, sbtProgram } = useEscrow();
 
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
@@ -45,8 +47,10 @@ export default function DeveloperProfilePage() {
     { label: "Forge Score", value: 0 },
   ]);
 
-  const badges: number[] = []; // Future SBT badges
-  const achievements: string[] = ["Founding Developer", "Top 100 Rank"]; // Example
+  const [sbtMint, setSbtMint] = useState<string | null>(null);
+  const [hasPioneer, setHasPioneer] = useState(false);
+  const [hasFounder, setHasFounder] = useState(false);
+  const [selectedNft, setSelectedNft] = useState<{ type: 'founder' | 'pioneer' | 'sbt', uri?: string } | null>(null);
 
   useEffect(() => {
     if (!address) return;
@@ -62,6 +66,7 @@ export default function DeveloperProfilePage() {
           
         if (data) {
           setProfile(data);
+          setSbtMint(data.profile_sbt_mint || null);
         }
       }
       setLoading(false);
@@ -98,13 +103,46 @@ export default function DeveloperProfilePage() {
           { label: "SOL Earned", value: earned.toFixed(2) },
           { label: "Forge Score", value: forgeScore },
         ]);
+
+        // Fetch Achievements (Pioneer & Founder NFTs)
+        try {
+          if (sbtProgram) {
+            const userPubkey = new PublicKey(address);
+            
+            // Check Pioneer
+            const [pioneerPda] = PublicKey.findProgramAddressSync(
+              [Buffer.from("pioneer"), userPubkey.toBuffer()],
+              sbtProgram.programId
+            );
+            try {
+              await (sbtProgram.account as any).specialNft.fetch(pioneerPda);
+              setHasPioneer(true);
+            } catch (e) {
+              setHasPioneer(false);
+            }
+            
+            // Check Founder
+            const [founderPda] = PublicKey.findProgramAddressSync(
+              [Buffer.from("founder"), userPubkey.toBuffer()],
+              sbtProgram.programId
+            );
+            try {
+              await (sbtProgram.account as any).specialNft.fetch(founderPda);
+              setHasFounder(true);
+            } catch (e) {
+              setHasFounder(false);
+            }
+          }
+        } catch (e) {
+          console.error("Failed to fetch special NFTs:", e);
+        }
       } catch (err) {
         console.error("Failed to fetch on-chain stats:", err);
       }
     };
 
     fetchOnChainStats();
-  }, [program, address]);
+  }, [program, sbtProgram, address]);
 
   if (loading) {
     return (
@@ -154,55 +192,119 @@ export default function DeveloperProfilePage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left — Identity Card */}
-        <div className="lg:col-span-1 flex flex-col gap-6">
-          <div className="brutalist-card bg-primary p-6 border-[3px] border-black relative overflow-hidden">
+      <div className="flex flex-col gap-8">
+        {/* Top — Identity Card */}
+        <div className="w-full flex flex-col gap-6">
+          <div className="brutalist-card bg-primary p-6 md:p-8 border-[3px] border-black relative overflow-hidden">
             {/* Background texture/noise */}
             <div className="absolute inset-0 opacity-10 mix-blend-overlay pointer-events-none" 
                  style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
             </div>
 
-            <div className="relative z-10 flex items-start justify-between">
-              <div className="w-20 h-20 bg-white border-[3px] border-black flex items-center justify-center overflow-hidden">
-                {profile.avatar_url ? (
-                  <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="font-black text-2xl text-black/20">?</span>
-                )}
-              </div>
-
-              {/* Badges */}
-              <div className="flex gap-2">
-                {profile.rank > 0 && (
-                  <div className="bg-[#FFD700] text-black px-3 py-2 border-2 border-black flex flex-col items-center" style={{ transform: "rotate(-2deg)" }}>
-                    <span className="text-[10px] font-black uppercase tracking-widest leading-none mb-1">Rank</span>
-                    <span className="font-black text-2xl leading-none">#{profile.rank}</span>
-                  </div>
-                )}
-                <div className="bg-black text-white px-3 py-2 border-2 border-black flex flex-col items-end" style={{ transform: "rotate(2deg)" }}>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-primary leading-none mb-1">Score</span>
-                  <span className="font-black text-2xl leading-none">{stats[3].value}</span>
+            <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start justify-between">
+              
+              {/* Left Side: Photo */}
+              <div className="flex flex-col gap-4 items-center shrink-0 w-full md:w-auto">
+                <div className="w-32 h-32 bg-white border-[3px] border-black flex items-center justify-center overflow-hidden">
+                  {profile.avatar_url ? (
+                    <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="font-black text-4xl text-black/20">?</span>
+                  )}
                 </div>
               </div>
-            </div>
 
-            <div className="relative z-10 mt-6">
-               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/40 mb-1">Authenticated Wallet</p>
-               <p className="font-mono text-xs font-black text-black bg-white/20 border-2 border-black/10 px-2 py-1 inline-block truncate max-w-full">
-                {address}
-               </p>
-            </div>
+              {/* Middle Side: Identity & Achievements */}
+              <div className="flex-1 flex flex-col w-full">
+                <h2 className="font-black text-4xl uppercase italic text-black leading-none mb-1">
+                  {profile.name || "Anonymous Dev"}
+                </h2>
+                <p className="font-bold text-sm uppercase text-black/60 mb-6">
+                  {profile.title || "Forge Developer"}
+                </p>
 
-            <div className="relative z-10 mt-6 pt-4 border-t-4 border-black/10">
-               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/40 mb-3">Achievements</p>
-               <div className="flex flex-wrap gap-2">
-                 {achievements.map((ach, i) => (
-                   <span key={i} className="bg-white/20 text-black px-2 py-1 text-[10px] font-black uppercase border-2 border-black/20 shrink-0">
-                     ★ {ach}
-                   </span>
-                 ))}
-               </div>
+                {/* Achievements Section */}
+                <div className="mb-8">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/40 mb-3">Achievements</p>
+                  {(!sbtMint && !hasPioneer && !hasFounder) ? (
+                    <div className="border-2 border-dashed border-black/10 p-3 text-center w-full md:w-64">
+                      <p className="font-bold text-[10px] text-black/30 uppercase tracking-widest">None</p>
+                    </div>
+                  ) : (
+                    <div className="flex gap-3 flex-wrap">
+                      {hasFounder && (
+                        <div onClick={() => setSelectedNft({ type: 'founder' })} className="border-2 border-black bg-white p-1.5 flex flex-col gap-1 shadow-[2px_2px_0px_0px_rgba(255,69,0,1)] hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_rgba(255,69,0,1)] transition-all cursor-pointer" style={{ width: 80 }} title="Forge Founder (1 of 1)">
+                          <div className="relative w-full border border-black overflow-hidden" style={{ height: 50 }}>
+                            <Image src="https://amber-important-primate-357.mypinata.cloud/ipfs/bafybeiaaxfuvglz5is7pmn5m2lthoyyit7rjzlt6irabyrgd5byy3esg5i" alt="Founder" fill className="object-cover" unoptimized />
+                            <div className="absolute top-0 right-0 bg-black text-white text-[6px] font-black px-1 border-l border-b border-black">1/1</div>
+                          </div>
+                          <p className="font-black text-[7px] uppercase text-center leading-tight whitespace-nowrap overflow-hidden text-ellipsis">Genesis</p>
+                        </div>
+                      )}
+                      
+                      {hasPioneer && (
+                        <div onClick={() => setSelectedNft({ type: 'pioneer' })} className="border-2 border-black bg-white p-1.5 flex flex-col gap-1 shadow-[2px_2px_0px_0px_rgba(255,215,0,1)] hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_rgba(255,215,0,1)] transition-all cursor-pointer" style={{ width: 80 }} title="Forge Pioneer (Early Adopter)">
+                          <div className="relative w-full border border-black overflow-hidden" style={{ height: 50 }}>
+                            <Image src="https://amber-important-primate-357.mypinata.cloud/ipfs/bafybeigjn3cdrocvxavacumjnz6ic6mdzghuxvzvzojkrxilijsnzzlqyi" alt="Pioneer" fill className="object-cover" unoptimized />
+                            <div className="absolute top-0 right-0 bg-[#FFD700] text-black text-[6px] font-black px-1 border-l border-b border-black">RARE</div>
+                          </div>
+                          <p className="font-black text-[7px] uppercase text-center leading-tight whitespace-nowrap overflow-hidden text-ellipsis">Pioneer</p>
+                        </div>
+                      )}
+
+                      {sbtMint && (
+                        <div onClick={() => setSelectedNft({ type: 'sbt', uri: sbtMint })} className="border-2 border-black bg-white px-3 py-2 flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] h-[81px] cursor-pointer hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-all">
+                          <span className="font-black text-[10px] uppercase tracking-widest text-black flex items-center gap-2">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                              <path d="M22 11.08V12a10 10 0 11-5.93-9.14M22 4L12 14.01l-3-3" />
+                            </svg>
+                            Soulbound
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Wallet Details */}
+                <div className="border-t-2 border-dashed border-black/10 pt-5">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/40 mb-2">Authenticated Wallet</p>
+                  <p className="font-mono text-[10px] font-black text-black bg-white/20 border-2 border-black/10 px-3 py-1.5 inline-block truncate w-full md:max-w-md mb-3">
+                    {address}
+                  </p>
+
+                  <div className="flex gap-2 flex-wrap items-center">
+                    <a href={`https://solscan.io/account/${address}?cluster=devnet`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[9px] font-black uppercase border-2 border-black px-2 py-1 bg-white hover:bg-black hover:text-white transition-colors">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" /></svg>
+                      Solscan
+                    </a>
+                    <a href={`https://explorer.solana.com/address/${address}?cluster=devnet`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[9px] font-black uppercase border-2 border-black px-2 py-1 bg-white hover:bg-black hover:text-white transition-colors">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" /></svg>
+                      Explorer
+                    </a>
+                    {sbtMint && (
+                      <a href={`https://explorer.solana.com/address/${sbtMint}?cluster=devnet`} target="_blank" className="flex items-center gap-2 text-[9px] font-black uppercase text-black hover:underline ml-2">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" /></svg>
+                        On-Chain Identity
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Side: Badges */}
+              <div className="flex flex-row md:flex-col gap-3 shrink-0 mt-6 md:mt-0 items-end">
+                {profile.rank > 0 && (
+                  <div className="bg-[#FFD700] text-black px-4 py-3 border-[3px] border-black flex flex-col items-center" style={{ transform: "rotate(-2deg)" }}>
+                    <span className="text-[10px] font-black uppercase tracking-widest leading-none mb-1">Rank</span>
+                    <span className="font-black text-3xl leading-none">#{profile.rank}</span>
+                  </div>
+                )}
+                <div className="bg-black text-white px-4 py-3 border-[3px] border-black flex flex-col items-center" style={{ transform: "rotate(2deg)" }}>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-primary leading-none mb-1">Score</span>
+                  <span className="font-black text-3xl leading-none">{stats[3].value}</span>
+                </div>
+              </div>
             </div>
             
             <div className="absolute -bottom-6 -right-6 opacity-10 pointer-events-none">
@@ -347,6 +449,67 @@ export default function DeveloperProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* NFT details modal */}
+      {selectedNft && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setSelectedNft(null)}>
+          <div className="bg-white border-4 border-black p-6 w-full max-w-md shadow-[8px_8px_0px_0px_rgba(255,69,0,1)] animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-black text-2xl uppercase italic">Achievement</h3>
+              <button onClick={() => setSelectedNft(null)} className="font-black text-2xl hover:text-[#FF4500]">×</button>
+            </div>
+            
+            {selectedNft.type === 'founder' && (
+              <div className="flex flex-col gap-4">
+                <div className="w-full aspect-square relative border-4 border-black">
+                  <Image src="https://amber-important-primate-357.mypinata.cloud/ipfs/bafybeiaaxfuvglz5is7pmn5m2lthoyyit7rjzlt6irabyrgd5byy3esg5i" alt="Founder" fill className="object-cover" unoptimized />
+                </div>
+                <div>
+                  <h4 className="font-black text-2xl uppercase text-[#FF4500]">Forge Founder</h4>
+                  <p className="font-bold text-sm text-black/60 uppercase tracking-widest">1 of 1 — Genesis</p>
+                  <p className="mt-4 font-bold text-sm text-black/80 border-l-4 border-black pl-3 py-1">The original builder of Forge — the trustless freelance marketplace on Solana. Permanent, non-transferable, held by exactly one wallet.</p>
+                </div>
+              </div>
+            )}
+
+            {selectedNft.type === 'pioneer' && (
+              <div className="flex flex-col gap-4">
+                <div className="w-full aspect-square relative border-4 border-black">
+                  <Image src="https://amber-important-primate-357.mypinata.cloud/ipfs/bafybeigjn3cdrocvxavacumjnz6ic6mdzghuxvzvzojkrxilijsnzzlqyi" alt="Pioneer" fill className="object-cover" unoptimized />
+                </div>
+                <div>
+                  <h4 className="font-black text-2xl uppercase text-[#FFD700] drop-shadow-[1px_1px_0px_rgba(0,0,0,1)]">Forge Pioneer</h4>
+                  <p className="font-bold text-sm text-black/60 uppercase tracking-widest">Early Adopter</p>
+                  <p className="mt-4 font-bold text-sm text-black/80 border-l-4 border-black pl-3 py-1">Awarded to the first 100 developers who forged their identity on the platform. A symbol of early belief and commitment to trustless work.</p>
+                </div>
+              </div>
+            )}
+
+            {selectedNft.type === 'sbt' && (
+              <div className="flex flex-col gap-4 items-center text-center py-8">
+                <div className="w-24 h-24 bg-black text-white flex items-center justify-center rounded-full mb-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]">
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14M22 4L12 14.01l-3-3" />
+                  </svg>
+                </div>
+                <div>
+                  <h4 className="font-black text-2xl uppercase">Soulbound Identity</h4>
+                  <p className="font-bold text-sm text-black/60 uppercase tracking-widest mb-4">On-Chain Profile</p>
+                  <p className="font-bold text-sm text-black/80 max-w-sm mx-auto">This developer has minted their core identity to the Solana blockchain. Their reputation, completed tasks, and score are permanently anchored on-chain.</p>
+                  <a href={`https://explorer.solana.com/address/${selectedNft.uri}?cluster=devnet`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 mt-6 px-6 py-3 bg-black text-white font-black text-xs uppercase hover:bg-primary transition-colors border-2 border-black hover:text-black">
+                    View on Explorer
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" /></svg>
+                  </a>
+                </div>
+              </div>
+            )}
+            
+            <button onClick={() => setSelectedNft(null)} className="w-full mt-6 py-3 border-2 border-black font-black uppercase text-xs hover:bg-black hover:text-white transition-colors">
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

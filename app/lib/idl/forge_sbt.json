@@ -277,14 +277,6 @@
     { "name": "ReputationAccount", "discriminator": [19, 185, 177, 157, 34, 87, 67, 233] },
     { "name": "SpecialNft", "discriminator": [17, 12, 109, 139, 234, 116, 230, 44] }
   ],
-  "events": [
-    { "name": "ClientBadgeMinted", "discriminator": [193, 3, 215, 8, 243, 106, 11, 120] },
-    { "name": "ProfileSbtMinted", "discriminator": [70, 50, 65, 53, 56, 77, 80, 113] },
-    { "name": "ReputationInitialized", "discriminator": [167, 122, 115, 118, 198, 80, 35, 69] },
-    { "name": "SpecialNftMinted", "discriminator": [200, 37, 150, 126, 237, 103, 222, 44] },
-    { "name": "WorkerBadgeMinted", "discriminator": [77, 121, 220, 185, 6, 186, 81, 148] },
-    { "name": "WorldIdVerified", "discriminator": [30, 107, 37, 21, 33, 176, 77, 33] }
-  ],
   "errors": [
     { "code": 6000, "name": "Unauthorized", "msg": "You are not authorized to perform this action" },
     { "code": 6001, "name": "InvalidRating", "msg": "Rating must be between 1 and 5" },

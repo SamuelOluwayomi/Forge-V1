@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { supabase } from "@/app/lib/supabase";
 import { ForgeLoader } from "@/app/components/ForgeLoader";
 import { PublicKey, SystemProgram } from "@solana/web3.js";
+import Image from "next/image";
 import { XLogo, GithubLogo, DiscordLogo, TelegramLogo } from "@phosphor-icons/react";
 
 function BadgeCard({ index }: { index: number }) {

@@ -11,7 +11,7 @@ use anchor_spl::{
 
 declare_id!("B563uW8guVAhSasPR5S6MgMGHcYwtbaiwVv9kofkwZKZ");
 
-const FORGE_FOUNDER: &str = "HDpuuLudmQoCjm52z1L8SC8eMAX85QEdum6KPu2b6TgW";
+const FORGE_FOUNDER: &str = "HDpuuLudmQeCjm52z1L8SC8eMAX85QEdum6KPu2b6TgW";
 
 // Pioneer NFT supply cap
 const PIONEER_MAX_SUPPLY: u32 = 100;

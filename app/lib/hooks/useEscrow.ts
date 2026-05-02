@@ -376,6 +376,8 @@ export function useEscrow(): UseEscrowReturn {
           rent: SYSVAR_RENT_PUBKEY,
         })
         .rpc();
+    },
+    [sbtProgram, walletPublicKey]
   );
 
   return {

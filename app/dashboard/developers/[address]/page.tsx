@@ -115,7 +115,7 @@ export default function DeveloperProfilePage() {
             
             // Check Pioneer
             const [pioneerPda] = PublicKey.findProgramAddressSync(
-              [Buffer.from("pioneer"), userPubkey.toBuffer()],
+              [Buffer.from("pioneer_nft"), userPubkey.toBuffer()],
               sbtProgram.programId
             );
             try {
@@ -127,7 +127,7 @@ export default function DeveloperProfilePage() {
             
             // Check Founder
             const [founderPda] = PublicKey.findProgramAddressSync(
-              [Buffer.from("founder"), userPubkey.toBuffer()],
+              [Buffer.from("founder_nft"), userPubkey.toBuffer()],
               sbtProgram.programId
             );
             try {

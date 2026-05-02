@@ -4,9 +4,12 @@ import { useCallback, useMemo } from "react";
 import { AnchorProvider, Program, web3, Idl, BN } from "@coral-xyz/anchor";
 import { useSolanaClient } from "../solana-client-context"; // provides connection
 import { useWallet } from "../wallet/context"; // provides wallet adapter
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
+import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import forgeEscrowIdl from "@/app/lib/idl/forge_escrow.json";
 import forgeSbtIdl from "@/app/lib/idl/forge_sbt.json";
+
+const TOKEN_METADATA_PROGRAM_ID = new web3.PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
 
 export type ForgeEscrowProgram = Program<any>;
 
@@ -25,6 +28,7 @@ export interface UseEscrowReturn {
   initializeMintTracker: () => Promise<string>;
   mintFounderNft: (recipient: web3.PublicKey, metadataUri: string) => Promise<string>;
   mintPioneerNft: (recipient: web3.PublicKey, metadataUri: string) => Promise<string>;
+  mintWorkerBadge: (taskId: number, workerPubkey: web3.PublicKey, skillCategory: string, rating: number, wasOnTime: boolean, amountEarned: bigint) => Promise<string>;
 }
 
 const TREASURY_PUBKEY = new web3.PublicKey("EPpNW3G47SAJ4j1DatpjW7mJMLRTH9Z8K7LJtBfhR8Mt"); // Forge Protocol Treasury
@@ -267,7 +271,114 @@ export function useEscrow(): UseEscrowReturn {
     [program, walletPublicKey]
   );
 
-  const result = {
+  const initializeMintTracker = useCallback(async () => {
+    if (!sbtProgram || !walletPublicKey) throw new Error("Wallet not connected");
+    const [trackerPda] = await web3.PublicKey.findProgramAddress(
+      [Buffer.from("mint_tracker")],
+      sbtProgram.programId
+    );
+    return await (sbtProgram.methods as any)
+      .initializeMintTracker()
+      .accounts({
+        tracker: trackerPda,
+        authority: walletPublicKey,
+        systemProgram: web3.SystemProgram.programId,
+      })
+      .rpc();
+  }, [sbtProgram, walletPublicKey]);
+
+  const mintFounderNft = useCallback(async (recipient: web3.PublicKey, metadataUri: string) => {
+    if (!sbtProgram || !walletPublicKey) throw new Error("Wallet not connected");
+    const [founderNftPda] = await web3.PublicKey.findProgramAddress(
+      [Buffer.from("founder_nft"), recipient.toBuffer()],
+      sbtProgram.programId
+    );
+    return await (sbtProgram.methods as any)
+      .mintFounderNft(metadataUri)
+      .accounts({
+        founderNft: founderNftPda,
+        recipient: recipient,
+        authority: walletPublicKey,
+        systemProgram: web3.SystemProgram.programId,
+      })
+      .rpc();
+  }, [sbtProgram, walletPublicKey]);
+
+  const mintPioneerNft = useCallback(async (recipient: web3.PublicKey, metadataUri: string) => {
+    if (!sbtProgram || !walletPublicKey) throw new Error("Wallet not connected");
+    const [pioneerNftPda] = await web3.PublicKey.findProgramAddress(
+      [Buffer.from("pioneer_nft"), recipient.toBuffer()],
+      sbtProgram.programId
+    );
+    const [trackerPda] = await web3.PublicKey.findProgramAddress(
+      [Buffer.from("mint_tracker")],
+      sbtProgram.programId
+    );
+    return await (sbtProgram.methods as any)
+      .mintPioneerNft(metadataUri)
+      .accounts({
+        tracker: trackerPda,
+        pioneerNft: pioneerNftPda,
+        authority: walletPublicKey,
+        recipient: recipient,
+        systemProgram: web3.SystemProgram.programId,
+      })
+      .rpc();
+  }, [sbtProgram, walletPublicKey]);
+
+  const mintWorkerBadge = useCallback(
+    async (taskId: number, workerPubkey: web3.PublicKey, skillCategory: string, rating: number, wasOnTime: boolean, amountEarned: bigint) => {
+      if (!sbtProgram || !walletPublicKey) throw new Error("Wallet not connected");
+
+      const [badgeMint] = await web3.PublicKey.findProgramAddress([
+        Buffer.from("worker_badge_mint"),
+        workerPubkey.toBuffer(),
+        Buffer.from([...new BN(taskId).toArray('le', 8)]),
+      ], sbtProgram.programId);
+
+      const [workerBadgeAccount] = await web3.PublicKey.findProgramAddress([
+        workerPubkey.toBuffer(),
+        TOKEN_PROGRAM_ID.toBuffer(),
+        badgeMint.toBuffer(),
+      ], ASSOCIATED_TOKEN_PROGRAM_ID);
+
+      const [badgeMetadata] = await web3.PublicKey.findProgramAddress([
+        Buffer.from("metadata"),
+        TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+        badgeMint.toBuffer(),
+      ], TOKEN_METADATA_PROGRAM_ID);
+
+      const [workerBadgeRecord] = await web3.PublicKey.findProgramAddress([
+        Buffer.from("worker_badge_record"),
+        workerPubkey.toBuffer(),
+        Buffer.from([...new BN(taskId).toArray('le', 8)]),
+      ], sbtProgram.programId);
+
+      const [workerReputation] = await web3.PublicKey.findProgramAddress([
+        Buffer.from("reputation"),
+        workerPubkey.toBuffer(),
+      ], sbtProgram.programId);
+
+      return await (sbtProgram.methods as any)
+        .mintWorkerBadge(new BN(taskId), skillCategory, rating, wasOnTime, new BN(amountEarned.toString()))
+        .accounts({
+          badgeMint,
+          workerBadgeAccount,
+          badgeMetadata,
+          workerBadgeRecord,
+          workerReputation,
+          worker: workerPubkey,
+          payer: walletPublicKey,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+          rent: SYSVAR_RENT_PUBKEY,
+        })
+        .rpc();
+  );
+
+  return {
     program,
     sbtProgram,
     createTask,
@@ -279,63 +390,9 @@ export function useEscrow(): UseEscrowReturn {
     raiseDispute,
     resolveDispute,
     provider,
-
-    /** Reward NFTs */
-    initializeMintTracker: useCallback(async () => {
-      if (!sbtProgram || !walletPublicKey) throw new Error("Wallet not connected");
-      const [trackerPda] = await web3.PublicKey.findProgramAddress(
-        [Buffer.from("mint_tracker")],
-        sbtProgram.programId
-      );
-      return await (sbtProgram.methods as any)
-        .initializeMintTracker()
-        .accounts({
-          tracker: trackerPda,
-          authority: walletPublicKey,
-          systemProgram: web3.SystemProgram.programId,
-        })
-        .rpc();
-    }, [sbtProgram, walletPublicKey]),
-
-    mintFounderNft: useCallback(async (recipient: web3.PublicKey, metadataUri: string) => {
-      if (!sbtProgram || !walletPublicKey) throw new Error("Wallet not connected");
-      const [founderNftPda] = await web3.PublicKey.findProgramAddress(
-        [Buffer.from("founder_nft"), recipient.toBuffer()],
-        sbtProgram.programId
-      );
-      return await (sbtProgram.methods as any)
-        .mintFounderNft(metadataUri)
-        .accounts({
-          founderNft: founderNftPda,
-          recipient: recipient,
-          authority: walletPublicKey,
-          systemProgram: web3.SystemProgram.programId,
-        })
-        .rpc();
-    }, [sbtProgram, walletPublicKey]),
-
-    mintPioneerNft: useCallback(async (recipient: web3.PublicKey, metadataUri: string) => {
-      if (!sbtProgram || !walletPublicKey) throw new Error("Wallet not connected");
-      const [pioneerNftPda] = await web3.PublicKey.findProgramAddress(
-        [Buffer.from("pioneer_nft"), recipient.toBuffer()],
-        sbtProgram.programId
-      );
-      const [trackerPda] = await web3.PublicKey.findProgramAddress(
-        [Buffer.from("mint_tracker")],
-        sbtProgram.programId
-      );
-      return await (sbtProgram.methods as any)
-        .mintPioneerNft(metadataUri)
-        .accounts({
-          pioneerNft: pioneerNftPda,
-          tracker: trackerPda,
-          recipient: recipient,
-          payer: walletPublicKey,
-          systemProgram: web3.SystemProgram.programId,
-        })
-        .rpc();
-    }, [sbtProgram, walletPublicKey]),
+    initializeMintTracker,
+    mintFounderNft,
+    mintPioneerNft,
+    mintWorkerBadge,
   };
-
-  return result;
 }

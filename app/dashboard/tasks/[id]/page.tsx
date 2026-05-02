@@ -164,7 +164,7 @@ export default function ManageTaskPage() {
   const pda = params.id as string;
   const { wallet } = useWallet();
   const address = wallet?.account.address;
-  const { program, acceptWorker, approveWork, raiseDispute } = useEscrow();
+  const { program, acceptWorker, approveWork, raiseDispute, mintWorkerBadge } = useEscrow();
 
   const [task, setTask] = useState<TaskDetail | null>(null);
   const [applicants, setApplicants] = useState<Applicant[]>([]);
@@ -289,6 +289,23 @@ export default function ManageTaskPage() {
       const sig = await approveWork(onChainTaskId);
       if (program?.provider?.connection) {
         await program.provider.connection.confirmTransaction(sig, "confirmed");
+      }
+      
+      // Mint Worker Badge SBT
+      try {
+        toast.loading("Minting Developer Badge...", { id: tid });
+        const escrowPda = new PublicKey(pda);
+        const escrowData = await (program.account as any).escrowAccount.fetch(escrowPda);
+        const workerPubkey = escrowData.worker;
+        const skillCategory = task?.skills?.[0] || "General Task";
+        const rating = 5; // Default 5 star rating
+        const wasOnTime = true; // Assume on time
+        const amountEarned = BigInt(Math.floor((task?.amount || 0) * 1_000_000_000));
+        
+        const badgeSig = await mintWorkerBadge(onChainTaskId, workerPubkey, skillCategory, rating, wasOnTime, amountEarned);
+        await program.provider.connection.confirmTransaction(badgeSig, "confirmed");
+      } catch (badgeErr) {
+        console.error("Non-critical: Failed to mint worker badge:", badgeErr);
       }
       
       // Update DB status

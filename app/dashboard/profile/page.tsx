@@ -76,7 +76,7 @@ export default function ProfilePage() {
 
   const { program, sbtProgram } = useEscrow();
 
-  const badges: number[] = [];
+  const [badges, setBadges] = useState<number[]>([]);
   const achievements: string[] = [];
 
   // Fetch profile on load
@@ -211,6 +211,9 @@ export default function ProfilePage() {
           { label: "SOL Earned", value: earned.toFixed(2) },
           { label: "Forge Score", value: forgeScore },
         ]);
+        
+        // Dynamically show badges for each completed task for now (as actual SBT minting is not fully hooked up in frontend yet)
+        setBadges(Array.from({ length: completedEscrows.length }).map((_, i) => i));
 
         // Sync forge_score to Supabase for rankings
         if (supabase && forgeScore > 0) {

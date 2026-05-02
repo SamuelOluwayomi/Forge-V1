@@ -51,6 +51,7 @@ export default function DeveloperProfilePage() {
   const [hasPioneer, setHasPioneer] = useState(false);
   const [hasFounder, setHasFounder] = useState(false);
   const [selectedNft, setSelectedNft] = useState<{ type: 'founder' | 'pioneer' | 'sbt', uri?: string } | null>(null);
+  const [badges, setBadges] = useState<number[]>([]);
 
   useEffect(() => {
     if (!address) return;
@@ -103,6 +104,9 @@ export default function DeveloperProfilePage() {
           { label: "SOL Earned", value: earned.toFixed(2) },
           { label: "Forge Score", value: forgeScore },
         ]);
+        
+        // Dynamically show badges for each completed task for now (as actual SBT minting is not fully hooked up in frontend yet)
+        setBadges(Array.from({ length: completedCount }).map((_, i) => i));
 
         // Fetch Achievements (Pioneer & Founder NFTs)
         try {
@@ -142,7 +146,8 @@ export default function DeveloperProfilePage() {
     };
 
     fetchOnChainStats();
-  }, [program, sbtProgram, address]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address]);
 
   if (loading) {
     return (

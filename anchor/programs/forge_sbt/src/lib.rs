@@ -11,8 +11,7 @@ use anchor_spl::{
 
 declare_id!("B563uW8guVAhSasPR5S6MgMGHcYwtbaiwVv9kofkwZKZ");
 
-// Your wallet — only this address can mint the Founder NFT
-const FORGE_FOUNDER: &str = "4taXpwcd3YA26w6BqrwRMgEoka33eFtEGQ3KiU41MS81";
+const FORGE_FOUNDER: &str = "HDpuuLudmQoCjm52z1L8SC8eMAX85QEdum6KPu2b6TgW";
 
 // Pioneer NFT supply cap
 const PIONEER_MAX_SUPPLY: u32 = 100;

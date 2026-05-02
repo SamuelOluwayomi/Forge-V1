@@ -62,6 +62,8 @@ export default function ProfilePage() {
   const [rankCountdown, setRankCountdown] = useState("");
   const [sbtMint, setSbtMint] = useState<string | null>(null);
   const [sbtMinting, setSbtMinting] = useState(false);
+  const [hasPioneer, setHasPioneer] = useState(false);
+  const [hasFounder, setHasFounder] = useState(false);
 
   const [stats, setStats] = useState([
     { label: "Tasks Completed", value: 0 },
@@ -125,11 +127,30 @@ export default function ProfilePage() {
       try {
         const userPubkey = new PublicKey(address);
         
+        const [pioneerPda] = await PublicKey.findProgramAddress(
+          [Buffer.from("pioneer_nft"), userPubkey.toBuffer()],
+          sbtProgram.programId
+        );
+        try {
+          await (sbtProgram.account as any).specialNft.fetch(pioneerPda);
+          setHasPioneer(true);
+        } catch {}
+
+        const [founderPda] = await PublicKey.findProgramAddress(
+          [Buffer.from("founder_nft"), userPubkey.toBuffer()],
+          sbtProgram.programId
+        );
+        try {
+          await (sbtProgram.account as any).specialNft.fetch(founderPda);
+          setHasFounder(true);
+        } catch {}
+        
       } catch (error) {
         console.error("Error fetching rewards:", error);
       }
     };
 
+    fetchRewards();
     fetchProfile();
     fetchTotalDevs();
   }, [address, sbtProgram]);
@@ -173,7 +194,6 @@ export default function ProfilePage() {
             Object.keys(e.account.status).includes("completed")
         );
 
-        const completedCount = completedEscrows.length;
         const earned =
           completedEscrows.reduce(
             (acc: number, e: any) => acc + Number(e.account.amount),
@@ -181,10 +201,10 @@ export default function ProfilePage() {
           ) / 1_000_000_000;
 
         // Simple Forge Score formula for now: 100 points per completed task
-        const forgeScore = completedCount * 100;
+        const forgeScore = completedEscrows.length * 100;
 
         setStats([
-          { label: "Tasks Completed", value: completedCount },
+          { label: "Tasks Completed", value: completedEscrows.length },
           { label: "Tasks Posted", value: posted },
           { label: "SOL Earned", value: earned.toFixed(2) },
           { label: "Forge Score", value: forgeScore },
@@ -520,7 +540,58 @@ export default function ProfilePage() {
               <p className="font-bold text-xs uppercase text-black/60 mb-3">
                 {profileData.title || "Forge Developer"}
               </p>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/40 mb-1">
+
+              {/* Achievements Section */}
+              <div className="mt-8 border-t-2 border-dashed border-black/10 pt-6">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/40 mb-4">
+                  Achievements
+                </p>
+                {(!sbtMint && !hasPioneer && !hasFounder) ? (
+                  <div className="border-2 border-dashed border-black/10 p-4 text-center">
+                    <p className="font-bold text-[10px] text-black/30 uppercase tracking-widest">
+                      None
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex gap-2 flex-wrap">
+                    {/* Founder NFT Minified Card */}
+                    {hasFounder && (
+                      <div className="border-2 border-black bg-white p-1.5 flex flex-col gap-1 shadow-[2px_2px_0px_0px_rgba(255,69,0,1)] hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_rgba(255,69,0,1)] transition-all cursor-pointer" style={{ width: 80 }} title="Forge Founder (1 of 1)">
+                        <div className="relative w-full border border-black overflow-hidden" style={{ height: 50 }}>
+                          <Image src="https://amber-important-primate-357.mypinata.cloud/ipfs/bafybeiaaxfuvglz5is7pmn5m2lthoyyit7rjzlt6irabyrgd5byy3esg5i" alt="Founder" fill className="object-cover" unoptimized />
+                          <div className="absolute top-0 right-0 bg-black text-white text-[6px] font-black px-1 border-l border-b border-black">1/1</div>
+                        </div>
+                        <p className="font-black text-[7px] uppercase text-center leading-tight whitespace-nowrap overflow-hidden text-ellipsis">Genesis</p>
+                      </div>
+                    )}
+                    
+                    {/* Pioneer NFT Minified Card */}
+                    {hasPioneer && (
+                      <div className="border-2 border-black bg-white p-1.5 flex flex-col gap-1 shadow-[2px_2px_0px_0px_rgba(255,215,0,1)] hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_rgba(255,215,0,1)] transition-all cursor-pointer" style={{ width: 80 }} title="Forge Pioneer (Early Adopter)">
+                        <div className="relative w-full border border-black overflow-hidden" style={{ height: 50 }}>
+                          <Image src="https://amber-important-primate-357.mypinata.cloud/ipfs/bafybeigjn3cdrocvxavacumjnz6ic6mdzghuxvzvzojkrxilijsnzzlqyi" alt="Pioneer" fill className="object-cover" unoptimized />
+                          <div className="absolute top-0 right-0 bg-[#FFD700] text-black text-[6px] font-black px-1 border-l border-b border-black">RARE</div>
+                        </div>
+                        <p className="font-black text-[7px] uppercase text-center leading-tight whitespace-nowrap overflow-hidden text-ellipsis">Pioneer</p>
+                      </div>
+                    )}
+
+                    {/* Standard Profile SBT Minified View */}
+                    {sbtMint && (
+                      <div className="border-2 border-black bg-white px-2 py-1.5 flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                         <span className="font-black text-[9px] uppercase tracking-widest text-black flex items-center gap-1.5">
+                           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                             <path d="M22 11.08V12a10 10 0 11-5.93-9.14M22 4L12 14.01l-3-3" />
+                           </svg>
+                           Soulbound
+                         </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/40 mt-6 mb-1">
                 Authenticated Wallet
               </p>
               <p className="font-mono text-[9px] font-black text-black bg-white/20 border-2 border-black/10 px-2 py-1 inline-block truncate max-w-full mb-2">

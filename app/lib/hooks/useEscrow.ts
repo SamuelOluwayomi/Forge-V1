@@ -263,5 +263,61 @@ export function useEscrow() {
     raiseDispute,
     resolveDispute,
     provider,
+
+    /** Reward NFTs */
+    initializeMintTracker: useCallback(async () => {
+      if (!sbtProgram || !walletPublicKey) throw new Error("Wallet not connected");
+      const [trackerPda] = await web3.PublicKey.findProgramAddress(
+        [Buffer.from("mint_tracker")],
+        sbtProgram.programId
+      );
+      return await (sbtProgram.methods as any)
+        .initializeMintTracker()
+        .accounts({
+          tracker: trackerPda,
+          authority: walletPublicKey,
+          systemProgram: web3.SystemProgram.programId,
+        })
+        .rpc();
+    }, [sbtProgram, walletPublicKey]),
+
+    mintFounderNft: useCallback(async (recipient: web3.PublicKey, metadataUri: string) => {
+      if (!sbtProgram || !walletPublicKey) throw new Error("Wallet not connected");
+      const [founderNftPda] = await web3.PublicKey.findProgramAddress(
+        [Buffer.from("founder_nft"), recipient.toBuffer()],
+        sbtProgram.programId
+      );
+      return await (sbtProgram.methods as any)
+        .mintFounderNft(metadataUri)
+        .accounts({
+          founderNft: founderNftPda,
+          recipient: recipient,
+          authority: walletPublicKey,
+          systemProgram: web3.SystemProgram.programId,
+        })
+        .rpc();
+    }, [sbtProgram, walletPublicKey]),
+
+    mintPioneerNft: useCallback(async (recipient: web3.PublicKey, metadataUri: string) => {
+      if (!sbtProgram || !walletPublicKey) throw new Error("Wallet not connected");
+      const [pioneerNftPda] = await web3.PublicKey.findProgramAddress(
+        [Buffer.from("pioneer_nft"), recipient.toBuffer()],
+        sbtProgram.programId
+      );
+      const [trackerPda] = await web3.PublicKey.findProgramAddress(
+        [Buffer.from("mint_tracker")],
+        sbtProgram.programId
+      );
+      return await (sbtProgram.methods as any)
+        .mintPioneerNft(metadataUri)
+        .accounts({
+          pioneerNft: pioneerNftPda,
+          tracker: trackerPda,
+          recipient: recipient,
+          payer: walletPublicKey,
+          systemProgram: web3.SystemProgram.programId,
+        })
+        .rpc();
+    }, [sbtProgram, walletPublicKey]),
   } as const;
 }

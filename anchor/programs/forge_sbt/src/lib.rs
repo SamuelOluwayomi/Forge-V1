@@ -11,6 +11,12 @@ use anchor_spl::{
 
 declare_id!("B563uW8guVAhSasPR5S6MgMGHcYwtbaiwVv9kofkwZKZ");
 
+// Your wallet — only this address can mint the Founder NFT
+const FORGE_FOUNDER: &str = "4taXpwcd3YA26w6BqrwRMgEoka33eFtEGQ3KiU41MS81";
+
+// Pioneer NFT supply cap
+const PIONEER_MAX_SUPPLY: u32 = 100;
+
 #[program]
 pub mod forge_sbt {
     use super::*;
@@ -339,6 +345,82 @@ pub mod forge_sbt {
 
         Ok(())
     }
+
+    // ─────────────────────────────────────────────
+    // 6. INITIALIZE MINT TRACKER
+    // Call this once to set up the tracker account for reward NFTs.
+    // ─────────────────────────────────────────────
+    pub fn initialize_mint_tracker(ctx: Context<InitializeMintTracker>) -> Result<()> {
+        let tracker = &mut ctx.accounts.tracker;
+        tracker.pioneer_minted = 0;
+        tracker.bump = ctx.bumps.tracker;
+        Ok(())
+    }
+
+    // ─────────────────────────────────────────────
+    // 7. MINT FOUNDER NFT
+    // Callable only by the hardcoded founder wallet.
+    // ─────────────────────────────────────────────
+    pub fn mint_founder_nft(ctx: Context<MintFounderNft>, metadata_uri: String) -> Result<()> {
+        // Only your wallet can mint this
+        let founder_key = FORGE_FOUNDER.parse::<Pubkey>().unwrap();
+        require!(
+            ctx.accounts.authority.key() == founder_key,
+            SbtError::Unauthorized
+        );
+
+        let nft = &mut ctx.accounts.founder_nft;
+        let clock = Clock::get()?;
+
+        nft.owner = ctx.accounts.recipient.key();
+        nft.nft_type = NftType::Founder;
+        nft.edition = 1;
+        nft.uri = metadata_uri;
+        nft.minted_at = clock.unix_timestamp;
+        nft.bump = ctx.bumps.founder_nft;
+
+        emit!(SpecialNftMinted {
+            owner: nft.owner,
+            nft_type: NftType::Founder,
+            minted_at: nft.minted_at,
+        });
+
+        Ok(())
+    }
+
+    // ─────────────────────────────────────────────
+    // 8. MINT PIONEER NFT
+    // Capped at 100 total mints.
+    // ─────────────────────────────────────────────
+    pub fn mint_pioneer_nft(ctx: Context<MintPioneerNft>, metadata_uri: String) -> Result<()> {
+        let tracker = &mut ctx.accounts.tracker;
+
+        // Check supply cap
+        require!(
+            tracker.pioneer_minted < PIONEER_MAX_SUPPLY,
+            SbtError::SupplyExhausted
+        );
+
+        let nft = &mut ctx.accounts.pioneer_nft;
+        let clock = Clock::get()?;
+
+        nft.owner = ctx.accounts.recipient.key();
+        nft.nft_type = NftType::Pioneer;
+        nft.edition = tracker.pioneer_minted + 1; // e.g. Pioneer #47
+        nft.uri = metadata_uri;
+        nft.minted_at = clock.unix_timestamp;
+        nft.bump = ctx.bumps.pioneer_nft;
+
+        tracker.pioneer_minted += 1;
+
+        emit!(SpecialNftMinted {
+            owner: nft.owner,
+            nft_type: NftType::Pioneer,
+            minted_at: nft.minted_at,
+        });
+
+        Ok(())
+    }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -429,11 +511,41 @@ impl ProfileSbt {
         + 1;   // bump
 }
 
+#[account]
+pub struct MintTracker {
+    pub pioneer_minted: u32, // tracks how many pioneers minted
+    pub bump: u8,
+}
+
+impl MintTracker {
+    pub const LEN: usize = 8 + 4 + 1;
+}
+
+#[account]
+pub struct SpecialNft {
+    pub owner: Pubkey,
+    pub nft_type: NftType,
+    pub edition: u32,   // for Pioneer: #1 to #100. Founder: always 1
+    pub uri: String,    // max 200
+    pub minted_at: i64,
+    pub bump: u8,
+}
+
+impl SpecialNft {
+    pub const LEN: usize = 8 + 32 + 1 + 4 + (4 + 200) + 8 + 1;
+}
+
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
 pub enum BadgeType {
     WorkerCompletion,
     ClientPayment,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
+pub enum NftType {
+    Founder,
+    Pioneer,
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -609,6 +721,70 @@ pub struct MintProfileSbt<'info> {
     pub system_program: Program<'info, System>,
 }
 
+#[derive(Accounts)]
+pub struct InitializeMintTracker<'info> {
+    #[account(
+        init,
+        payer = authority,
+        space = MintTracker::LEN,
+        seeds = [b"mint_tracker"],
+        bump
+    )]
+    pub tracker: Account<'info, MintTracker>,
+
+    #[account(mut)]
+    pub authority: Signer<'info>,
+
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct MintFounderNft<'info> {
+    #[account(
+        init,
+        payer = authority,
+        space = SpecialNft::LEN,
+        seeds = [b"founder_nft", recipient.key().as_ref()],
+        bump
+    )]
+    pub founder_nft: Account<'info, SpecialNft>,
+
+    /// CHECK: recipient wallet
+    pub recipient: UncheckedAccount<'info>,
+
+    #[account(mut)]
+    pub authority: Signer<'info>,
+
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct MintPioneerNft<'info> {
+    #[account(
+        init,
+        payer = payer,
+        space = SpecialNft::LEN,
+        seeds = [b"pioneer_nft", recipient.key().as_ref()],
+        bump
+    )]
+    pub pioneer_nft: Account<'info, SpecialNft>,
+
+    #[account(
+        mut,
+        seeds = [b"mint_tracker"],
+        bump = tracker.bump,
+    )]
+    pub tracker: Account<'info, MintTracker>,
+
+    /// CHECK: recipient wallet
+    pub recipient: UncheckedAccount<'info>,
+
+    #[account(mut)]
+    pub payer: Signer<'info>,
+
+    pub system_program: Program<'info, System>,
+}
+
 
 // ─────────────────────────────────────────────────────────────
 // EVENTS
@@ -653,6 +829,13 @@ pub struct ProfileSbtMinted {
     pub minted_at: i64,
 }
 
+#[event]
+pub struct SpecialNftMinted {
+    pub owner: Pubkey,
+    pub nft_type: NftType,
+    pub minted_at: i64,
+}
+
 
 // ─────────────────────────────────────────────────────────────
 // ERRORS
@@ -671,4 +854,7 @@ pub enum SbtError {
 
     #[msg("Reputation account already initialized")]
     AlreadyInitialized,
+
+    #[msg("Pioneer NFT supply of 100 has been exhausted")]
+    SupplyExhausted,
 }

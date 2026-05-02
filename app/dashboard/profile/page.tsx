@@ -9,6 +9,7 @@ import { supabase } from "@/app/lib/supabase";
 import { ForgeLoader } from "@/app/components/ForgeLoader";
 import { PublicKey, SystemProgram } from "@solana/web3.js";
 import { XLogo, GithubLogo, DiscordLogo, TelegramLogo } from "@phosphor-icons/react";
+import { NFT_METADATA } from "@/app/lib/nft-metadata";
 
 function BadgeCard({ index }: { index: number }) {
   const colors = ["#FF4500", "#FFD700", "#4ADE80", "#60A5FA", "#FF90E8"];
@@ -71,6 +72,13 @@ export default function ProfilePage() {
     { label: "Forge Score", value: 0 },
   ]);
 
+  const [pioneerStats, setPioneerStats] = useState<{ minted: number; total: number }>({ minted: 0, total: 100 });
+  const [userRewards, setUserRewards] = useState<{ hasPioneer: boolean; hasFounder: boolean }>({ hasPioneer: false, hasFounder: false });
+  const [claimingReward, setClaimingReward] = useState(false);
+
+  const { sbtProgram, mintPioneerNft, mintFounderNft, initializeMintTracker } = useEscrow();
+  const FORGE_FOUNDER = "4taXpwcd3YA26w6BqrwRMgEoka33eFtEGQ3KiU41MS81";
+
   const badges: number[] = [];
   const achievements: string[] = [];
 
@@ -118,8 +126,101 @@ export default function ProfilePage() {
         .select("*", { count: "exact", head: true });
       if (count) setTotalDevs(count);
     };
+
+    const fetchRewards = async () => {
+      if (!sbtProgram || !address) return;
+      try {
+        const userPubkey = new PublicKey(address);
+        
+        // 1. Fetch Mint Tracker
+        const [trackerPda] = await PublicKey.findProgramAddress(
+          [Buffer.from("mint_tracker")],
+          sbtProgram.programId
+        );
+        
+        try {
+          const tracker = await (sbtProgram.account as any).mintTracker.fetch(trackerPda);
+          setPioneerStats({ minted: tracker.pioneerMinted, total: 100 });
+        } catch (e) {
+          console.log("Mint tracker not initialized yet");
+        }
+
+        // 2. Check Pioneer NFT
+        const [pioneerPda] = await PublicKey.findProgramAddress(
+          [Buffer.from("pioneer_nft"), userPubkey.toBuffer()],
+          sbtProgram.programId
+        );
+        try {
+          await (sbtProgram.account as any).specialNft.fetch(pioneerPda);
+          setUserRewards(prev => ({ ...prev, hasPioneer: true }));
+        } catch (e) {}
+
+        // 3. Check Founder NFT
+        const [founderPda] = await PublicKey.findProgramAddress(
+          [Buffer.from("founder_nft"), userPubkey.toBuffer()],
+          sbtProgram.programId
+        );
+        try {
+          await (sbtProgram.account as any).specialNft.fetch(founderPda);
+          setUserRewards(prev => ({ ...prev, hasFounder: true }));
+        } catch (e) {}
+
+      } catch (error) {
+        console.error("Error fetching rewards:", error);
+      }
+    };
+
+    fetchProfile();
     fetchTotalDevs();
-  }, [address]);
+    fetchRewards();
+  }, [address, sbtProgram]);
+
+  const handleClaimReward = async (type: 'pioneer' | 'founder') => {
+    if (!address || !sbtProgram) return;
+    setClaimingReward(true);
+    const userPubkey = new PublicKey(address);
+    
+    try {
+      if (type === 'pioneer') {
+        await mintPioneerNft(userPubkey, NFT_METADATA.pioneer.uri);
+        toast.success("Welcome to the Pioneer team! NFT minted.");
+        setUserRewards(prev => ({ ...prev, hasPioneer: true }));
+      } else {
+        await mintFounderNft(userPubkey, NFT_METADATA.founder.uri);
+        toast.success("Founder status confirmed. NFT minted.");
+        setUserRewards(prev => ({ ...prev, hasFounder: true }));
+      }
+      
+      // Update stats
+      const [trackerPda] = await PublicKey.findProgramAddress(
+        [Buffer.from("mint_tracker")],
+        sbtProgram.programId
+      );
+      const tracker = await (sbtProgram.account as any).mintTracker.fetch(trackerPda);
+      setPioneerStats({ minted: tracker.pioneerMinted, total: 100 });
+
+    } catch (error: any) {
+      console.error("Error claiming reward:", error);
+      if (error.message.includes("SupplyExhausted")) {
+        toast.error("Pioneer supply exhausted (100/100)");
+      } else if (error.message.includes("Unauthorized")) {
+        toast.error("Unauthorized to claim this NFT");
+      } else {
+        toast.error("Failed to claim NFT reward");
+      }
+    } finally {
+      setClaimingReward(false);
+    }
+  };
+
+  const handleInitTracker = async () => {
+    try {
+      await initializeMintTracker();
+      toast.success("Mint tracker initialized!");
+    } catch (e) {
+      toast.error("Failed to initialize tracker");
+    }
+  };
 
   // Countdown to midnight UTC (ranking refresh)
   useEffect(() => {
@@ -1010,6 +1111,89 @@ export default function ProfilePage() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Exclusive Rewards */}
+          <div className="brutalist-card bg-primary/10 p-8 border-4 border-black relative overflow-hidden mb-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-black text-xl uppercase tracking-tight">
+                Exclusive Rewards
+              </h2>
+              <div className="flex gap-2">
+                {address === FORGE_FOUNDER && pioneerStats.minted === 0 && (
+                  <button 
+                    onClick={handleInitTracker}
+                    className="text-[10px] font-black uppercase bg-black text-white px-2 py-1"
+                  >
+                    Init Tracker
+                  </button>
+                )}
+                <div
+                  className="brutalist-tape text-[10px] px-2 py-0.5 bg-primary text-white"
+                  style={{ transform: "rotate(-2deg)" }}
+                >
+                  Limited Edition
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Pioneer NFT */}
+              <div className={`border-2 border-black p-4 ${userRewards.hasPioneer ? 'bg-green-500/10' : 'bg-white'}`}>
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-black uppercase text-sm">Pioneer NFT</h3>
+                  <span className="text-[10px] font-bold bg-black text-white px-1.5 py-0.5">
+                    {pioneerStats.minted}/{pioneerStats.total} CLAIMED
+                  </span>
+                </div>
+                <p className="text-xs font-bold text-black/60 mb-4">
+                  Awarded to the first 100 builders joining the Forge ecosystem.
+                </p>
+                {userRewards.hasPioneer ? (
+                  <div className="flex items-center gap-2 text-green-600 font-black text-xs uppercase">
+                    <div className="w-2 h-2 rounded-full bg-green-600" />
+                    Claimed
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => handleClaimReward('pioneer')}
+                    disabled={claimingReward || pioneerStats.minted >= pioneerStats.total}
+                    className="w-full brutalist-button py-2 bg-black text-white text-xs font-black uppercase disabled:opacity-50"
+                  >
+                    {claimingReward ? "Minting..." : pioneerStats.minted >= pioneerStats.total ? "Exhausted" : "Claim Pioneer NFT"}
+                  </button>
+                )}
+              </div>
+
+              {/* Founder NFT */}
+              {address === FORGE_FOUNDER && (
+                <div className={`border-2 border-black p-4 ${userRewards.hasFounder ? 'bg-primary/20' : 'bg-white'}`}>
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-black uppercase text-sm">Founder NFT</h3>
+                    <span className="text-[10px] font-bold bg-primary text-white px-1.5 py-0.5 uppercase">
+                      Unique
+                    </span>
+                  </div>
+                  <p className="text-xs font-bold text-black/60 mb-4">
+                    The genesis token for the architect of the Forge protocol.
+                  </p>
+                  {userRewards.hasFounder ? (
+                    <div className="flex items-center gap-2 text-primary font-black text-xs uppercase">
+                      <div className="w-2 h-2 rounded-full bg-primary" />
+                      Genesis Active
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleClaimReward('founder')}
+                      disabled={claimingReward}
+                      className="w-full brutalist-button py-2 bg-primary text-white text-xs font-black uppercase disabled:opacity-50"
+                    >
+                      {claimingReward ? "Minting..." : "Mint Genesis Founder NFT"}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* SBT Badges */}

@@ -111,7 +111,7 @@ pub mod forge_escrow {
         let escrow = &mut ctx.accounts.escrow_account;
         let clock = Clock::get()?;
 
-        require!(escrow.status == EscrowStatus::Active, ForgeError::InvalidStatus);
+        require!(escrow.status == EscrowStatus::Active || escrow.status == EscrowStatus::Disputed, ForgeError::InvalidStatus);
         require!(escrow.worker == ctx.accounts.worker.key(), ForgeError::Unauthorized);
         require!(submission_uri.len() <= 200, ForgeError::MetadataUriTooLong);
 
@@ -197,6 +197,7 @@ pub mod forge_escrow {
         require!(reason_uri.len() <= 200, ForgeError::MetadataUriTooLong);
 
         escrow.status = EscrowStatus::Disputed;
+        escrow.dispute_reason = reason_uri.clone();
 
         emit!(DisputeRaised { task_id: escrow.task_id, raised_by: caller, reason_uri });
         Ok(())
@@ -263,11 +264,12 @@ pub struct EscrowAccount {
     pub ai_report_hash: Option<[u8; 32]>, 
     pub submission_timestamp: Option<i64>,
     pub created_at: i64,
+    pub dispute_reason: String,      
     pub bump: u8,
 }
 
 impl EscrowAccount {
-    pub const LEN: usize = 8 + 8 + 32 + 32 + 8 + 1 + 1 + 1 + 8 + 204 + 204 + 33 + 9 + 8 + 1;
+    pub const LEN: usize = 8 + 8 + 32 + 32 + 8 + 1 + 1 + 1 + 8 + 204 + 204 + 33 + 9 + 8 + 204 + 1;
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]

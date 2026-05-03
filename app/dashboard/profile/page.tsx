@@ -66,6 +66,8 @@ export default function ProfilePage() {
   const [hasPioneer, setHasPioneer] = useState(false);
   const [hasFounder, setHasFounder] = useState(false);
   const [selectedNft, setSelectedNft] = useState<{ type: 'founder' | 'pioneer' | 'sbt', uri?: string } | null>(null);
+  const [pioneerPdaAddr, setPioneerPdaAddr] = useState<string | null>(null);
+  const [founderPdaAddr, setFounderPdaAddr] = useState<string | null>(null);
 
   const [stats, setStats] = useState([
     { label: "Tasks Completed", value: 0 },
@@ -133,6 +135,7 @@ export default function ProfilePage() {
           [Buffer.from("pioneer_nft"), userPubkey.toBuffer()],
           sbtProgram.programId
         );
+        setPioneerPdaAddr(pioneerPda.toBase58());
         try {
           await (sbtProgram.account as any).specialNft.fetch(pioneerPda);
           setHasPioneer(true);
@@ -142,6 +145,7 @@ export default function ProfilePage() {
           [Buffer.from("founder_nft"), userPubkey.toBuffer()],
           sbtProgram.programId
         );
+        setFounderPdaAddr(founderPda.toBase58());
         try {
           await (sbtProgram.account as any).specialNft.fetch(founderPda);
           setHasFounder(true);
@@ -372,9 +376,9 @@ export default function ProfilePage() {
         "metadata",
         JSON.stringify({
           name: `${profileData.name} — Forge Identity`,
-          description: profileData.bio || "Forge Developer",
+          description: profileData.bio || "Forge Contributor",
           image: displayPhoto || "",
-          attributes: [{ trait_type: "Title", value: profileData.title }],
+          attributes: [{ trait_type: "Title", value: profileData.title || "Forge Contributor" }],
         })
       );
 
@@ -510,7 +514,7 @@ export default function ProfilePage() {
                   {profileData.name || "Anonymous Dev"}
                 </h2>
                 <p className="font-bold text-sm uppercase text-black/60 mb-6">
-                  {profileData.title || "Forge Developer"}
+                  {profileData.title || "Forge Contributor"}
                 </p>
 
                 {/* Achievements Section */}
@@ -594,6 +598,39 @@ export default function ProfilePage() {
                       </button>
                     )}
                   </div>
+
+                  {/* NFT PDA on-chain links */}
+                  {(hasPioneer || hasFounder) && (
+                    <div className="mt-3 flex flex-col gap-1.5">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/40 mb-1">On-Chain NFT Accounts</p>
+                      {hasPioneer && pioneerPdaAddr && (
+                        <a
+                          href={`https://explorer.solana.com/address/${pioneerPdaAddr}?cluster=devnet`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-[9px] font-black uppercase border-2 border-[#FFD700] bg-[#FFD700]/10 px-2 py-1.5 hover:bg-[#FFD700] transition-colors w-fit"
+                        >
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
+                          </svg>
+                          Pioneer NFT — {pioneerPdaAddr.slice(0, 8)}...{pioneerPdaAddr.slice(-6)}
+                        </a>
+                      )}
+                      {hasFounder && founderPdaAddr && (
+                        <a
+                          href={`https://explorer.solana.com/address/${founderPdaAddr}?cluster=devnet`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-[9px] font-black uppercase border-2 border-[#FF4500] bg-[#FF4500]/10 px-2 py-1.5 hover:bg-[#FF4500] hover:text-white transition-colors w-fit"
+                        >
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
+                          </svg>
+                          Founder NFT (1/1) — {founderPdaAddr.slice(0, 8)}...{founderPdaAddr.slice(-6)}
+                        </a>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -652,7 +689,7 @@ export default function ProfilePage() {
                     {profileData.name || "Dev Profile"}
                   </h2>
                   <p className="font-bold text-[10px] uppercase text-black/60 mb-4">
-                    {profileData.title || "Forge Developer"}
+                    {profileData.title || "Forge Contributor"}
                   </p>
                   <div className="flex gap-2">
                     {rank > 0 && (
@@ -678,7 +715,7 @@ export default function ProfilePage() {
               </div>
 
               {/* Wallet Section */}
-              <div className="bg-white/90 border-[3px] border-black p-4 mb-8">
+              <div className="bg-white/90 border-[3px] border-black p-4 mb-4">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/50 mb-1">
                   Authenticated Wallet
                 </p>
@@ -686,6 +723,25 @@ export default function ProfilePage() {
                   {address || "Not Connected"}
                 </p>
               </div>
+
+              {/* NFT on-chain block for exportable card */}
+              {(hasPioneer || hasFounder) && (
+                <div className="mb-6 flex flex-col gap-1.5">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/50 mb-1">On-Chain NFTs</p>
+                  {hasPioneer && pioneerPdaAddr && (
+                    <div className="bg-[#FFD700]/40 border-2 border-black p-2 flex justify-between items-center">
+                      <p className="font-black text-[9px] uppercase">⭐ Pioneer NFT</p>
+                      <p className="font-mono text-[8px] text-black/60">{pioneerPdaAddr.slice(0, 8)}...{pioneerPdaAddr.slice(-6)}</p>
+                    </div>
+                  )}
+                  {hasFounder && founderPdaAddr && (
+                    <div className="bg-white/60 border-2 border-black p-2 flex justify-between items-center">
+                      <p className="font-black text-[9px] uppercase">🔥 Founder NFT (1/1)</p>
+                      <p className="font-mono text-[8px] text-black/60">{founderPdaAddr.slice(0, 8)}...{founderPdaAddr.slice(-6)}</p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Stats Bar */}
               <div className="grid grid-cols-2 gap-4">

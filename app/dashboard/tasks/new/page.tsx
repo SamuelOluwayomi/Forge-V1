@@ -274,7 +274,7 @@ export default function NewTaskPage() {
         <div className="flex-1 h-0.5 bg-black/10"></div>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6" noValidate>
         {/* Task Type Toggle */}
         <div className="brutalist-card bg-white p-6 flex flex-col gap-4">
           <p className="font-black text-sm uppercase tracking-widest text-black/60">
@@ -394,10 +394,10 @@ export default function NewTaskPage() {
           </label>
           <input
             id="listing-deadline"
-            type="datetime-local"
+            type="date"
             value={listingDeadline}
             onChange={(e) => setListingDeadline(e.target.value)}
-            min={minDateTime}
+            min={new Date().toISOString().slice(0, 10)}
             className="border-2 border-black bg-background px-4 py-3 font-bold text-sm text-black outline-none focus:border-primary transition-colors"
           />
           <p className="text-xs font-bold text-black/40 leading-tight">

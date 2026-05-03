@@ -7,7 +7,7 @@ declare_id!("AkoaVinz9Md94KsC2k6sULNdwvqh2uF16KdKiWdpr6ye"); // replace after an
 pub mod forge_escrow {
     use super::*;
 
-    pub const TREASURY_PUBKEY: Pubkey = pubkey!("EPpNW3G47SAJ4j1DatpjW7mJMLRTH9Z8K7LJtBfhR8Mt");
+    pub const TREASURY_PUBKEY: Pubkey = pubkey!("HDpuuLudmQcCm52z1L8SC8eMAX8SQedum6KPu2b6TgW");
 
     // ─────────────────────────────────────────────
     // 1. CREATE TASK
@@ -211,6 +211,7 @@ pub mod forge_escrow {
         let amount = ctx.accounts.escrow_account.amount;
 
         require!(ctx.accounts.escrow_account.status == EscrowStatus::Disputed, ForgeError::InvalidStatus);
+        require!(ctx.accounts.arbitrator.key() == crate::forge_escrow::TREASURY_PUBKEY, ForgeError::Unauthorized);
 
         if release_to_worker {
             let fee_amount = amount.checked_mul(200).unwrap().checked_div(10_000).unwrap();

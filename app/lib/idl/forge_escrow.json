@@ -798,6 +798,10 @@
             "type": "i64"
           },
           {
+            "name": "dispute_reason",
+            "type": "string"
+          },
+          {
             "name": "bump",
             "type": "u8"
           }

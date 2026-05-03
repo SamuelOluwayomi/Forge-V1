@@ -442,7 +442,7 @@ export default function TaskDetailPage() {
         )}
 
         {isWorker && (
-          <Link href="/dashboard/accepted-work" className="brutalist-button px-8 py-3 text-sm bg-[#4ADE80] text-black border-black">
+          <Link href="/dashboard/work" className="brutalist-button px-8 py-3 text-sm bg-[#4ADE80] text-black border-black">
             Go to My Work
           </Link>
         )}

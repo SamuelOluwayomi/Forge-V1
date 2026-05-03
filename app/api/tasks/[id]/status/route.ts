@@ -9,7 +9,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
 
   try {
-    const { status } = await req.json();
+    const { status, dispute_reason } = await req.json();
     
     if (!status) {
       return NextResponse.json({ error: "Status is required" }, { status: 400 });
@@ -18,7 +18,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     // Update the task status in DB
     const { error } = await supabase
       .from("tasks")
-      .update({ status })
+      .update({ 
+        status,
+        ...(dispute_reason && { dispute_reason })
+      })
       .eq("pda", id);
 
     if (error) {

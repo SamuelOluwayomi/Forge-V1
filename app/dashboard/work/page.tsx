@@ -18,6 +18,7 @@ interface WorkItem {
   amount: string;
   status: WorkStatus;
   difficulty: number;
+  disputeReason?: string;
 }
 
 const STATUS_STYLES: Record<WorkStatus, string> = {
@@ -90,15 +91,22 @@ function WorkCard({ item, onSubmit, submitting }: { item: WorkItem; onSubmit: (i
         <CopyButton text={item.client} id={`copy-client-${item.id}`} />
       </div>
 
-      {(item.status === "Approved" || item.status === "In Progress") && (
+      {(item.status === "Approved" || item.status === "In Progress" || item.status === "Disputed") && (
         <button
           id={`submit-work-${item.id}`}
           onClick={() => onSubmit(item.id, item.client)}
           disabled={submitting === item.id}
           className="brutalist-button w-full py-2.5 text-sm bg-primary text-white border-black disabled:opacity-50"
         >
-          {submitting === item.id ? "Submitting..." : "Submit Work"}
+          {submitting === item.id ? "Submitting..." : item.status === "Disputed" ? "Resubmit Work" : "Submit Work"}
         </button>
+      )}
+
+      {item.status === "Disputed" && item.disputeReason && (
+        <div className="bg-[#FF4500]/10 border-2 border-[#FF4500] p-3">
+          <p className="font-black text-[10px] uppercase text-[#FF4500] mb-1">Dispute Reason</p>
+          <p className="text-xs font-bold text-black/70 italic">&quot;{item.disputeReason}&quot;</p>
+        </div>
       )}
 
       {item.status === "Completed" && (
@@ -139,7 +147,7 @@ export default function WorkPage() {
       const pdas = myWork.map((e: any) => e.publicKey.toBase58());
       let dbTasks: any[] = [];
       if (supabase && pdas.length > 0) {
-        const { data } = await supabase.from("tasks").select("pda, title").in("pda", pdas);
+        const { data } = await supabase.from("tasks").select("pda, title, dispute_reason").in("pda", pdas);
         dbTasks = data || [];
       }
 
@@ -165,6 +173,7 @@ export default function WorkPage() {
           amount: (Number(e.account.amount) / 1_000_000_000).toString(),
           status,
           difficulty: e.account.difficulty,
+          disputeReason: e.account.disputeReason || dbTask?.dispute_reason,
         };
       });
 
@@ -213,7 +222,7 @@ export default function WorkPage() {
   };
 
   const filtered = filter === "All" ? jobs : jobs.filter((j) => j.status === filter);
-  const filters: (WorkStatus | "All")[] = ["All", "Approved", "In Progress", "Submitted", "Completed"];
+  const filters: (WorkStatus | "All")[] = ["All", "Approved", "In Progress", "Submitted", "Disputed", "Completed"];
 
   return (
     <div className="w-full">

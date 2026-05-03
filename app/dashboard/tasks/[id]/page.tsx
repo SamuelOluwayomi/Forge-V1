@@ -348,6 +348,19 @@ export default function ManageTaskPage() {
       toast.success("Revision requested! The task is now disputed/paused.", { id: tid });
       setShowRevisionModal(false);
       setOnChainStatus("disputed"); // Or fetch again
+
+      // Update DB status (non-critical)
+      try {
+        await fetch(`/api/tasks/${pda}/status`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            status: "disputed",
+            dispute_reason: revisionReason 
+          }),
+        });
+      } catch (_) { /* non-critical */ }
+
       await fetchTask();
     } catch (err: any) {
       console.error("Revision failed:", err);

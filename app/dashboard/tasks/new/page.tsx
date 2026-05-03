@@ -7,6 +7,7 @@ import { useEscrow } from "@/app/lib/hooks/useEscrow";
 import { toast } from "sonner";
 import { validateTaskInput } from "@/app/lib/validation";
 import { useBalance } from "@/app/lib/hooks/use-balance";
+import { useMemo } from "react";
 
 const DIFFICULTY_OPTIONS = [
   { value: 1, label: "Beginner", desc: "Simple tasks, clear scope" },
@@ -37,6 +38,9 @@ export default function NewTaskPage() {
   const [aiPrompt, setAiPrompt] = useState("");
   const [generating, setGenerating] = useState(false);
   const [aiAnalysisCache, setAiAnalysisCache] = useState<any>(null);
+
+  // Stable min date for the input
+  const minDateTime = useMemo(() => new Date().toISOString().slice(0, 16), []);
 
   const handleGenerateWithAI = async () => {
     if (!aiPrompt) {
@@ -172,9 +176,13 @@ export default function NewTaskPage() {
           expected_days: cleanData.expectedDays,
           difficulty: cleanData.difficulty,
           contact_info: contactInfo,
-          listing_deadline: listingDeadline 
-            ? new Date(listingDeadline).toISOString() 
-            : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // Default: 7 days
+          listing_deadline: (() => {
+            if (!listingDeadline) return new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+            const d = new Date(listingDeadline);
+            // If date is invalid or incomplete, fallback to 7 days safely
+            if (isNaN(d.getTime())) return new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+            return d.toISOString();
+          })(),
           task_type: taskType,
           skills: aiAnalysisCache?.skills || [],
           ai_analysis: aiAnalysisCache,
@@ -389,7 +397,7 @@ export default function NewTaskPage() {
             type="datetime-local"
             value={listingDeadline}
             onChange={(e) => setListingDeadline(e.target.value)}
-            min={new Date().toISOString().slice(0, 16)}
+            min={minDateTime}
             className="border-2 border-black bg-background px-4 py-3 font-bold text-sm text-black outline-none focus:border-primary transition-colors"
           />
           <p className="text-xs font-bold text-black/40 leading-tight">

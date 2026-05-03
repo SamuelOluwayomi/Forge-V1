@@ -9,19 +9,22 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
 
   try {
-    const { status, dispute_reason } = await req.json();
+    const { status, dispute_reason, escalated_to_admin } = await req.json();
     
-    if (!status) {
-      return NextResponse.json({ error: "Status is required" }, { status: 400 });
+    if (!status && escalated_to_admin === undefined) {
+      return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
     }
+
+    // Build update payload
+    const updatePayload: Record<string, any> = {};
+    if (status) updatePayload.status = status;
+    if (dispute_reason) updatePayload.dispute_reason = dispute_reason;
+    if (escalated_to_admin !== undefined) updatePayload.escalated_to_admin = escalated_to_admin;
 
     // Update the task status in DB
     const { error } = await supabase
       .from("tasks")
-      .update({ 
-        status,
-        ...(dispute_reason && { dispute_reason })
-      })
+      .update(updatePayload)
       .eq("pda", id);
 
     if (error) {

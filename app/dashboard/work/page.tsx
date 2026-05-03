@@ -173,7 +173,7 @@ export default function WorkPage() {
           amount: (Number(e.account.amount) / 1_000_000_000).toString(),
           status,
           difficulty: e.account.difficulty,
-          disputeReason: e.account.disputeReason || dbTask?.dispute_reason,
+          disputeReason: (e.account.disputeReason || dbTask?.dispute_reason || "").replace(/\0/g, "").trim(),
         };
       });
 

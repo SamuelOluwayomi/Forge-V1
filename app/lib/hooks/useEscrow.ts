@@ -9,6 +9,7 @@ import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from "@solana/spl-token
 import forgeEscrowIdl from "@/app/lib/idl/forge_escrow.json";
 import forgeSbtIdl from "@/app/lib/idl/forge_sbt.json";
 import { sendSponsoredTransaction } from "@/app/lib/sponsored-tx";
+import { useCluster } from "../../components/cluster-context";
 
 const TOKEN_METADATA_PROGRAM_ID = new web3.PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
 
@@ -36,6 +37,8 @@ const TREASURY_PUBKEY = new web3.PublicKey("EPpNW3G47SAJ4j1DatpjW7mJMLRTH9Z8K7LJ
 export function useEscrow(): UseEscrowReturn {
   const { connection } = useSolanaClient(); // Solana RPC connection
   const { wallet } = useWallet();
+  const { cluster } = useCluster();
+  const chain = `solana:${cluster}`;
   const walletPublicKey = useMemo(() => wallet ? new PublicKey(wallet.account.address) : null, [wallet]);
 
   // Shim for Anchor's expected signTransaction
@@ -47,9 +50,9 @@ export function useEscrow(): UseEscrowReturn {
     // Anchor passes a Transaction object, so we must serialize it first, then
     // deserialize the signed bytes back into a Transaction for Anchor to use.
     const serialized = transaction.serialize({ requireAllSignatures: false });
-    const signedBytes = await wallet.signTransaction(serialized, "solana:devnet");
+    const signedBytes = await wallet.signTransaction(serialized, chain);
     return web3.Transaction.from(signedBytes);
-  }, [wallet]);
+  }, [wallet, chain]);
 
   // Provider – combines connection, wallet, and options
   const provider = useMemo(() => {

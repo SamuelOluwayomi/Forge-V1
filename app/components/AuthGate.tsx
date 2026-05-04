@@ -6,15 +6,14 @@ import { useRouter } from "next/navigation";
 import { SystemProgram, PublicKey } from "@solana/web3.js";
 import { toast } from "sonner";
 import { useEscrow } from "../lib/hooks/useEscrow";
+import { useCluster } from "./cluster-context";
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { wallet, status } = useWallet();
   const { program, sbtProgram } = useEscrow();
-  console.log(
-    "Available SBT methods:",
-    Object.keys((sbtProgram as any)?.methods ?? {})
-  );
+  const { cluster } = useCluster();
+  const chain = `solana:${cluster}`;
 
   const address = wallet?.account?.address ?? null;
 
@@ -23,7 +22,6 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     "loading"
   );
   const [initPending, setInitPending] = useState(false);
-  const [signingPending, setSigningPending] = useState(false);
 
 
   useEffect(() => {
@@ -54,13 +52,9 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         if (!cancelled) setRepStatus("missing");
       }
     })();
-    const timeout = setTimeout(() => {
-      if (!cancelled) setRepStatus("ready");
-    }, 5000);
 
     return () => {
       cancelled = true;
-      clearTimeout(timeout);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [program?.programId.toBase58(), sbtProgram?.programId.toBase58(), address]);
@@ -69,7 +63,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     if (!program || !sbtProgram || !address) return;
     setInitPending(true);
     try {
-      const { sendSponsoredTransaction } = await import("../lib/sponsored-tx");
+      const { sendSponsoredTransaction, FORGE_FEE_PAYER_PUBKEY } = await import("../lib/sponsored-tx");
       const { Transaction } = await import("@solana/web3.js");
 
       const pubkey = new PublicKey(address);
@@ -87,12 +81,22 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         })
         .transaction();
 
+      // The initialize_reputation instruction requires the `owner` to pay the PDA rent.
+      // Since we want this to be completely gasless for the user (even if they have 0 SOL),
+      // we prepend a transfer of 0.002 SOL from the Forge fee payer to the user.
+      // The relay server will sign this transfer alongside paying the network fee.
+      tx.instructions.unshift(
+        SystemProgram.transfer({
+          fromPubkey: new PublicKey(FORGE_FEE_PAYER_PUBKEY),
+          toPubkey: pubkey,
+          lamports: 2000000,
+        })
+      );
+
       const signTx = async (transaction: any) => {
         if (!wallet || !wallet.signTransaction) throw new Error("Wallet not connected");
-        setSigningPending(true);
         const serialized = transaction.serialize({ requireAllSignatures: false });
-        const signedBytes = await wallet.signTransaction(serialized, "solana:devnet");
-        setSigningPending(false);
+        const signedBytes = await wallet.signTransaction(serialized, chain);
         return Transaction.from(signedBytes);
       };
 
@@ -100,7 +104,6 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       toast.success("Reputation account created — Forge covered the fees!");
       setRepStatus("ready");
     } catch (err: any) {
-      setSigningPending(false);
       toast.error(err?.message ?? "Failed to initialize reputation account.");
     } finally {
       setInitPending(false);
@@ -163,60 +166,36 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
           <h2 className="text-3xl font-black uppercase mb-4">
             Welcome to Forge
           </h2>
-
-          {signingPending ? (
-            <>
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <svg className="animate-pulse" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M12 3a9 9 0 019 9" className="text-primary" />
+          <p className="font-bold text-sm text-black/60 mb-6 leading-snug">
+            We need to create a Reputation account on-chain before you can use
+            the dashboard. This is a one-time transaction — Forge covers the fees.
+          </p>
+          <button
+            id="auth-init-reputation"
+            onClick={initializeReputation}
+            disabled={initPending}
+            className="brutalist-button px-8 py-3 bg-primary text-white border-black disabled:opacity-50 flex items-center gap-3 mx-auto"
+          >
+            {initPending ? (
+              <>
+                <svg
+                  className="animate-spin"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                >
+                  <path d="M12 3a9 9 0 019 9" />
                   <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity="0.2" />
                 </svg>
-                <p className="font-black text-sm uppercase tracking-widest">
-                  Waiting for signature...
-                </p>
-              </div>
-              <div className="bg-amber-50 border-2 border-amber-400 rounded p-4 mb-2">
-                <p className="font-bold text-sm text-amber-800 leading-snug">
-                  Your Solflare extension needs approval.
-                  <br />
-                  <span className="font-black">Please open it now</span> and confirm the transaction.
-                </p>
-              </div>
-            </>
-          ) : (
-            <>
-              <p className="font-bold text-sm text-black/60 mb-6 leading-snug">
-                We need to create a Reputation account on-chain before you can use
-                the dashboard. This is a one-time transaction — Forge covers the fees.
-              </p>
-              <button
-                id="auth-init-reputation"
-                onClick={initializeReputation}
-                disabled={initPending}
-                className="brutalist-button px-8 py-3 bg-primary text-white border-black disabled:opacity-50 flex items-center gap-3 mx-auto"
-              >
-                {initPending ? (
-                  <>
-                    <svg
-                      className="animate-spin"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                    >
-                      <path d="M12 3a9 9 0 019 9" />
-                      <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity="0.2" />
-                    </svg>
-                    Preparing transaction...
-                  </>
-                ) : (
-                  "Initialize Reputation Account"
-                )}
-              </button>
-            </>
-          )}
+                Initializing...
+              </>
+            ) : (
+              "Initialize Reputation Account"
+            )}
+          </button>
         </div>
       </div>
     );

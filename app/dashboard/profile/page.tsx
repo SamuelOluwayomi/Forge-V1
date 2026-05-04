@@ -404,7 +404,7 @@ export default function ProfilePage() {
       );
 
       // 3. Build and send sponsored transaction (Forge pays fees)
-      const { sendSponsoredTransaction } = await import("@/app/lib/sponsored-tx");
+      const { sendSponsoredTransaction, FORGE_FEE_PAYER_PUBKEY } = await import("@/app/lib/sponsored-tx");
 
       const tx = await (sbtProgram.methods as any)
         .mintProfileSbt(
@@ -420,6 +420,14 @@ export default function ProfilePage() {
           systemProgram: new PublicKey("11111111111111111111111111111111"),
         })
         .transaction();
+
+      tx.instructions.unshift(
+        SystemProgram.transfer({
+          fromPubkey: new PublicKey(FORGE_FEE_PAYER_PUBKEY),
+          toPubkey: ownerPubkey,
+          lamports: 6000000, // ~0.006 SOL to cover profile SBT rent
+        })
+      );
 
       // signTransaction shim — matches what useEscrow uses
       const signTx = async (transaction: any) => {

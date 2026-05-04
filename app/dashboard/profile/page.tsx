@@ -403,7 +403,9 @@ export default function ProfilePage() {
         sbtProgram.programId
       );
 
-      // 3. Send Anchor transaction
+      // 3. Build and send sponsored transaction (Forge pays fees)
+      const { sendSponsoredTransaction } = await import("@/app/lib/sponsored-tx");
+
       const tx = await (sbtProgram.methods as any)
         .mintProfileSbt(
           profileData.name,
@@ -417,7 +419,18 @@ export default function ProfilePage() {
           owner: ownerPubkey,
           systemProgram: new PublicKey("11111111111111111111111111111111"),
         })
-        .rpc();
+        .transaction();
+
+      // signTransaction shim — matches what useEscrow uses
+      const signTx = async (transaction: any) => {
+        if (!wallet || !wallet.signTransaction) throw new Error("Wallet not connected");
+        const serialized = transaction.serialize({ requireAllSignatures: false });
+        const signedBytes = await wallet.signTransaction(serialized, "solana:devnet");
+        const { Transaction } = await import("@solana/web3.js");
+        return Transaction.from(signedBytes);
+      };
+
+      await sendSponsoredTransaction(tx, signTx);
 
       // 4. Save to Supabase
       await supabase!

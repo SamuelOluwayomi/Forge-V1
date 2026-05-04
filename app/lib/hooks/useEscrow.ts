@@ -8,6 +8,7 @@ import { PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
 import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import forgeEscrowIdl from "@/app/lib/idl/forge_escrow.json";
 import forgeSbtIdl from "@/app/lib/idl/forge_sbt.json";
+import { sendSponsoredTransaction } from "@/app/lib/sponsored-tx";
 
 const TOKEN_METADATA_PROGRAM_ID = new web3.PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
 
@@ -83,7 +84,11 @@ export function useEscrow(): UseEscrowReturn {
   }, [provider]);
 
 
-  /** Create a new escrow task */
+  /**
+   * Create a new escrow task
+   * NOTE: This is the ONE transaction the user pays for themselves,
+   * because they are locking their own SOL into the escrow PDA.
+   */
   const createTask = useCallback(
     async (
       taskId: number,
@@ -100,6 +105,7 @@ export function useEscrow(): UseEscrowReturn {
         Buffer.from([...(new BN(taskId).toArray('le', 8))]),
       ], program.programId);
 
+      // User pays for task creation since they're locking their own SOL
       return await (program.methods as any)
         .createTask(new BN(taskId), new BN(amount.toString()), reviewWindowDays, difficulty, taskMetadataUri)
         .accounts({
@@ -114,7 +120,7 @@ export function useEscrow(): UseEscrowReturn {
 
   const TREASURY_PUBKEY = new web3.PublicKey("EPpNW3G47SAJ4j1DatpjW7mJMLRTH9Z8K7LJtBfhR8Mt"); // Forge Protocol Treasury
 
-  /** Accept a worker and lock SOL into the PDA */
+  /** Accept a worker and lock SOL into the PDA — SPONSORED */
   const acceptWorker = useCallback(
     async (taskId: number, workerPubkey: web3.PublicKey) => {
       if (!program || !walletPublicKey) throw new Error("Wallet not connected");
@@ -124,19 +130,21 @@ export function useEscrow(): UseEscrowReturn {
         Buffer.from([...(new BN(taskId).toArray('le', 8))]),
       ], program.programId);
 
-      return await (program.methods as any)
+      const tx = await (program.methods as any)
         .acceptWorker(workerPubkey)
         .accounts({
           escrowAccount: escrowPda,
           client: walletPublicKey,
           systemProgram: web3.SystemProgram.programId,
         })
-        .rpc();
+        .transaction();
+
+      return await sendSponsoredTransaction(tx, signTransaction);
     },
-    [program, walletPublicKey]
+    [program, walletPublicKey, signTransaction]
   );
 
-  /** Worker submits work */
+  /** Worker submits work — SPONSORED */
   const submitWork = useCallback(
     async (taskId: number, clientPubkey: web3.PublicKey, submissionUri: string, aiReportHash?: Uint8Array) => {
       if (!program || !walletPublicKey) throw new Error("Wallet not connected");
@@ -146,18 +154,20 @@ export function useEscrow(): UseEscrowReturn {
         Buffer.from([...(new BN(taskId).toArray('le', 8))]),
       ], program.programId);
 
-      return await (program.methods as any)
+      const tx = await (program.methods as any)
         .submitWork(submissionUri, aiReportHash ?? null)
         .accounts({
           escrowAccount: escrowPda,
           worker: walletPublicKey,
         })
-        .rpc();
+        .transaction();
+
+      return await sendSponsoredTransaction(tx, signTransaction);
     },
-    [program, walletPublicKey]
+    [program, walletPublicKey, signTransaction]
   );
 
-  /** Client approves the worker's work and releases SOL */
+  /** Client approves the worker's work and releases SOL — SPONSORED */
   const approveWork = useCallback(
     async (taskId: number) => {
       if (!program || !walletPublicKey) throw new Error("Wallet not connected");
@@ -169,7 +179,7 @@ export function useEscrow(): UseEscrowReturn {
 
       const escrowData = await (program.account as any).escrowAccount.fetch(escrowPda);
 
-      return await (program.methods as any)
+      const tx = await (program.methods as any)
         .approveWork()
         .accounts({
           escrowAccount: escrowPda,
@@ -177,11 +187,14 @@ export function useEscrow(): UseEscrowReturn {
           worker: escrowData.worker,
           treasury: TREASURY_PUBKEY,
         })
-        .rpc();
+        .transaction();
+
+      return await sendSponsoredTransaction(tx, signTransaction);
     },
-    [program, walletPublicKey]
+    [program, walletPublicKey, signTransaction]
   );
 
+  /** Cancel task — SPONSORED */
   const cancelTask = useCallback(
     async (taskId: number) => {
       if (!program || !walletPublicKey) throw new Error("Wallet not connected");
@@ -191,18 +204,20 @@ export function useEscrow(): UseEscrowReturn {
         Buffer.from([...(new BN(taskId).toArray('le', 8))]),
       ], program.programId);
 
-      return await (program.methods as any)
+      const tx = await (program.methods as any)
         .cancelTask()
         .accounts({
           escrowAccount: escrowPda,
           client: walletPublicKey,
         })
-        .rpc();
+        .transaction();
+
+      return await sendSponsoredTransaction(tx, signTransaction);
     },
-    [program, walletPublicKey]
+    [program, walletPublicKey, signTransaction]
   );
 
-  /** Worker claims funds after review window expires */
+  /** Worker claims funds after review window expires — SPONSORED */
   const claimCompletion = useCallback(
     async (taskId: number, clientPubkey: web3.PublicKey) => {
       if (!program || !walletPublicKey) throw new Error("Wallet not connected");
@@ -214,7 +229,7 @@ export function useEscrow(): UseEscrowReturn {
 
       const escrowData = await (program.account as any).escrowAccount.fetch(escrowPda);
 
-      return await (program.methods as any)
+      const tx = await (program.methods as any)
         .claimCompletion()
         .accounts({
           escrowAccount: escrowPda,
@@ -222,12 +237,14 @@ export function useEscrow(): UseEscrowReturn {
           worker: escrowData.worker,
           treasury: TREASURY_PUBKEY,
         })
-        .rpc();
+        .transaction();
+
+      return await sendSponsoredTransaction(tx, signTransaction);
     },
-    [program, walletPublicKey]
+    [program, walletPublicKey, signTransaction]
   );
 
-  /** Raise a dispute on a submitted task */
+  /** Raise a dispute on a submitted task — SPONSORED */
   const raiseDispute = useCallback(
     async (taskId: number, clientPubkey: web3.PublicKey, reasonUri: string) => {
       if (!program || !walletPublicKey) throw new Error("Wallet not connected");
@@ -237,18 +254,20 @@ export function useEscrow(): UseEscrowReturn {
         Buffer.from([...(new BN(taskId).toArray('le', 8))]),
       ], program.programId);
 
-      return await (program.methods as any)
+      const tx = await (program.methods as any)
         .raiseDispute(reasonUri)
         .accounts({
           escrowAccount: escrowPda,
           caller: walletPublicKey,
         })
-        .rpc();
+        .transaction();
+
+      return await sendSponsoredTransaction(tx, signTransaction);
     },
-    [program, walletPublicKey]
+    [program, walletPublicKey, signTransaction]
   );
 
-  /** Arbitrator resolves a dispute */
+  /** Arbitrator resolves a dispute — SPONSORED */
   const resolveDispute = useCallback(
     async (taskId: number, clientPubkey: web3.PublicKey, recipientPubkey: web3.PublicKey, releaseToWorker: boolean) => {
       if (!program || !walletPublicKey) throw new Error("Wallet not connected");
@@ -258,7 +277,7 @@ export function useEscrow(): UseEscrowReturn {
         Buffer.from([...(new BN(taskId).toArray('le', 8))]),
       ], program.programId);
 
-      return await (program.methods as any)
+      const tx = await (program.methods as any)
         .resolveDispute(releaseToWorker)
         .accounts({
           escrowAccount: escrowPda,
@@ -266,34 +285,42 @@ export function useEscrow(): UseEscrowReturn {
           recipient: recipientPubkey,
           treasury: TREASURY_PUBKEY,
         })
-        .rpc();
+        .transaction();
+
+      return await sendSponsoredTransaction(tx, signTransaction);
     },
-    [program, walletPublicKey]
+    [program, walletPublicKey, signTransaction]
   );
 
+  /** Initialize mint tracker — SPONSORED */
   const initializeMintTracker = useCallback(async () => {
     if (!sbtProgram || !walletPublicKey) throw new Error("Wallet not connected");
     const [trackerPda] = await web3.PublicKey.findProgramAddress(
       [Buffer.from("mint_tracker")],
       sbtProgram.programId
     );
-    return await (sbtProgram.methods as any)
+
+    const tx = await (sbtProgram.methods as any)
       .initializeMintTracker()
       .accounts({
         tracker: trackerPda,
         authority: walletPublicKey,
         systemProgram: web3.SystemProgram.programId,
       })
-      .rpc();
-  }, [sbtProgram, walletPublicKey]);
+      .transaction();
 
+    return await sendSponsoredTransaction(tx, signTransaction);
+  }, [sbtProgram, walletPublicKey, signTransaction]);
+
+  /** Mint founder NFT — SPONSORED */
   const mintFounderNft = useCallback(async (recipient: web3.PublicKey, metadataUri: string) => {
     if (!sbtProgram || !walletPublicKey) throw new Error("Wallet not connected");
     const [founderNftPda] = await web3.PublicKey.findProgramAddress(
       [Buffer.from("founder_nft"), recipient.toBuffer()],
       sbtProgram.programId
     );
-    return await (sbtProgram.methods as any)
+
+    const tx = await (sbtProgram.methods as any)
       .mintFounderNft(metadataUri)
       .accounts({
         founderNft: founderNftPda,
@@ -301,9 +328,12 @@ export function useEscrow(): UseEscrowReturn {
         authority: walletPublicKey,
         systemProgram: web3.SystemProgram.programId,
       })
-      .rpc();
-  }, [sbtProgram, walletPublicKey]);
+      .transaction();
 
+    return await sendSponsoredTransaction(tx, signTransaction);
+  }, [sbtProgram, walletPublicKey, signTransaction]);
+
+  /** Mint pioneer NFT — SPONSORED */
   const mintPioneerNft = useCallback(async (recipient: web3.PublicKey, metadataUri: string) => {
     if (!sbtProgram || !walletPublicKey) throw new Error("Wallet not connected");
     const [pioneerNftPda] = await web3.PublicKey.findProgramAddress(
@@ -314,7 +344,8 @@ export function useEscrow(): UseEscrowReturn {
       [Buffer.from("mint_tracker")],
       sbtProgram.programId
     );
-    return await (sbtProgram.methods as any)
+
+    const tx = await (sbtProgram.methods as any)
       .mintPioneerNft(metadataUri)
       .accounts({
         tracker: trackerPda,
@@ -323,9 +354,12 @@ export function useEscrow(): UseEscrowReturn {
         recipient: recipient,
         systemProgram: web3.SystemProgram.programId,
       })
-      .rpc();
-  }, [sbtProgram, walletPublicKey]);
+      .transaction();
 
+    return await sendSponsoredTransaction(tx, signTransaction);
+  }, [sbtProgram, walletPublicKey, signTransaction]);
+
+  /** Mint worker badge — SPONSORED */
   const mintWorkerBadge = useCallback(
     async (taskId: number, workerPubkey: web3.PublicKey, skillCategory: string, rating: number, wasOnTime: boolean, amountEarned: bigint) => {
       if (!sbtProgram || !walletPublicKey) throw new Error("Wallet not connected");
@@ -359,7 +393,7 @@ export function useEscrow(): UseEscrowReturn {
         workerPubkey.toBuffer(),
       ], sbtProgram.programId);
 
-      return await (sbtProgram.methods as any)
+      const tx = await (sbtProgram.methods as any)
         .mintWorkerBadge(new BN(taskId), skillCategory, rating, wasOnTime, new BN(amountEarned.toString()))
         .accounts({
           badgeMint,
@@ -375,9 +409,11 @@ export function useEscrow(): UseEscrowReturn {
           systemProgram: SystemProgram.programId,
           rent: SYSVAR_RENT_PUBKEY,
         })
-        .rpc();
+        .transaction();
+
+      return await sendSponsoredTransaction(tx, signTransaction);
     },
-    [sbtProgram, walletPublicKey]
+    [sbtProgram, walletPublicKey, signTransaction]
   );
 
   return {

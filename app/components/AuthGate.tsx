@@ -72,20 +72,34 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     if (!program || !sbtProgram || !address) return;
     setInitPending(true);
     try {
+      const { sendSponsoredTransaction } = await import("../lib/sponsored-tx");
+      const { Transaction } = await import("@solana/web3.js");
+
       const pubkey = new PublicKey(address);
       const [repPda] = await PublicKey.findProgramAddress(
         [Buffer.from("reputation"), pubkey.toBuffer()],
         sbtProgram.programId
       );
-      await (sbtProgram.methods as any)
+
+      const tx = await (sbtProgram.methods as any)
         .initializeReputation()
         .accounts({
           reputation: repPda,
           owner: pubkey,
           systemProgram: SystemProgram.programId,
         })
-        .rpc();
-      toast.success("Reputation account created.");
+        .transaction();
+
+      // Sign shim — user proves identity, Forge pays fees
+      const signTx = async (transaction: any) => {
+        if (!wallet || !wallet.signTransaction) throw new Error("Wallet not connected");
+        const serialized = transaction.serialize({ requireAllSignatures: false });
+        const signedBytes = await wallet.signTransaction(serialized, "solana:devnet");
+        return Transaction.from(signedBytes);
+      };
+
+      await sendSponsoredTransaction(tx, signTx);
+      toast.success("Reputation account created — Forge covered the fees!");
       setRepStatus("ready");
     } catch (err: any) {
       toast.error(err?.message ?? "Failed to initialize reputation account.");

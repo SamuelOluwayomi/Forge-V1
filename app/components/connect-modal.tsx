@@ -18,7 +18,6 @@ export function ConnectModal({ open, onClose }: ConnectModalProps) {
   // Tracks how long we've been waiting — drives the staged hint UI
   const [waitSeconds, setWaitSeconds] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Close on overlay click
   const handleOverlayClick = (e: React.MouseEvent) => {
@@ -59,19 +58,12 @@ export function ConnectModal({ open, onClose }: ConnectModalProps) {
       timerRef.current = setInterval(() => {
         setWaitSeconds((s) => s + 1);
       }, 1000);
-      // Hard timeout at 30s — clear stuck state so user is not stranded
-      timeoutRef.current = setTimeout(() => {
-        setConnecting(null);
-        setWaitSeconds(0);
-      }, 30_000);
     } else {
       setWaitSeconds(0);
       if (timerRef.current) clearInterval(timerRef.current);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     }
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, [connecting]);
 
@@ -204,10 +196,7 @@ export function ConnectModal({ open, onClose }: ConnectModalProps) {
                   </li>
                 </ol>
                 {waitSeconds >= 20 && (
-                  <div className="mt-1 flex items-center justify-between">
-                    <p className="font-black text-xs text-black/60 uppercase tracking-widest">
-                      Auto-cancels in {30 - waitSeconds}s
-                    </p>
+                  <div className="mt-1 flex items-center justify-end">
                     <button
                       onClick={() => setConnecting(null)}
                       className="font-black text-xs uppercase underline hover:no-underline"

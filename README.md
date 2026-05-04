@@ -58,6 +58,9 @@ While profiles are public, sensitive **Direct Contact Info** (WhatsApp, Slack, e
 ### Identity Cards
 Users can download or share their **Forge Identity Card**—a high-fidelity, neo-brutalist social card that showcases their Forge Score, Global Rank, and authenticated wallet status.
 
+### Zero-Gas Infrastructure (Fee Sponsorship)
+To ensure a frictionless onboarding experience, Forge operates a server-side transaction relay. Every infrastructure transaction—including account initialization, SBT minting, and profile updates—is co-signed by Forge's treasury wallet as the fee payer. Users only sign to prove identity and never pay network fees for using the platform. The only time a user pays is when locking their own funds into an escrow contract.
+
 ## The Bigger Picture — Onchain Professional Identity
 
 Forge is not just a marketplace. The SBT system creates something the web3 space has never had cleanly: a portable, human-verified, tamper-proof professional identity that lives in your wallet.

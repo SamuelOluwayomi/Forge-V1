@@ -370,9 +370,14 @@ export default function Home() {
                 </AnimateIn>
               </div>
 
-              <div className="border-t-4 border-black pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <p className="font-bold text-sm text-black/60">© 2026 Forge. Built on Solana. All rights reserved.</p>
-                <p className="font-black text-sm uppercase tracking-widest">Earn it. Prove it. <span className="text-primary">Forge it.</span></p>
+              <div className="border-t-4 border-black pt-8 flex flex-col items-center gap-4">
+                <div className="brutalist-tape text-[10px] sm:text-xs px-3 py-1 bg-black text-white rotate-1 mb-2">
+                  Jesus Loves me and He loves you too ❤️
+                </div>
+                <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <p className="font-bold text-sm text-black/60">© 2026 Forge. Built on Solana. All rights reserved.</p>
+                  <p className="font-black text-sm uppercase tracking-widest">Earn it. Prove it. <span className="text-primary">Forge it.</span></p>
+                </div>
               </div>
             </div>
           </div>

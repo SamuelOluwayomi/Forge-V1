@@ -50,15 +50,19 @@ export function ConnectModal({ open, onClose }: ConnectModalProps) {
 
   if (!open) return null;
 
-  const handleConnect = async (connectorId: string) => {
+  const handleConnect = (connectorId: string) => {
+    // Call connect immediately before any React state updates to preserve 
+    // the browser's user gesture context. This fixes issues where extensions 
+    // like Solflare/MetaMask fail to open their popup windows.
+    const promise = connect(connectorId);
+    
     setConnecting(connectorId);
-    try {
-      await connect(connectorId);
-    } catch {
+    
+    promise.catch(() => {
       // error surfaced through context state
-    } finally {
+    }).finally(() => {
       setConnecting(null);
-    }
+    });
   };
 
   const steps = [

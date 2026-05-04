@@ -18,13 +18,14 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   const address = wallet?.account?.address ?? null;
 
-  // Rep account state: "loading" | "missing" | "ready"
+
   const [repStatus, setRepStatus] = useState<"loading" | "missing" | "ready">(
     "loading"
   );
   const [initPending, setInitPending] = useState(false);
+  const [signingPending, setSigningPending] = useState(false);
 
-  // Step 1 — redirect if no wallet and not connecting
+
   useEffect(() => {
     if (!address && status === "disconnected") {
       router.replace("/");
@@ -65,10 +66,6 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   }, [program?.programId.toBase58(), sbtProgram?.programId.toBase58(), address]);
 
   const initializeReputation = async () => {
-    console.log(
-      "Calling initializeReputation with methods:",
-      Object.keys((sbtProgram as any)?.methods ?? {})
-    );
     if (!program || !sbtProgram || !address) return;
     setInitPending(true);
     try {
@@ -90,11 +87,12 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         })
         .transaction();
 
-      // Sign shim — user proves identity, Forge pays fees
       const signTx = async (transaction: any) => {
         if (!wallet || !wallet.signTransaction) throw new Error("Wallet not connected");
+        setSigningPending(true);
         const serialized = transaction.serialize({ requireAllSignatures: false });
         const signedBytes = await wallet.signTransaction(serialized, "solana:devnet");
+        setSigningPending(false);
         return Transaction.from(signedBytes);
       };
 
@@ -102,13 +100,14 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       toast.success("Reputation account created — Forge covered the fees!");
       setRepStatus("ready");
     } catch (err: any) {
+      setSigningPending(false);
       toast.error(err?.message ?? "Failed to initialize reputation account.");
     } finally {
       setInitPending(false);
     }
   };
 
-  // Guard 0: Connecting
+
   if (status === "connecting") {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
@@ -122,15 +121,11 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Guard 1: no wallet
   if (!address) {
-    return null; // redirect is already triggered in the effect above
+    return null;
   }
 
-  // Guard 2: Civic pass removed
 
-
-  // Guard 3: reputation account
   if (repStatus === "loading") {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
@@ -168,36 +163,60 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
           <h2 className="text-3xl font-black uppercase mb-4">
             Welcome to Forge
           </h2>
-          <p className="font-bold text-sm text-black/60 mb-6 leading-snug">
-            We need to create a Reputation account on-chain before you can use
-            the dashboard. This is a one-time transaction.
-          </p>
-          <button
-            id="auth-init-reputation"
-            onClick={initializeReputation}
-            disabled={initPending}
-            className="brutalist-button px-8 py-3 bg-primary text-white border-black disabled:opacity-50 flex items-center gap-3 mx-auto"
-          >
-            {initPending ? (
-              <>
-                <svg
-                  className="animate-spin"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                >
-                  <path d="M12 3a9 9 0 019 9" />
+
+          {signingPending ? (
+            <>
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <svg className="animate-pulse" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M12 3a9 9 0 019 9" className="text-primary" />
                   <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity="0.2" />
                 </svg>
-                Initializing...
-              </>
-            ) : (
-              "Initialize Reputation Account"
-            )}
-          </button>
+                <p className="font-black text-sm uppercase tracking-widest">
+                  Waiting for signature...
+                </p>
+              </div>
+              <div className="bg-amber-50 border-2 border-amber-400 rounded p-4 mb-2">
+                <p className="font-bold text-sm text-amber-800 leading-snug">
+                  Your Solflare extension needs approval.
+                  <br />
+                  <span className="font-black">Please open it now</span> and confirm the transaction.
+                </p>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="font-bold text-sm text-black/60 mb-6 leading-snug">
+                We need to create a Reputation account on-chain before you can use
+                the dashboard. This is a one-time transaction — Forge covers the fees.
+              </p>
+              <button
+                id="auth-init-reputation"
+                onClick={initializeReputation}
+                disabled={initPending}
+                className="brutalist-button px-8 py-3 bg-primary text-white border-black disabled:opacity-50 flex items-center gap-3 mx-auto"
+              >
+                {initPending ? (
+                  <>
+                    <svg
+                      className="animate-spin"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                    >
+                      <path d="M12 3a9 9 0 019 9" />
+                      <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity="0.2" />
+                    </svg>
+                    Preparing transaction...
+                  </>
+                ) : (
+                  "Initialize Reputation Account"
+                )}
+              </button>
+            </>
+          )}
         </div>
       </div>
     );

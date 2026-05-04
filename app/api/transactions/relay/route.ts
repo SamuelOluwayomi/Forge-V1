@@ -4,68 +4,53 @@ import {
   Keypair,
   Transaction,
   VersionedTransaction,
+  LAMPORTS_PER_SOL,
   clusterApiUrl,
 } from "@solana/web3.js";
 
-// Load Forge's fee payer from environment — never exposed to the browser
 function getFeePayer(): Keypair {
   const raw = process.env.FORGE_FEE_PAYER_PRIVATE_KEY;
   if (!raw) throw new Error("FORGE_FEE_PAYER_PRIVATE_KEY is not set");
   return Keypair.fromSecretKey(new Uint8Array(JSON.parse(raw)));
 }
 
-const connection = new Connection(
-  process.env.NEXT_PUBLIC_RPC_URL ?? clusterApiUrl("devnet"),
-  "confirmed"
-);
+const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL ?? clusterApiUrl("devnet");
+const IS_DEVNET = RPC_URL.includes("devnet");
 
-/**
- * POST /api/transactions/relay
- *
- * Accepts a base64-encoded, partially signed (or unsigned) transaction
- * from the frontend. Sets Forge's fee payer wallet as the fee payer,
- * co-signs it, and returns the transaction for the user to finish signing.
- *
- * Body: { transaction: string }  — base64 encoded serialized transaction
- * Returns: { transaction: string } — base64 encoded, fee-payer-signed transaction
- */
+const connection = new Connection(RPC_URL, "confirmed");
+
+async function ensureFunds(feePayer: Keypair) {
+  if (!IS_DEVNET) return;
+  const balance = await connection.getBalance(feePayer.publicKey);
+  if (balance < 0.1 * LAMPORTS_PER_SOL) {
+    const sig = await connection.requestAirdrop(feePayer.publicKey, 2 * LAMPORTS_PER_SOL);
+    await connection.confirmTransaction(sig, "confirmed");
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { transaction: txBase64 } = await req.json();
 
     if (!txBase64) {
-      return NextResponse.json(
-        { error: "Missing transaction" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing transaction" }, { status: 400 });
     }
 
     const feePayer = getFeePayer();
+    await ensureFunds(feePayer);
     const txBuffer = Buffer.from(txBase64, "base64");
-
-    // Detect versioned vs legacy transaction
     let signedTxBase64: string;
 
     try {
-      // Try as versioned transaction first
       const vtx = VersionedTransaction.deserialize(txBuffer);
       vtx.sign([feePayer]);
       signedTxBase64 = Buffer.from(vtx.serialize()).toString("base64");
     } catch {
-      // Fall back to legacy transaction
       const tx = Transaction.from(txBuffer);
-
-      // Override fee payer to Forge's wallet
       tx.feePayer = feePayer.publicKey;
-
-      // Fetch fresh blockhash to avoid expiry
-      const { blockhash, lastValidBlockHeight } =
-        await connection.getLatestBlockhash();
+      const { blockhash } = await connection.getLatestBlockhash();
       tx.recentBlockhash = blockhash;
-
-      // Forge co-signs as fee payer
       tx.partialSign(feePayer);
-
       signedTxBase64 = tx
         .serialize({ requireAllSignatures: false, verifySignatures: false })
         .toString("base64");
@@ -80,3 +65,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+

@@ -19,7 +19,7 @@ export async function sendSponsoredTransaction(
   signFn: (tx: Transaction) => Promise<Transaction>
 ): Promise<string> {
   if (!tx.recentBlockhash) {
-    const { blockhash } = await connection.getLatestBlockhash();
+    const { blockhash } = await connection.getLatestBlockhash("finalized");
     tx.recentBlockhash = blockhash;
   }
   if (!tx.feePayer) {

@@ -425,7 +425,7 @@ export default function ProfilePage() {
         SystemProgram.transfer({
           fromPubkey: new PublicKey(FORGE_FEE_PAYER_PUBKEY),
           toPubkey: ownerPubkey,
-          lamports: 6000000, // ~0.006 SOL to cover profile SBT rent
+          lamports: 6500000, // ~0.0065 SOL (5.16M for PDA rent + 0.89M for wallet rent exemption)
         })
       );
 

@@ -89,7 +89,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         SystemProgram.transfer({
           fromPubkey: new PublicKey(FORGE_FEE_PAYER_PUBKEY),
           toPubkey: pubkey,
-          lamports: 2000000,
+          lamports: 2500000, // 0.0025 SOL (1.52M for PDA rent + 0.89M for wallet rent exemption)
         })
       );
 

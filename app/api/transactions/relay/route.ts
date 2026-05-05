@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     } catch {
       const tx = Transaction.from(txBuffer);
       tx.feePayer = feePayer.publicKey;
-      const { blockhash } = await connection.getLatestBlockhash("finalized");
+      const { blockhash } = await connection.getLatestBlockhash("confirmed");
       tx.recentBlockhash = blockhash;
       tx.partialSign(feePayer);
       signedTxBase64 = tx

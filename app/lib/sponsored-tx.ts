@@ -19,7 +19,7 @@ export async function sendSponsoredTransaction(
   signFn: (tx: Transaction) => Promise<Transaction>
 ): Promise<string> {
   if (!tx.recentBlockhash) {
-    const { blockhash } = await connection.getLatestBlockhash("finalized");
+    const { blockhash } = await connection.getLatestBlockhash("confirmed");
     tx.recentBlockhash = blockhash;
   }
   if (!tx.feePayer) {
@@ -47,7 +47,7 @@ export async function sendSponsoredTransaction(
   const signedTx = await signFn(relayedTx);
 
   const sig = await connection.sendRawTransaction(signedTx.serialize(), {
-    skipPreflight: false,
+    skipPreflight: true,
     preflightCommitment: "confirmed",
   });
 

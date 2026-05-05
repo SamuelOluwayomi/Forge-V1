@@ -51,6 +51,21 @@ export async function sendSponsoredTransaction(
     preflightCommitment: "confirmed",
   });
 
-  await connection.confirmTransaction(sig, "confirmed");
+  // Poll for signature status manually because Devnet websockets drop confirmation events frequently
+  let confirmed = false;
+  for (let i = 0; i < 20; i++) {
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    const status = await connection.getSignatureStatus(sig);
+    if (status.value?.confirmationStatus === "confirmed" || status.value?.confirmationStatus === "finalized") {
+      if (status.value.err) throw new Error("Transaction failed: " + JSON.stringify(status.value.err));
+      confirmed = true;
+      break;
+    }
+  }
+
+  if (!confirmed) {
+    console.warn("Transaction confirmation timed out, but it may have still succeeded: ", sig);
+  }
+
   return sig;
 }

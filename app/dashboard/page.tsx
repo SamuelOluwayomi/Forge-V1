@@ -10,7 +10,6 @@ import { ellipsify } from "@/app/lib/explorer";
 import { useCluster } from "@/app/components/cluster-context";
 import { supabase } from "@/app/lib/supabase";
 
-// ── Stat card ──────────────────────────────────────────────────────────────
 function StatCard({
   label,
   value,
@@ -259,7 +258,8 @@ export default function DashboardOverview() {
     };
 
     fetchDashboardData();
-  }, [program, sbtProgram, address]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [program?.programId.toBase58(), sbtProgram?.programId.toBase58(), address]);
 
   return (
     <div className="w-full">

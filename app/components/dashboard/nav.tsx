@@ -108,7 +108,7 @@ const NAV_ITEMS = [
   },
 ];
 
-export const ADMIN_WALLET = "HDpuuLudmQoCJm52z1L8SC8eMAX8SQedum6KPu2b6TgW";
+export const ADMIN_WALLET = "HDpuuLudmQeCjm52z1L8SC8eMAX85QEdum6KPu2b6TgW";
 
 export function DashboardNav() {
   const pathname = usePathname();

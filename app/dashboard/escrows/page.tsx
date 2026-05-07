@@ -7,7 +7,7 @@ import { supabase } from "@/app/lib/supabase";
 import { toast } from "sonner";
 import { PublicKey } from "@solana/web3.js";
 
-const ADMIN_WALLET = "HDpuuLudmQoCJm52z1L8SC8eMAX8SQedum6KPu2b6TgW";
+const ADMIN_WALLET = "HDpuuLudmQeCjm52z1L8SC8eMAX85QEdum6KPu2b6TgW";
 
 type EscrowStatus = "Funded" | "In Progress" | "Submitted" | "Completed" | "Disputed";
 

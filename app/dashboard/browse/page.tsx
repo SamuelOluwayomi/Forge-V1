@@ -158,7 +158,8 @@ export default function BrowseTasksPage() {
 
   useEffect(() => {
     fetchAllTasks();
-  }, [program]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [program?.programId.toBase58()]);
 
   const filtered = filter === "All" ? tasks : tasks.filter((t) => t.status === filter);
 

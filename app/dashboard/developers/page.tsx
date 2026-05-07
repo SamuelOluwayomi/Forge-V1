@@ -82,7 +82,8 @@ export default function DevelopersPage() {
     };
 
     fetchDevs();
-  }, [program]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [program?.programId.toBase58()]);
 
   return (
     <div className="w-full max-w-6xl mx-auto pb-20">

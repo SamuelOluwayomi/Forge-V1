@@ -240,7 +240,8 @@ export default function TasksPage() {
 
   useEffect(() => {
     fetchTasks();
-  }, [program, wallet]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [program?.programId.toBase58(), wallet?.account.address]);
 
   const handleCancel = async (taskId: string) => {
     const tid = toast.loading("Canceling task on-chain...");

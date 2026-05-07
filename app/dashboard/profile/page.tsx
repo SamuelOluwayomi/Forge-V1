@@ -252,7 +252,8 @@ export default function ProfilePage() {
     };
 
     fetchOnChainStats();
-  }, [program, sbtProgram, address]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [program?.programId.toBase58(), sbtProgram?.programId.toBase58(), address]);
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

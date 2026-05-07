@@ -224,7 +224,8 @@ export default function ManageTaskPage() {
       }
     };
     fetchOnChain();
-  }, [program, pda]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [program?.programId.toBase58(), pda]);
 
   useEffect(() => { fetchTask(); }, [pda]);
 

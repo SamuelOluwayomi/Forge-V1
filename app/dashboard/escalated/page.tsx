@@ -245,7 +245,8 @@ export default function EscalatedPage() {
     } finally {
       setLoading(false);
     }
-  }, [program, isAdmin]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [program?.programId.toBase58(), isAdmin]);
 
   useEffect(() => { fetchEscalated(); }, [fetchEscalated]);
 

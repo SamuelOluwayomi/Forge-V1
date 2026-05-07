@@ -159,7 +159,8 @@ export default function ProfilePage() {
     fetchRewards();
     fetchProfile();
     fetchTotalDevs();
-  }, [address, sbtProgram]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address, sbtProgram?.programId.toBase58()]);
 
   // Countdown to midnight UTC (ranking refresh)
   useEffect(() => {

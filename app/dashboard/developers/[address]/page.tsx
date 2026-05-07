@@ -157,7 +157,7 @@ export default function DeveloperProfilePage() {
 
     fetchOnChainStats();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [program, sbtProgram, address]);
+  }, [program?.programId.toBase58(), sbtProgram?.programId.toBase58(), address]);
 
   if (loading) {
     return (

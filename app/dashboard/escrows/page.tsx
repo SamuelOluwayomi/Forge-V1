@@ -356,7 +356,8 @@ export default function EscrowsPage() {
     } finally {
       setLoading(false);
     }
-  }, [program, walletAddress, isAdmin]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [program?.programId.toBase58(), walletAddress, isAdmin]);
 
   useEffect(() => { fetchEscrows(); }, [fetchEscrows]);
 

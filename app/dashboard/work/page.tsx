@@ -213,7 +213,8 @@ export default function WorkPage() {
     }
   };
 
-  useEffect(() => { fetchWork(); }, [program, wallet]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchWork(); }, [program?.programId.toBase58(), wallet?.account.address]);
 
   const handleSubmitClick = (taskId: string, clientStr: string, isEscalate?: boolean) => {
     setSubmittingId(taskId);

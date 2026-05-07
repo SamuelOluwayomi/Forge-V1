@@ -23,6 +23,7 @@ interface Escrow {
   disputeReason?: string;
   submissionUri?: string;
   escalatedToAdmin?: boolean;
+  skills?: string[];
 }
 
 function ConfirmModal({
@@ -190,7 +191,7 @@ export default function EscalatedPage() {
   const [escrows, setEscrows] = useState<Escrow[]>([]);
   const [resolving, setResolving] = useState<string | null>(null);
 
-  const { program, resolveDispute } = useEscrow();
+  const { program, resolveDispute, mintWorkerBadge } = useEscrow();
   const { wallet } = useWallet();
 
   const walletAddress = wallet?.account.address?.toString() ?? "";
@@ -235,6 +236,7 @@ export default function EscalatedPage() {
           disputeReason: (e.account.disputeReason || dbTask?.dispute_reason || "").replace(/\0/g, "").trim(),
           submissionUri: (e.account.submissionUri || "").replace(/\0/g, "").trim(),
           escalatedToAdmin: true,
+          skills: dbTask?.skills,
         };
       });
 
@@ -262,6 +264,23 @@ export default function EscalatedPage() {
         await program.provider.connection.confirmTransaction(sig, "confirmed");
       }
       toast.success(release ? "✓ Worker paid." : "✓ Client refunded.", { id: tid });
+
+      if (release && escrow.workerAddress) {
+        try {
+          toast.loading("Minting Developer Badge...", { id: tid });
+          const workerPubkey = new PublicKey(escrow.workerAddress);
+          const skillCategory = escrow.skills?.[0] || "General Task";
+          const rating = 5; // Default 5 star
+          const wasOnTime = true;
+          const amountEarned = BigInt(Math.floor(parseFloat(escrow.amount) * 1_000_000_000));
+          
+          const badgeSig = await mintWorkerBadge(parseInt(escrow.id), workerPubkey, skillCategory, rating, wasOnTime, amountEarned);
+          await program.provider.connection.confirmTransaction(badgeSig, "confirmed");
+          toast.success("✓ Worker paid and badge minted.", { id: tid });
+        } catch (badgeErr) {
+          console.error("Non-critical: Failed to mint worker badge:", badgeErr);
+        }
+      }
 
       // Update DB
       await fetch(`/api/tasks/${escrow.pda}/status`, {

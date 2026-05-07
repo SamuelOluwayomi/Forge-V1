@@ -21,6 +21,17 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (dispute_reason) updatePayload.dispute_reason = dispute_reason;
     if (escalated_to_admin !== undefined) updatePayload.escalated_to_admin = escalated_to_admin;
 
+    // If setting to disputed, increment the dispute_count
+    if (status === "disputed") {
+      // Fetch current count first
+      const { data: current } = await supabase
+        .from("tasks")
+        .select("dispute_count")
+        .eq("pda", id)
+        .single();
+      updatePayload.dispute_count = (current?.dispute_count || 0) + 1;
+    }
+
     // Update the task status in DB
     const { error } = await supabase
       .from("tasks")

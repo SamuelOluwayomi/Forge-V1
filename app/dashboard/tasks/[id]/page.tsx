@@ -22,6 +22,8 @@ interface TaskDetail {
   contact_info: string | null;
   skills: string[];
   expected_days: number | null;
+  dispute_count?: number;
+  escalated_to_admin?: boolean;
 }
 
 interface Applicant {
@@ -178,6 +180,9 @@ export default function ManageTaskPage() {
   const [showRevisionModal, setShowRevisionModal] = useState(false);
   const [revisionReason, setRevisionReason] = useState("");
   const [requestingRevision, setRequestingRevision] = useState(false);
+  const [showEscalateModal, setShowEscalateModal] = useState(false);
+  const [escalateMessage, setEscalateMessage] = useState("");
+  const [escalating, setEscalating] = useState(false);
 
   const fetchTask = async () => {
     setLoading(true);
@@ -370,6 +375,35 @@ export default function ManageTaskPage() {
     }
   };
 
+  const handleEscalate = async () => {
+    if (!program || !address || onChainTaskId === null || !task) return;
+    setEscalating(true);
+    const tid = toast.loading("Escalating to admin...");
+    try {
+      const appendedReason = escalateMessage 
+        ? `${revisionReason || task.description} | Escalation: ${escalateMessage}`
+        : (revisionReason || "Client escalated task");
+
+      await fetch(`/api/tasks/${pda}/status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          escalated_to_admin: true,
+          dispute_reason: appendedReason
+        }),
+      });
+
+      toast.success("Dispute escalated to admin. They will review shortly.", { id: tid });
+      setShowEscalateModal(false);
+      await fetchTask();
+    } catch (err: any) {
+      console.error("Escalation failed:", err);
+      toast.error("Failed to escalate: " + (err.message || "Unknown error"), { id: tid });
+    } finally {
+      setEscalating(false);
+    }
+  };
+
   return (
     <div className="w-full max-w-4xl">
       {/* Applicant Profile Modal */}
@@ -487,6 +521,26 @@ export default function ManageTaskPage() {
               </button>
             </div>
           )}
+
+          {onChainStatus === "disputed" && task?.dispute_count && task.dispute_count >= 2 && !task.escalated_to_admin && (
+            <div className="mt-4 p-4 border-2 border-dashed border-[#FF4500] bg-[#FF4500]/10 text-center">
+              <p className="text-sm font-black uppercase text-[#FF4500] mb-2">Still having issues?</p>
+              <button
+                onClick={() => setShowEscalateModal(true)}
+                className="brutalist-button px-6 py-3 bg-black text-white border-black text-xs"
+              >
+                🚨 Escalate to Admin
+              </button>
+            </div>
+          )}
+          {task?.escalated_to_admin && (
+            <div className="mt-4 p-4 border-2 border-dashed border-[#FFD700] bg-[#FFD700]/20 text-center flex items-center justify-center gap-2">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-black">
+                <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
+              </svg>
+              <p className="text-sm font-black uppercase text-black">Escalated — Admin is reviewing</p>
+            </div>
+          )}
         </div>
       )}
 
@@ -596,6 +650,48 @@ export default function ManageTaskPage() {
               <button
                 onClick={() => setShowRevisionModal(false)}
                 disabled={requestingRevision}
+                className="brutalist-button px-6 py-3 bg-white text-black border-black text-sm hover:bg-black/5"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Escalate Modal */}
+      {showEscalateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="brutalist-card bg-white w-full max-w-md p-6">
+            <h3 className="text-2xl font-black uppercase italic tracking-tighter mb-2 text-[#FF4500]">Escalate to Admin</h3>
+            <p className="text-xs font-bold text-black/60 mb-6">
+              Provide a message to the admin explaining why you are escalating this dispute.
+            </p>
+
+            <div className="flex flex-col gap-3 mb-8">
+              <label htmlFor="escalate-message" className="font-black text-xs uppercase tracking-widest text-black/40">
+                Message to Admin <span className="text-primary">*</span>
+              </label>
+              <textarea
+                id="escalate-message"
+                rows={4}
+                value={escalateMessage}
+                onChange={(e) => setEscalateMessage(e.target.value)}
+                placeholder="The developer did not fix the requested issues..."
+                className="border-2 border-black bg-background px-4 py-3 font-bold text-sm text-black outline-none focus:border-primary placeholder:text-black/30 resize-none"
+              />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleEscalate}
+                disabled={escalating}
+                className="brutalist-button flex-1 py-3 bg-[#FF4500] text-white border-black text-sm disabled:opacity-50"
+              >
+                {escalating ? "Escalating..." : "Submit Escalation"}
+              </button>
+              <button
+                onClick={() => setShowEscalateModal(false)}
                 className="brutalist-button px-6 py-3 bg-white text-black border-black text-sm hover:bg-black/5"
               >
                 Cancel

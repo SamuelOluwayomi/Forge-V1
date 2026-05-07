@@ -86,7 +86,7 @@ export default function BrowseTasksPage() {
       if (supabase && pdas.length > 0) {
         const { data: taskData } = await supabase
           .from("tasks")
-          .select("pda, title, description, listing_deadline, client, task_type")
+          .select("pda, title, description, listing_deadline, client, task_type, created_at")
           .in("pda", pdas);
         dbTasks = taskData || [];
 
@@ -142,10 +142,12 @@ export default function BrowseTasksPage() {
           listing_deadline: dbTask?.listing_deadline || null,
           applicant_count: applicantCounts[pdaStr] || 0,
           task_type: dbTask?.task_type || "challenge",
+          created_at: dbTask?.created_at ? new Date(dbTask.created_at).getTime() : 0,
         };
       });
       
-      setTasks(mappedTasks.filter(t => (t.status as any) !== "Cancelled").reverse());
+      const filteredTasks = mappedTasks.filter(t => (t.status as any) !== "Cancelled");
+      setTasks(filteredTasks.sort((a, b) => b.created_at - a.created_at));
     } catch (err) {
       console.error("Failed to fetch tasks:", err);
     } finally {

@@ -159,7 +159,7 @@ export default function DashboardOverview() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const { program } = useEscrow();
+  const { program, sbtProgram } = useEscrow();
   const [stats, setStats] = useState([
     { label: "Tasks Posted", value: 0, tag: "CLIENT" },
     { label: "Tasks Completed", value: 0, tag: "WORKER" },
@@ -195,6 +195,17 @@ export default function DashboardOverview() {
             0
           ) / 1_000_000_000;
 
+        let sbtBadgesCount = 0;
+        if (sbtProgram) {
+          try {
+            const allBadges = await (sbtProgram.account as any).badgeRecord.all();
+            const userBadges = allBadges.filter((b: any) => b.account.owner.toBase58() === address);
+            sbtBadgesCount = userBadges.length;
+          } catch (err) {
+            console.error("Error fetching badges:", err);
+          }
+        }
+
         setStats([
           { label: "Tasks Posted", value: posted, tag: "CLIENT" },
           {
@@ -203,7 +214,7 @@ export default function DashboardOverview() {
             tag: "WORKER",
           },
           { label: "SOL Earned", value: earned.toFixed(2), accent: "#4ADE80" },
-          { label: "SBT Badges", value: 0, tag: "ON-CHAIN" },
+          { label: "SBT Badges", value: sbtBadgesCount, tag: "ON-CHAIN" },
         ]);
 
         // 2. Activity (Take last 5)
@@ -248,7 +259,7 @@ export default function DashboardOverview() {
     };
 
     fetchDashboardData();
-  }, [program, address]);
+  }, [program, sbtProgram, address]);
 
   return (
     <div className="w-full">
@@ -371,12 +382,25 @@ export default function DashboardOverview() {
                   </svg>
                 </div>
                 <div>
-                  <p className="font-black text-sm uppercase text-white">
-                    No Badges Yet
-                  </p>
-                  <p className="text-[10px] font-bold text-white/80 uppercase">
-                    Complete your first task to earn a badge.
-                  </p>
+                  {stats[3].value === 0 ? (
+                    <>
+                      <p className="font-black text-sm uppercase text-white">
+                        No Badges Yet
+                      </p>
+                      <p className="text-[10px] font-bold text-white/80 uppercase">
+                        Complete your first task to earn a badge.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-black text-sm uppercase text-white">
+                        {stats[3].value} Badge{stats[3].value === 1 ? "" : "s"} Earned
+                      </p>
+                      <p className="text-[10px] font-bold text-white/80 uppercase">
+                        On-chain reputation
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

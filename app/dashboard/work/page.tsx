@@ -19,6 +19,8 @@ interface WorkItem {
   status: WorkStatus;
   difficulty: number;
   disputeReason?: string;
+  disputeCount?: number;
+  escalatedToAdmin?: boolean;
 }
 
 const STATUS_STYLES: Record<WorkStatus, string> = {
@@ -51,7 +53,7 @@ function CopyButton({ text, id }: { text: string; id: string }) {
   );
 }
 
-function WorkCard({ item, onSubmit, submitting }: { item: WorkItem; onSubmit: (id: string, client: string) => void; submitting: string | null }) {
+function WorkCard({ item, onSubmit, submitting }: { item: WorkItem; onSubmit: (id: string, client: string, isEscalate?: boolean) => void; submitting: string | null }) {
   return (
     <div className="brutalist-card bg-white p-6 flex flex-col gap-4 relative">
       {/* Difficulty tape */}
@@ -114,6 +116,27 @@ function WorkCard({ item, onSubmit, submitting }: { item: WorkItem; onSubmit: (i
           <p className="font-black text-xs uppercase">Completed — Payment Released</p>
         </div>
       )}
+
+      {item.status === "Disputed" && item.disputeCount && item.disputeCount >= 2 && !item.escalatedToAdmin && (
+        <div className="mt-2 p-4 border-2 border-dashed border-[#FF4500] bg-[#FF4500]/10 text-center">
+          <p className="text-sm font-black uppercase text-[#FF4500] mb-2">Can't agree with the client?</p>
+          <button
+            onClick={() => onSubmit(item.id, item.client, true)}
+            className="brutalist-button w-full py-2 bg-black text-white border-black text-xs"
+          >
+            🚨 Escalate to Admin
+          </button>
+        </div>
+      )}
+
+      {item.escalatedToAdmin && (
+        <div className="mt-2 p-4 border-2 border-dashed border-[#FFD700] bg-[#FFD700]/20 text-center flex flex-col items-center justify-center gap-2">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-black">
+            <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
+          </svg>
+          <p className="text-xs font-black uppercase text-black">Escalated — Admin is reviewing</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -123,8 +146,11 @@ export default function WorkPage() {
   const [loading, setLoading] = useState(true);
   const [submittingId, setSubmittingId] = useState<string | null>(null);
   const [submittingClient, setSubmittingClient] = useState<string | null>(null);
+  const [isEscalating, setIsEscalating] = useState(false);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [submissionUri, setSubmissionUri] = useState("");
+  const [escalateMessage, setEscalateMessage] = useState("");
+  const [processingEscalate, setProcessingEscalate] = useState(false);
 
   const { program, submitWork } = useEscrow();
   const { wallet } = useWallet();
@@ -147,7 +173,7 @@ export default function WorkPage() {
       const pdas = myWork.map((e: any) => e.publicKey.toBase58());
       let dbTasks: any[] = [];
       if (supabase && pdas.length > 0) {
-        const { data } = await supabase.from("tasks").select("pda, title, dispute_reason").in("pda", pdas);
+        const { data } = await supabase.from("tasks").select("pda, title, dispute_reason, dispute_count, escalated_to_admin").in("pda", pdas);
         dbTasks = data || [];
       }
 
@@ -174,6 +200,8 @@ export default function WorkPage() {
           status,
           difficulty: e.account.difficulty,
           disputeReason: (e.account.disputeReason || dbTask?.dispute_reason || "").replace(/\0/g, "").trim(),
+          disputeCount: dbTask?.dispute_count || 0,
+          escalatedToAdmin: dbTask?.escalated_to_admin || false,
         };
       });
 
@@ -187,10 +215,12 @@ export default function WorkPage() {
 
   useEffect(() => { fetchWork(); }, [program, wallet]);
 
-  const handleSubmitClick = (taskId: string, clientStr: string) => {
+  const handleSubmitClick = (taskId: string, clientStr: string, isEscalate?: boolean) => {
     setSubmittingId(taskId);
     setSubmittingClient(clientStr);
     setSubmissionUri("");
+    setEscalateMessage("");
+    setIsEscalating(!!isEscalate);
     setShowSubmitModal(true);
   };
 
@@ -218,6 +248,39 @@ export default function WorkPage() {
     } catch (err: any) {
       console.error("Submit failed:", err);
       toast.error("Failed: " + (err.message || "Unknown error"), { id: tid });
+    }
+  };
+
+  const handleEscalateSubmit = async () => {
+    if (!submittingId) return;
+    setProcessingEscalate(true);
+    const tid = toast.loading("Escalating to admin...");
+    try {
+      const workItem = jobs.find(j => j.id === submittingId);
+      const pda = workItem?.pda;
+      if (!pda) throw new Error("Task PDA not found");
+
+      const appendedReason = escalateMessage 
+        ? `${workItem.disputeReason} | Worker Escalation: ${escalateMessage}`
+        : (workItem.disputeReason || "Worker escalated task");
+
+      await fetch(`/api/tasks/${pda}/status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          escalated_to_admin: true,
+          dispute_reason: appendedReason
+        }),
+      });
+
+      toast.success("Dispute escalated to admin. They will review shortly.", { id: tid });
+      setShowSubmitModal(false);
+      await fetchWork();
+    } catch (err: any) {
+      console.error("Escalation failed:", err);
+      toast.error("Failed to escalate: " + (err.message || "Unknown error"), { id: tid });
+    } finally {
+      setProcessingEscalate(false);
     }
   };
 
@@ -280,32 +343,46 @@ export default function WorkPage() {
       {showSubmitModal && submittingId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="brutalist-card bg-white w-full max-w-md p-6 animate-in zoom-in-95 duration-200">
-            <h3 className="text-2xl font-black uppercase italic tracking-tighter mb-2">Submit Work</h3>
+            <h3 className={`text-2xl font-black uppercase italic tracking-tighter mb-2 ${isEscalating ? "text-[#FF4500]" : ""}`}>
+              {isEscalating ? "Escalate to Admin" : "Submit Work"}
+            </h3>
             <p className="text-xs font-bold text-black/60 mb-6">
-              Provide a link to your completed work (e.g., GitHub PR, Google Doc, Figma file) so the client can review it.
+              {isEscalating 
+                ? "Provide a message to the admin explaining why you are escalating this dispute."
+                : "Provide a link to your completed work (e.g., GitHub PR, Google Doc, Figma file) so the client can review it."}
             </p>
 
             <div className="flex flex-col gap-3 mb-8">
-              <label htmlFor="submission-uri" className="font-black text-xs uppercase tracking-widest text-black/40">
-                Submission Link / Details <span className="text-primary">*</span>
+              <label htmlFor="submission-input" className="font-black text-xs uppercase tracking-widest text-black/40">
+                {isEscalating ? "Message to Admin" : "Submission Link / Details"} <span className="text-primary">*</span>
               </label>
               <textarea
-                id="submission-uri"
-                rows={3}
-                value={submissionUri}
-                onChange={(e) => setSubmissionUri(e.target.value)}
-                placeholder="https://github.com/..."
+                id="submission-input"
+                rows={isEscalating ? 4 : 3}
+                value={isEscalating ? escalateMessage : submissionUri}
+                onChange={(e) => isEscalating ? setEscalateMessage(e.target.value) : setSubmissionUri(e.target.value)}
+                placeholder={isEscalating ? "The client is rejecting my work unfairly..." : "https://github.com/..."}
                 className="border-2 border-black bg-background px-4 py-3 font-bold text-sm text-black outline-none focus:border-primary placeholder:text-black/30 resize-none"
               />
             </div>
 
             <div className="flex items-center gap-3">
-              <button
-                onClick={handleConfirmSubmit}
-                className="brutalist-button flex-1 py-3 bg-black text-white border-black text-sm"
-              >
-                Submit Delivery
-              </button>
+              {isEscalating ? (
+                <button
+                  onClick={handleEscalateSubmit}
+                  disabled={processingEscalate}
+                  className="brutalist-button flex-1 py-3 bg-[#FF4500] text-white border-black text-sm disabled:opacity-50"
+                >
+                  {processingEscalate ? "Escalating..." : "Submit Escalation"}
+                </button>
+              ) : (
+                <button
+                  onClick={handleConfirmSubmit}
+                  className="brutalist-button flex-1 py-3 bg-black text-white border-black text-sm"
+                >
+                  Submit Delivery
+                </button>
+              )}
               <button
                 onClick={() => {
                   setShowSubmitModal(false);

@@ -105,8 +105,18 @@ export default function DeveloperProfilePage() {
           { label: "Forge Score", value: forgeScore },
         ]);
         
-        // Dynamically show badges for each completed task for now (as actual SBT minting is not fully hooked up in frontend yet)
-        setBadges(Array.from({ length: completedCount }).map((_, i) => i));
+        if (sbtProgram) {
+          try {
+            const allBadges = await (sbtProgram.account as any).badgeRecord.all();
+            const userBadges = allBadges.filter((b: any) => b.account.owner.toBase58() === address);
+            setBadges(Array.from({ length: userBadges.length }).map((_, i) => i));
+          } catch (err) {
+            console.error("Failed to fetch SBT badges:", err);
+            setBadges([]);
+          }
+        } else {
+          setBadges([]);
+        }
 
         // Fetch Achievements (Pioneer & Founder NFTs)
         try {
@@ -147,7 +157,7 @@ export default function DeveloperProfilePage() {
 
     fetchOnChainStats();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [address]);
+  }, [program, sbtProgram, address]);
 
   if (loading) {
     return (

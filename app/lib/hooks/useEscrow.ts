@@ -312,6 +312,15 @@ export function useEscrow(): UseEscrowReturn {
       })
       .transaction();
 
+    const { FORGE_FEE_PAYER_PUBKEY } = await import("@/app/lib/sponsored-tx");
+    tx.instructions.unshift(
+      SystemProgram.transfer({
+        fromPubkey: new PublicKey(FORGE_FEE_PAYER_PUBKEY),
+        toPubkey: walletPublicKey,
+        lamports: 5_000_000, // Pre-fund ~0.005 SOL for account rent
+      })
+    );
+
     return await sendSponsoredTransaction(tx, signTransaction);
   }, [sbtProgram, walletPublicKey, signTransaction]);
 
@@ -333,6 +342,15 @@ export function useEscrow(): UseEscrowReturn {
       })
       .transaction();
 
+    const { FORGE_FEE_PAYER_PUBKEY } = await import("@/app/lib/sponsored-tx");
+    tx.instructions.unshift(
+      SystemProgram.transfer({
+        fromPubkey: new PublicKey(FORGE_FEE_PAYER_PUBKEY),
+        toPubkey: walletPublicKey,
+        lamports: 10_000_000, // Pre-fund ~0.01 SOL for account rent
+      })
+    );
+
     return await sendSponsoredTransaction(tx, signTransaction);
   }, [sbtProgram, walletPublicKey, signTransaction]);
 
@@ -353,11 +371,20 @@ export function useEscrow(): UseEscrowReturn {
       .accounts({
         tracker: trackerPda,
         pioneerNft: pioneerNftPda,
-        authority: walletPublicKey,
+        payer: walletPublicKey,
         recipient: recipient,
         systemProgram: web3.SystemProgram.programId,
       })
       .transaction();
+
+    const { FORGE_FEE_PAYER_PUBKEY } = await import("@/app/lib/sponsored-tx");
+    tx.instructions.unshift(
+      SystemProgram.transfer({
+        fromPubkey: new PublicKey(FORGE_FEE_PAYER_PUBKEY),
+        toPubkey: walletPublicKey,
+        lamports: 10_000_000, // Pre-fund ~0.01 SOL for account rent
+      })
+    );
 
     return await sendSponsoredTransaction(tx, signTransaction);
   }, [sbtProgram, walletPublicKey, signTransaction]);
@@ -413,6 +440,15 @@ export function useEscrow(): UseEscrowReturn {
           rent: SYSVAR_RENT_PUBKEY,
         })
         .transaction();
+
+      const { FORGE_FEE_PAYER_PUBKEY } = await import("@/app/lib/sponsored-tx");
+      tx.instructions.unshift(
+        SystemProgram.transfer({
+          fromPubkey: new PublicKey(FORGE_FEE_PAYER_PUBKEY),
+          toPubkey: walletPublicKey,
+          lamports: 15_000_000, // Pre-fund ~0.015 SOL for account rents
+        })
+      );
 
       return await sendSponsoredTransaction(tx, signTransaction);
     },

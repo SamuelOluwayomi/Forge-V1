@@ -16,7 +16,6 @@ function getFeePayer(): Keypair {
 
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL ?? clusterApiUrl("devnet");
 const IS_DEVNET = RPC_URL.includes("devnet");
-
 const connection = new Connection(RPC_URL, "confirmed");
 
 async function ensureFunds(feePayer: Keypair) {

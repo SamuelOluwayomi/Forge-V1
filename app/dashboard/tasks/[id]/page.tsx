@@ -540,7 +540,7 @@ export default function ManageTaskPage() {
               )}
             </div>
           )}
-          {task?.escalated_to_admin && (
+          {task?.escalated_to_admin && onChainStatus !== "completed" && (
             <div className="mt-4 p-4 border-2 border-dashed border-[#FFD700] bg-[#FFD700]/20 text-center flex items-center justify-center gap-2">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-black">
                 <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>

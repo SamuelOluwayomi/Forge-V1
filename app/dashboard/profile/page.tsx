@@ -302,22 +302,26 @@ export default function ProfilePage() {
 
   const handleDownloadCard = async () => {
     try {
-      const html2canvas = (await import("html2canvas")).default;
+      const { toPng } = await import("html-to-image");
       const card = document.getElementById("profile-card");
       if (!card) return;
 
       toast.loading("Rendering card...", { id: "download" });
 
-      const canvas = await html2canvas(card, {
+      const dataUrl = await toPng(card, {
         backgroundColor: "#FF4500",
-        scale: 2, 
-        useCORS: true,
-        logging: false,
+        pixelRatio: 2,
+        filter: (node) => {
+          if (node instanceof HTMLElement && node.getAttribute("data-html2canvas-ignore") === "true") {
+            return false;
+          }
+          return true;
+        }
       });
 
       const link = document.createElement("a");
       link.download = `forge-profile-${address.slice(0, 8)}.png`;
-      link.href = canvas.toDataURL("image/png");
+      link.href = dataUrl;
       link.click();
 
       toast.success("Profile card downloaded!", { id: "download" });
@@ -334,16 +338,21 @@ export default function ProfilePage() {
     setGeneratingShare(true);
     setShowShareModal(true);
     try {
-      const html2canvas = (await import("html2canvas")).default;
+      const { toPng } = await import("html-to-image");
       const card = document.getElementById("profile-card");
       if (!card) return;
-      const canvas = await html2canvas(card, {
+      
+      const dataUrl = await toPng(card, {
         backgroundColor: "#FF4500",
-        scale: 2, 
-        useCORS: true,
-        logging: false,
+        pixelRatio: 2,
+        filter: (node) => {
+          if (node instanceof HTMLElement && node.getAttribute("data-html2canvas-ignore") === "true") {
+            return false;
+          }
+          return true;
+        }
       });
-      setShareImage(canvas.toDataURL("image/png"));
+      setShareImage(dataUrl);
     } catch (err) {
       console.error(err);
       toast.error("Failed to generate share image.");

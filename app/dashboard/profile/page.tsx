@@ -66,6 +66,10 @@ export default function ProfilePage() {
   const [hasPioneer, setHasPioneer] = useState(false);
   const [hasFounder, setHasFounder] = useState(false);
   const [selectedNft, setSelectedNft] = useState<{ type: 'founder' | 'pioneer' | 'sbt', uri?: string } | null>(null);
+  
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareImage, setShareImage] = useState<string | null>(null);
+  const [generatingShare, setGeneratingShare] = useState(false);
   const [pioneerPdaAddr, setPioneerPdaAddr] = useState<string | null>(null);
   const [founderPdaAddr, setFounderPdaAddr] = useState<string | null>(null);
 
@@ -299,21 +303,16 @@ export default function ProfilePage() {
   const handleDownloadCard = async () => {
     try {
       const html2canvas = (await import("html2canvas")).default;
-      const card = document.getElementById("profile-card-export");
+      const card = document.getElementById("profile-card");
       if (!card) return;
 
       toast.loading("Rendering card...", { id: "download" });
 
       const canvas = await html2canvas(card, {
         backgroundColor: "#FF4500",
-        scale: 3, // Even higher for "premium" feel
+        scale: 2, 
         useCORS: true,
         logging: false,
-        onclone: (clonedDoc) => {
-          // Force standard colors on the cloned element to prevent html2canvas oklab crash
-          const el = clonedDoc.getElementById("profile-card-export");
-          if (el) el.style.display = "block";
-        },
       });
 
       const link = document.createElement("a");
@@ -328,13 +327,40 @@ export default function ProfilePage() {
     }
   };
 
-  const handleShareCard = async () => {
-    const shareText = `Check out my Forge Developer Profile! 🛠️\n\nForge Score: ${stats[3].value}\nWallet: ${address.slice(0, 4)}...${address.slice(-4)}\n\nBuilt on @Solana #ForgeProtocol`;
-    const shareUrl = window.location.href;
+  const shareText = `Check out my Forge Developer Profile! 🛠️\n\nForge Score: ${stats[3].value}\nWallet: ${address.slice(0, 4)}...${address.slice(-4)}\n\nBuilt on @Solana #ForgeProtocol`;
+  const shareUrl = typeof window !== "undefined" ? window.location.href : "https://forge.dev";
 
+  const handleOpenShare = async () => {
+    setGeneratingShare(true);
+    setShowShareModal(true);
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+      const card = document.getElementById("profile-card");
+      if (!card) return;
+      const canvas = await html2canvas(card, {
+        backgroundColor: "#FF4500",
+        scale: 2, 
+        useCORS: true,
+        logging: false,
+      });
+      setShareImage(canvas.toDataURL("image/png"));
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to generate share image.");
+      setShowShareModal(false);
+    } finally {
+      setGeneratingShare(false);
+    }
+  };
+
+  const handleShareTwitter = () => {
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
-
     window.open(twitterUrl, "_blank");
+  };
+
+  const handleShareTelegram = () => {
+    const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`;
+    window.open(telegramUrl, "_blank");
   };
 
   const handleSaveProfile = async () => {
@@ -531,12 +557,12 @@ export default function ProfilePage() {
                 <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} accept="image/*" className="hidden" />
 
                 {/* Action Buttons */}
-                <div className="flex flex-col w-full md:w-32 gap-2 mt-2">
+                <div className="flex flex-col w-full md:w-32 gap-2 mt-2" data-html2canvas-ignore="true">
                   <button onClick={handleDownloadCard} className="w-full bg-white border-2 border-black py-2 font-black text-[10px] uppercase tracking-widest hover:bg-black hover:text-white transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5">
                     Download
                   </button>
-                  <button onClick={handleShareCard} className="w-full bg-black text-white border-2 border-black py-2 font-black text-[10px] uppercase tracking-widest hover:bg-primary hover:text-black transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5">
-                    Share
+                  <button onClick={handleOpenShare} disabled={generatingShare} className="w-full bg-black text-white border-2 border-black py-2 font-black text-[10px] uppercase tracking-widest hover:bg-primary hover:text-black transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 disabled:opacity-50">
+                    {generatingShare ? "Loading..." : "Share"}
                   </button>
                 </div>
               </div>
@@ -683,125 +709,6 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* HIDDEN EXPORTABLE CARD (Standard Hex only for html2canvas compatibility) */}
-          <div className="hidden">
-            <div
-              id="profile-card-export"
-              className="w-[450px] bg-[#FF4500] p-10 border-[6px] border-black relative overflow-hidden"
-              style={{ color: "black", fontFamily: "sans-serif" }}
-            >
-              {/* Header with Logo */}
-              <div className="flex justify-between items-center mb-10">
-                <div className="bg-black text-white px-4 py-1 font-black text-2xl italic tracking-tighter uppercase border-2 border-black">
-                  FORGE
-                </div>
-                <div className="bg-white px-3 py-1 border-2 border-black font-black text-[10px] uppercase tracking-widest">
-                  Identity Card
-                </div>
-              </div>
-
-              <div className="flex gap-8 items-start mb-8">
-                {/* Photo */}
-                <div className="w-32 h-32 bg-white border-[4px] border-black shrink-0 overflow-hidden">
-                  {displayPhoto ? (
-                    <img
-                      src={displayPhoto}
-                      alt="Profile"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center font-black text-4xl text-black/10">
-                      ?
-                    </div>
-                  )}
-                </div>
-
-                {/* Main Identity */}
-                <div className="flex-1">
-                  <h2 className="font-black text-2xl uppercase leading-none mb-1 italic">
-                    {profileData.name || "Dev Profile"}
-                  </h2>
-                  <p className="font-bold text-[10px] uppercase text-black/60 mb-4">
-                    {profileData.title || "Forge Contributor"}
-                  </p>
-                  <div className="flex gap-2">
-                    {rank > 0 && (
-                      <div className="bg-[#FFD700] text-black px-3 py-2 border-2 border-black inline-block">
-                        <p className="text-[10px] font-black uppercase tracking-widest mb-1">
-                          Rank
-                        </p>
-                        <p className="font-black text-3xl leading-none">
-                          #{rank}
-                        </p>
-                      </div>
-                    )}
-                    <div className="bg-black text-white px-3 py-2 border-2 border-black inline-block">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-[#FF4500] mb-1">
-                        Forge Score
-                      </p>
-                      <p className="font-black text-3xl leading-none">
-                        {stats[3].value}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Wallet Section */}
-              <div className="bg-white/90 border-[3px] border-black p-4 mb-4">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/50 mb-1">
-                  Authenticated Wallet
-                </p>
-                <p className="font-mono text-xs font-black text-black break-all">
-                  {address || "Not Connected"}
-                </p>
-              </div>
-
-              {/* NFT on-chain block for exportable card */}
-              {(hasPioneer || hasFounder) && (
-                <div className="mb-6 flex flex-col gap-1.5">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/50 mb-1">On-Chain NFTs</p>
-                  {hasPioneer && pioneerPdaAddr && (
-                    <div className="bg-[#FFD700]/40 border-2 border-black p-2 flex justify-between items-center">
-                      <p className="font-black text-[9px] uppercase">⭐ Pioneer NFT</p>
-                      <p className="font-mono text-[8px] text-black/60">{pioneerPdaAddr.slice(0, 8)}...{pioneerPdaAddr.slice(-6)}</p>
-                    </div>
-                  )}
-                  {hasFounder && founderPdaAddr && (
-                    <div className="bg-white/60 border-2 border-black p-2 flex justify-between items-center">
-                      <p className="font-black text-[9px] uppercase">🔥 Founder NFT (1/1)</p>
-                      <p className="font-mono text-[8px] text-black/60">{founderPdaAddr.slice(0, 8)}...{founderPdaAddr.slice(-6)}</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Stats Bar */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-black/10 border-2 border-black p-3">
-                  <p className="text-[10px] font-black uppercase text-black/40">
-                    Tasks Posted
-                  </p>
-                  <p className="font-black text-2xl text-black">
-                    {stats[1].value}
-                  </p>
-                </div>
-                <div className="bg-black/10 border-2 border-black p-3">
-                  <p className="text-[10px] font-black uppercase text-black/40">
-                    Tasks Done
-                  </p>
-                  <p className="font-black text-2xl text-black">
-                    {stats[0].value}
-                  </p>
-                </div>
-              </div>
-
-              {/* Footer Tape */}
-              <div className="absolute -bottom-4 -right-10 bg-black text-white px-20 py-4 font-black uppercase text-sm tracking-widest rotate-[-15deg] border-y-4 border-black">
-                FORGE PROTOCOL
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Bottom — stats + badges */}
@@ -1222,6 +1129,68 @@ export default function ProfilePage() {
             <button onClick={() => setSelectedNft(null)} className="w-full mt-6 py-3 border-2 border-black font-black uppercase text-xs hover:bg-black hover:text-white transition-colors">
               Close
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowShareModal(false)}>
+          <div className="brutalist-card bg-white w-full max-w-4xl p-6 relative max-h-[90vh] overflow-y-auto shadow-[8px_8px_0px_0px_rgba(255,69,0,1)]" onClick={e => e.stopPropagation()}>
+            <button
+              onClick={() => {
+                setShowShareModal(false);
+                setShareImage(null);
+              }}
+              className="absolute top-4 right-4 w-8 h-8 bg-black text-white flex items-center justify-center font-black text-sm hover:bg-primary transition-colors z-10"
+            >
+              ✕
+            </button>
+
+            <h3 className="text-3xl font-black uppercase italic tracking-tighter mb-6 text-black">
+              Share Your Profile
+            </h3>
+
+            <div className="flex flex-col md:flex-row gap-8">
+              {/* Preview Image */}
+              <div className="flex-1 border-4 border-black bg-[#e0e0e0] p-4 flex flex-col items-center justify-center min-h-[300px]">
+                {shareImage ? (
+                  <img src={shareImage} alt="Profile Preview" className="w-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] border-2 border-black" />
+                ) : (
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 border-4 border-black border-t-primary animate-spin" />
+                    <p className="font-black uppercase text-xs text-black/50">Generating Card...</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Share Options */}
+              <div className="flex-1 flex flex-col gap-6">
+                <div className="bg-[#60A5FA]/10 border-2 border-[#60A5FA] p-4 relative">
+                  <div className="brutalist-tape absolute -top-3 -right-2 text-[10px] px-2 py-0.5 bg-[#60A5FA] text-white" style={{ transform: "rotate(3deg)" }}>
+                    Share Content
+                  </div>
+                  <p className="font-bold text-sm text-black/80 whitespace-pre-wrap">{shareText}</p>
+                  <p className="font-bold text-xs text-blue-600 underline mt-3 break-all">{shareUrl}</p>
+                </div>
+
+                <div className="flex flex-col gap-3 mt-auto">
+                  <button onClick={handleShareTwitter} className="brutalist-button w-full py-4 bg-black text-white border-black text-sm flex items-center justify-center gap-3 hover:bg-[#1DA1F2] transition-colors">
+                    <XLogo weight="fill" size={24} /> Share on X
+                  </button>
+                  <button onClick={handleShareTelegram} className="brutalist-button w-full py-4 bg-white text-black border-black text-sm flex items-center justify-center gap-3 hover:bg-[#0088cc] hover:text-white transition-colors">
+                    <TelegramLogo weight="fill" size={24} /> Share on Telegram
+                  </button>
+                  <button onClick={() => {
+                    navigator.clipboard.writeText(`${shareText}\n\n${shareUrl}`);
+                    toast.success("Copied to clipboard!");
+                  }} className="brutalist-button w-full py-4 bg-[#FFD700] text-black border-black text-sm flex items-center justify-center gap-3 hover:bg-black hover:text-white transition-colors">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    Copy Link & Text
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -360,11 +360,14 @@ export default function DashboardOverview() {
             <div className="space-y-4">
               <div className="flex flex-col gap-1">
                 <div className="flex justify-between text-xs font-black uppercase text-white">
-                  <span>Trust Score</span>
-                  <span>0 / 1000</span>
+                  <span>Forge Score</span>
+                  <span>{Number(stats[1].value) * 100} / {Math.max(1000, Math.ceil((Number(stats[1].value) * 100 + 1) / 1000) * 1000)}</span>
                 </div>
                 <div className="h-6 border-4 border-black bg-white/20 overflow-hidden p-1">
-                  <div className="h-full bg-[#FFD700] w-0 transition-all duration-500" />
+                  <div 
+                    className="h-full bg-[#FFD700] transition-all duration-500" 
+                    style={{ width: `${Math.min(100, ((Number(stats[1].value) * 100) / Math.max(1000, Math.ceil((Number(stats[1].value) * 100 + 1) / 1000) * 1000)) * 100)}%` }}
+                  />
                 </div>
               </div>
               <div className="flex items-center gap-4 p-4 bg-black/20 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">

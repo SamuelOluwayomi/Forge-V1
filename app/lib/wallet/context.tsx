@@ -79,18 +79,35 @@ export function WalletProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     const unsubscribe = watchWallets(handleWalletsChanged);
-
-    const lastId = localStorage.getItem(STORAGE_KEY);
-    if (lastId && !autoConnectAttempted.current) {
-      autoConnectAttempted.current = true;
-      const connector = connectorsRef.current.find((c) => c.id === lastId);
-      if (connector) {
-        void runAutoConnect(connector);
-      }
-    }
-
     return unsubscribe;
-  }, [handleWalletsChanged, runAutoConnect]);
+  }, [handleWalletsChanged]);
+
+  useEffect(() => {
+    const lastId = localStorage.getItem(STORAGE_KEY);
+    if (!lastId || autoConnectAttempted.current) return;
+
+    const connector = connectors.find((c) => c.id === lastId);
+    if (connector) {
+      autoConnectAttempted.current = true;
+      void runAutoConnect(connector);
+    }
+  }, [connectors, runAutoConnect]);
+
+  useEffect(() => {
+    const lastId = localStorage.getItem(STORAGE_KEY);
+    if (!lastId) return;
+
+    // Fallback: if the wallet extension is uninstalled or blocked, stop showing the loader after 1 second
+    const timer = setTimeout(() => {
+      if (!autoConnectAttempted.current) {
+        autoConnectAttempted.current = true;
+        setStatus(WALLET_STATUS.DISCONNECTED);
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const connect = useCallback(async (connectorId: string) => {
     const connector = connectorsRef.current.find((c) => c.id === connectorId);

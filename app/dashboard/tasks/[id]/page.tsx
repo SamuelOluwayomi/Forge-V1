@@ -523,15 +523,21 @@ export default function ManageTaskPage() {
             </div>
           )}
 
-          {onChainStatus === "disputed" && task?.dispute_count && task.dispute_count >= 2 && !task.escalated_to_admin && (
+          {(onChainStatus === "submitted" || onChainStatus === "disputed") && !task?.escalated_to_admin && (
             <div className="mt-4 p-4 border-2 border-dashed border-[#FF4500] bg-[#FF4500]/10 text-center">
-              <p className="text-sm font-black uppercase text-[#FF4500] mb-2">Still having issues?</p>
+              <p className="text-sm font-black uppercase text-[#FF4500] mb-2">Need admin intervention?</p>
               <button
                 onClick={() => setShowEscalateModal(true)}
-                className="brutalist-button px-6 py-3 bg-black text-white border-black text-xs"
+                disabled={!task?.dispute_count || task.dispute_count < 1}
+                className="brutalist-button px-6 py-3 bg-black text-white border-black text-xs disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                🚨 Escalate to Admin
+                Escalate to Admin
               </button>
+              {(!task?.dispute_count || task.dispute_count < 1) && (
+                <p className="text-[10px] font-bold text-black/50 mt-2 leading-tight">
+                  * Escalation becomes available once a dispute is raised (Request Revisions).
+                </p>
+              )}
             </div>
           )}
           {task?.escalated_to_admin && (

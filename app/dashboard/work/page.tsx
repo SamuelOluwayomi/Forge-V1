@@ -117,15 +117,21 @@ function WorkCard({ item, onSubmit, submitting }: { item: WorkItem; onSubmit: (i
         </div>
       )}
 
-      {item.status === "Disputed" && item.disputeCount && item.disputeCount >= 2 && !item.escalatedToAdmin && (
+      {(item.status === "Submitted" || item.status === "Disputed") && !item.escalatedToAdmin && (
         <div className="mt-2 p-4 border-2 border-dashed border-[#FF4500] bg-[#FF4500]/10 text-center">
-          <p className="text-sm font-black uppercase text-[#FF4500] mb-2">Can't agree with the client?</p>
+          <p className="text-sm font-black uppercase text-[#FF4500] mb-2">Need admin intervention?</p>
           <button
             onClick={() => onSubmit(item.id, item.client, true)}
-            className="brutalist-button w-full py-2 bg-black text-white border-black text-xs"
+            disabled={!item.disputeCount || item.disputeCount < 1}
+            className="brutalist-button w-full py-2 bg-black text-white border-black text-xs disabled:opacity-50 disabled:cursor-not-allowed"
           >
             🚨 Escalate to Admin
           </button>
+          {(!item.disputeCount || item.disputeCount < 1) && (
+             <p className="text-[10px] font-bold text-black/50 mt-2 leading-tight">
+               * Escalation becomes available once a dispute is raised.
+             </p>
+          )}
         </div>
       )}
 

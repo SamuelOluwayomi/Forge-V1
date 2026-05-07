@@ -138,8 +138,9 @@ export function WalletButton() {
           </div>
 
           <button
-            onClick={() => {
-              disconnect();
+            onClick={async () => {
+              await disconnect();
+              document.cookie = "wallet=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
               close();
             }}
             className="mt-2 w-full cursor-pointer rounded-lg border border-border-low bg-card px-3 py-2 text-xs font-medium text-destructive transition hover:bg-destructive/10"

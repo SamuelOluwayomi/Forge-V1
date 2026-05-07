@@ -126,8 +126,8 @@ export function DashboardNav() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleDisconnect = () => {
-    disconnect();
+  const handleDisconnect = async () => {
+    await disconnect();
     document.cookie = "wallet=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
     router.push("/");
   };

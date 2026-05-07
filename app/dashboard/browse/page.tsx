@@ -24,6 +24,7 @@ interface Task {
   listing_deadline: string | null;
   applicant_count: number;
   task_type: "challenge" | "bounty";
+  created_at: number;
 }
 
 const STATUS_STYLES: Record<string, string> = {

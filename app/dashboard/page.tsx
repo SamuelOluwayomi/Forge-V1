@@ -308,25 +308,13 @@ export default function DashboardOverview() {
             </div>
           </div>
           {activity.length === 0 ? (
-            <div className="border-4 border-black bg-[#FFD700] p-10 flex flex-col items-center justify-center text-center shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] mt-4">
-              <h3 className="font-black text-2xl uppercase mb-2">Welcome to Forge</h3>
-              <p className="font-bold text-black/70 mb-8 max-w-md">
-                You haven't posted any tasks or accepted any work yet. Get started by posting a task or browsing the marketplace.
+            <div className="border-2 border-dashed border-black/20 p-10 text-center">
+              <p className="font-black text-black/40 uppercase text-sm">
+                No activity yet
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-                <Link
-                  href="/dashboard/tasks/new"
-                  className="brutalist-button px-6 py-3 bg-primary text-white border-black text-sm uppercase transition-colors"
-                >
-                  Post Your First Task
-                </Link>
-                <Link
-                  href="/dashboard/browse"
-                  className="brutalist-button px-6 py-3 bg-black text-white border-black text-sm uppercase transition-colors"
-                >
-                  Browse Open Tasks
-                </Link>
-              </div>
+              <p className="font-bold text-xs text-black/30 mt-2">
+                Post a task or accept work to get started.
+              </p>
             </div>
           ) : (
             activity.map((a, i) => <ActivityRow key={i} {...a} />)
@@ -365,34 +353,44 @@ export default function DashboardOverview() {
           </div>
 
           {/* Reputation Breakdown */}
-          <div className="brutalist-card bg-black text-white p-6 border-4 border-black relative overflow-hidden group">
-            <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/20 rounded-full blur-2xl group-hover:bg-primary/40 transition-colors"></div>
-            <h2 className="font-black text-2xl uppercase tracking-tight mb-6">
-              Reputation
-            </h2>
-            <div className="space-y-6 relative z-10">
+          <div className="brutalist-card bg-black text-white p-6 border-4 border-black shadow-[4px_4px_0px_0px_rgba(255,69,0,1)]">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="font-black text-2xl uppercase tracking-tight text-white">
+                Reputation
+              </h2>
+              <div className="brutalist-tape bg-white text-black px-2 py-0.5 text-[10px]" style={{ transform: "rotate(-2deg)" }}>
+                ON-CHAIN
+              </div>
+            </div>
+            
+            <div className="space-y-6">
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between items-end">
-                  <span className="text-sm font-black uppercase text-white/80 tracking-widest">Forge Score</span>
+                  <span className="text-sm font-black uppercase text-white/60 tracking-widest">Forge Score</span>
                   <div className="text-right">
-                    <span className="text-2xl font-black text-[#FFD700] leading-none">{Number(stats[1].value) * 100}</span>
-                    <span className="text-[10px] font-black text-white/40 ml-1">/ {Math.max(1000, Math.ceil((Number(stats[1].value) * 100 + 1) / 1000) * 1000)}</span>
+                    <span className="text-2xl font-black text-primary leading-none">{Number(stats[1].value) * 100}</span>
+                    <span className="text-xs font-black text-white/40 ml-1">/ {Math.max(1000, Math.ceil((Number(stats[1].value) * 100 + 1) / 1000) * 1000)}</span>
                   </div>
                 </div>
-                <div className="h-4 border-2 border-white/20 bg-white/5 overflow-hidden relative">
+                {/* Brutalist Progress Bar */}
+                <div className="h-6 border-4 border-white bg-white/10 p-0.5 relative overflow-hidden">
                   <div 
-                    className="absolute top-0 left-0 h-full bg-[#FFD700] transition-all duration-1000 ease-out flex items-center" 
+                    className="h-full bg-primary relative" 
                     style={{ width: `${Math.min(100, ((Number(stats[1].value) * 100) / Math.max(1000, Math.ceil((Number(stats[1].value) * 100 + 1) / 1000) * 1000)) * 100)}%` }}
                   >
-                    <div className="w-full h-full bg-white/20 animate-[pulse_2s_ease-in-out_infinite]" />
+                    {/* Animated diagonal stripes */}
+                    <div className="absolute inset-0 opacity-20" style={{
+                      backgroundImage: "linear-gradient(-45deg, #000 25%, transparent 25%, transparent 50%, #000 50%, #000 75%, transparent 75%, transparent)",
+                      backgroundSize: "20px 20px"
+                    }}></div>
                   </div>
                 </div>
               </div>
-
-              <div className={`p-4 border-2 transition-colors ${stats[3].value === 0 ? "border-white/10 bg-white/5" : "border-[#4ADE80]/30 bg-[#4ADE80]/10"} flex items-center gap-4`}>
-                <div className={`w-12 h-12 border-2 flex items-center justify-center shrink-0 transition-colors ${stats[3].value === 0 ? "border-white/20 bg-black" : "border-[#4ADE80] bg-[#4ADE80]/20"}`}>
+              
+              <div className="flex items-center gap-4 p-4 border-4 border-white bg-white/5">
+                <div className={`w-12 h-12 border-4 flex items-center justify-center shrink-0 ${stats[3].value === 0 ? "border-white/20 bg-transparent" : "border-primary bg-primary text-black"}`}>
                   <svg
-                    className={stats[3].value === 0 ? "text-white/20" : "text-[#4ADE80]"}
+                    className={stats[3].value === 0 ? "text-white/20" : "text-black"}
                     width="24"
                     height="24"
                     viewBox="0 0 24 24"
@@ -406,7 +404,7 @@ export default function DashboardOverview() {
                 <div>
                   {stats[3].value === 0 ? (
                     <>
-                      <p className="font-black text-base uppercase text-white/40">
+                      <p className="font-black text-sm uppercase text-white/40">
                         No Badges Yet
                       </p>
                       <p className="text-[10px] font-bold text-white/30 uppercase mt-0.5">
@@ -415,11 +413,11 @@ export default function DashboardOverview() {
                     </>
                   ) : (
                     <>
-                      <p className="font-black text-base uppercase text-[#4ADE80]">
+                      <p className="font-black text-sm uppercase text-primary">
                         {stats[3].value} Badge{stats[3].value === 1 ? "" : "s"} Earned
                       </p>
                       <p className="text-[10px] font-bold text-white/60 uppercase mt-0.5">
-                        Permanent On-chain reputation
+                        Verified by smart contract
                       </p>
                     </>
                   )}

@@ -353,74 +353,66 @@ export default function DashboardOverview() {
           </div>
 
           {/* Reputation Breakdown */}
-          <div className="brutalist-card bg-black text-white p-6 border-4 border-black shadow-[4px_4px_0px_0px_rgba(255,69,0,1)]">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="font-black text-2xl uppercase tracking-tight text-white">
-                Reputation
-              </h2>
-              <div className="brutalist-tape bg-white text-black px-2 py-0.5 text-[10px]" style={{ transform: "rotate(-2deg)" }}>
+          <div className="bg-white p-6 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden group transition-all hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[10px_10px_0px_0px_rgba(0,0,0,1)]">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="font-black text-2xl uppercase tracking-tighter italic">Reputation</h2>
+              <div className="bg-primary text-white px-3 py-1 text-[10px] font-black border-2 border-black rotate-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                 ON-CHAIN
               </div>
             </div>
-            
-            <div className="space-y-6">
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-between items-end">
-                  <span className="text-sm font-black uppercase text-white/60 tracking-widest">Forge Score</span>
+
+            <div className="space-y-8">
+              <div>
+                <div className="flex justify-between items-end mb-2">
+                  <span className="text-xs font-black uppercase tracking-widest text-black/40">Forge Score</span>
                   <div className="text-right">
-                    <span className="text-2xl font-black text-primary leading-none">{Number(stats[1].value) * 100}</span>
-                    <span className="text-xs font-black text-white/40 ml-1">/ {Math.max(1000, Math.ceil((Number(stats[1].value) * 100 + 1) / 1000) * 1000)}</span>
+                    <span className="text-4xl font-black italic text-primary leading-none tabular-nums">
+                      {Number(stats[1].value) * 100}
+                    </span>
                   </div>
                 </div>
-                {/* Brutalist Progress Bar */}
-                <div className="h-6 border-4 border-white bg-white/10 p-0.5 relative overflow-hidden">
-                  <div 
-                    className="h-full bg-primary relative" 
-                    style={{ width: `${Math.min(100, ((Number(stats[1].value) * 100) / Math.max(1000, Math.ceil((Number(stats[1].value) * 100 + 1) / 1000) * 1000)) * 100)}%` }}
-                  >
-                    {/* Animated diagonal stripes */}
-                    <div className="absolute inset-0 opacity-20" style={{
-                      backgroundImage: "linear-gradient(-45deg, #000 25%, transparent 25%, transparent 50%, #000 50%, #000 75%, transparent 75%, transparent)",
-                      backgroundSize: "20px 20px"
-                    }}></div>
-                  </div>
+                {/* Custom Blocky Progress Bar */}
+                <div className="h-10 border-4 border-black bg-black/5 p-1 flex gap-1">
+                  {[...Array(10)].map((_, i) => {
+                    const score = Number(stats[1].value) * 100;
+                    const nextLevel = Math.max(1000, Math.ceil((score + 1) / 1000) * 1000);
+                    const progress = (score / nextLevel) * 10;
+                    const isActive = i < progress;
+                    return (
+                      <div 
+                        key={i}
+                        className={`flex-1 transition-all duration-300 ${isActive ? 'bg-primary border-2 border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]' : 'bg-black/5'}`}
+                        style={{ transitionDelay: `${i * 30}ms` }}
+                      />
+                    );
+                  })}
+                </div>
+                <div className="flex justify-between mt-2 font-black text-[10px] uppercase text-black/30">
+                  <span>Level 1</span>
+                  <span>Target: {Math.max(1000, Math.ceil((Number(stats[1].value) * 100 + 1) / 1000) * 1000)}</span>
                 </div>
               </div>
-              
-              <div className="flex items-center gap-4 p-4 border-4 border-white bg-white/5">
-                <div className={`w-12 h-12 border-4 flex items-center justify-center shrink-0 ${stats[3].value === 0 ? "border-white/20 bg-transparent" : "border-primary bg-primary text-black"}`}>
-                  <svg
-                    className={stats[3].value === 0 ? "text-white/20" : "text-black"}
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    stroke="currentColor"
-                    strokeWidth="1"
-                  >
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                  </svg>
-                </div>
-                <div>
-                  {stats[3].value === 0 ? (
-                    <>
-                      <p className="font-black text-sm uppercase text-white/40">
-                        No Badges Yet
-                      </p>
-                      <p className="text-[10px] font-bold text-white/30 uppercase mt-0.5">
-                        Complete tasks to earn SBTs
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <p className="font-black text-sm uppercase text-primary">
-                        {stats[3].value} Badge{stats[3].value === 1 ? "" : "s"} Earned
-                      </p>
-                      <p className="text-[10px] font-bold text-white/60 uppercase mt-0.5">
-                        Verified by smart contract
-                      </p>
-                    </>
-                  )}
+
+              <div className="border-4 border-black bg-primary/5 p-4 relative group/badge">
+                <div className="flex items-center gap-4">
+                  <div className={`w-14 h-14 border-4 border-black flex items-center justify-center shrink-0 transition-transform group-hover/badge:rotate-12 ${stats[3].value === 0 ? "bg-white text-black/20" : "bg-primary text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"}`}>
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" stroke="black" strokeWidth="2">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    {stats[3].value === 0 ? (
+                      <>
+                        <p className="font-black text-sm uppercase leading-tight">No Badges Yet</p>
+                        <p className="text-[10px] font-bold text-black/40 uppercase mt-1">Complete tasks to earn SBTs</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="font-black text-lg uppercase leading-tight text-black">{stats[3].value} Badge{stats[3].value === 1 ? "" : "s"}</p>
+                        <p className="text-[10px] font-bold text-primary uppercase mt-1">SBT Verified Credentials</p>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

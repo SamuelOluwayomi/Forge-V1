@@ -309,7 +309,6 @@ export default function ProfilePage() {
       toast.loading("Rendering card...", { id: "download" });
 
       const dataUrl = await toPng(card, {
-        backgroundColor: "#FF4500",
         pixelRatio: 2,
         filter: (node) => {
           if (node instanceof HTMLElement && node.getAttribute("data-html2canvas-ignore") === "true") {
@@ -343,7 +342,6 @@ export default function ProfilePage() {
       if (!card) return;
       
       const dataUrl = await toPng(card, {
-        backgroundColor: "#FF4500",
         pixelRatio: 2,
         filter: (node) => {
           if (node instanceof HTMLElement && node.getAttribute("data-html2canvas-ignore") === "true") {
@@ -532,15 +530,30 @@ export default function ProfilePage() {
         <div className="w-full flex flex-col gap-6">
           <div
             id="profile-card"
-            className="brutalist-card bg-primary p-6 border-[3px] border-black relative overflow-hidden"
+            className="brutalist-card bg-[#fdf3e3] p-8 border-[3px] border-black relative overflow-hidden"
           >
+            {/* Edge Tapes */}
+            <div
+              className="absolute -top-3 -left-6 w-24 h-8 bg-primary border-2 border-black z-20 pointer-events-none"
+              style={{ transform: "rotate(-8deg)" }}
+            />
+            <div
+              className="absolute -top-3 -right-6 w-24 h-8 bg-black border-2 border-black z-20 pointer-events-none"
+              style={{ transform: "rotate(6deg)" }}
+            />
+
             {/* Background texture/noise */}
             <div
-              className="absolute inset-0 opacity-10 mix-blend-overlay pointer-events-none"
+              className="absolute inset-0 opacity-10 mix-blend-overlay pointer-events-none z-0"
               style={{
                 backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
               }}
             ></div>
+
+            {/* Forge Logo Watermark */}
+            <div className="absolute -bottom-16 -right-16 opacity-[0.03] pointer-events-none z-0">
+              <img src="/forge.png" alt="" className="w-[450px] h-auto rotate-[-5deg] grayscale" />
+            </div>
 
             <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start justify-between">
               {/* Left Side: Photo & Actions */}
@@ -703,16 +716,24 @@ export default function ProfilePage() {
               </div>
 
               {/* Right Side: Score/Rank Badges */}
-              <div className="flex flex-row md:flex-col gap-3 shrink-0 mt-6 md:mt-0 items-end">
-                {rank > 0 && (
-                  <div className="bg-[#FFD700] text-black px-4 py-3 border-[3px] border-black flex flex-col items-center" style={{ transform: "rotate(-2deg)" }}>
-                    <span className="text-[10px] font-black uppercase tracking-widest leading-none mb-1">Rank</span>
-                    <span className="font-black text-3xl leading-none">#{rank}</span>
+              <div className="flex flex-row md:flex-col gap-3 shrink-0 mt-6 md:mt-0 items-end h-full justify-between">
+                <div className="flex flex-row md:flex-col gap-3 items-end">
+                  {rank > 0 && (
+                    <div className="bg-[#FFD700] text-black px-4 py-3 border-[3px] border-black flex flex-col items-center" style={{ transform: "rotate(-2deg)" }}>
+                      <span className="text-[10px] font-black uppercase tracking-widest leading-none mb-1">Rank</span>
+                      <span className="font-black text-3xl leading-none">#{rank}</span>
+                    </div>
+                  )}
+                  <div className="bg-black text-white px-4 py-3 border-[3px] border-black flex flex-col items-center" style={{ transform: "rotate(2deg)" }}>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-primary leading-none mb-1">Score</span>
+                    <span className="font-black text-3xl leading-none">{stats[3].value}</span>
                   </div>
-                )}
-                <div className="bg-black text-white px-4 py-3 border-[3px] border-black flex flex-col items-center" style={{ transform: "rotate(2deg)" }}>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-primary leading-none mb-1">Score</span>
-                  <span className="font-black text-3xl leading-none">{stats[3].value}</span>
+                </div>
+
+                {/* Powered by Forge Logo */}
+                <div className="hidden md:flex flex-col items-end mt-auto pt-10 opacity-60 pointer-events-none">
+                  <span className="text-[8px] font-black uppercase tracking-widest text-black/50 mb-1">Powered by</span>
+                  <img src="/forge.png" alt="Forge Protocol" className="w-24 h-auto grayscale" />
                 </div>
               </div>
             </div>

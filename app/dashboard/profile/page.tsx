@@ -310,7 +310,7 @@ export default function ProfilePage() {
 
       const dataUrl = await toPng(card, {
         pixelRatio: 2,
-        filter: (node) => {
+        filter: (node: HTMLElement) => {
           if (node instanceof HTMLElement && node.getAttribute("data-html2canvas-ignore") === "true") {
             return false;
           }
@@ -330,7 +330,7 @@ export default function ProfilePage() {
     }
   };
 
-  const shareText = `Check out my Forge Developer Profile! 🛠️\n\nForge Score: ${stats[3].value}\nWallet: ${address.slice(0, 4)}...${address.slice(-4)}\n\nBuilt on @Solana #ForgeProtocol`;
+  const shareText = `Check out my Forge Developer Profile! \n\nForge Score: ${stats[3].value}\nWallet: ${address.slice(0, 4)}...${address.slice(-4)}\n\nBuilt on @Solana #ForgeProtocol`;
   const shareUrl = typeof window !== "undefined" ? window.location.href : "https://forge.dev";
 
   const handleOpenShare = async () => {
@@ -343,7 +343,7 @@ export default function ProfilePage() {
       
       const dataUrl = await toPng(card, {
         pixelRatio: 2,
-        filter: (node) => {
+        filter: (node: HTMLElement) => {
           if (node instanceof HTMLElement && node.getAttribute("data-html2canvas-ignore") === "true") {
             return false;
           }
@@ -360,9 +360,44 @@ export default function ProfilePage() {
     }
   };
 
-  const handleShareTwitter = () => {
+  const handleShareTwitter = async () => {
+    // Try Web Share API first (supports image files)
+    if (navigator.share && shareImage) {
+      try {
+        const response = await fetch(shareImage);
+        const blob = await response.blob();
+        const file = new File([blob], `forge-profile-${address.slice(0, 8)}.png`, { type: 'image/png' });
+        
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            text: shareText,
+            files: [file]
+          });
+          return;
+        }
+      } catch (err) {
+        console.error("Web Share failed:", err);
+      }
+    }
+
+    // Fallback to URL intent (text only)
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
     window.open(twitterUrl, "_blank");
+  };
+
+  const handleCopyImage = async () => {
+    if (!shareImage) return;
+    try {
+      const response = await fetch(shareImage);
+      const blob = await response.blob();
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'image/png': blob })
+      ]);
+      toast.success("Image copied to clipboard! You can now paste it directly on X.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to copy image.");
+    }
   };
 
   const handleShareTelegram = () => {
@@ -1205,8 +1240,12 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="flex flex-col gap-3 mt-auto">
-                  <button onClick={handleShareTwitter} className="brutalist-button w-full py-4 bg-black text-white border-black text-sm flex items-center justify-center gap-3 hover:bg-[#1DA1F2] transition-colors">
+                  <button onClick={handleShareTwitter} className="brutalist-button w-full py-4 bg-black text-white border-black text-sm flex items-center justify-center gap-3 hover:bg-[#1DA1F2] transition-colors shadow-[4px_4px_0px_0px_rgba(255,69,0,1)]">
                     <XLogo weight="fill" size={24} /> Share on X
+                  </button>
+                  <button onClick={handleCopyImage} className="brutalist-button w-full py-4 bg-white text-black border-black text-sm flex items-center justify-center gap-3 hover:bg-primary hover:text-white transition-colors">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                    Copy Card Image
                   </button>
                   <button onClick={handleShareTelegram} className="brutalist-button w-full py-4 bg-white text-black border-black text-sm flex items-center justify-center gap-3 hover:bg-[#0088cc] hover:text-white transition-colors">
                     <TelegramLogo weight="fill" size={24} /> Share on Telegram

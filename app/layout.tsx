@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     template: "%s | Forge",
   },
   description:
-    "Forge is a trustless developer marketplace built on Solana. Get paid in SOL through escrow-secured tasks, earn Soulbound Tokens as permanent proof of your work, and build a verifiable onchain reputation that follows you everywhere.",
+    "Forge is a trustless developer marketplace built on Solana. Get paid in SOL through escrow-secured tasks, earn Soulbound Tokens as permanent proof of your work, and build a verifiable onchain reputation that follows you everywhere. Built for the Solana Frontier Hackathon.",
 
   keywords: [
     "Forge",

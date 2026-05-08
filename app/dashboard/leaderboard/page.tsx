@@ -7,6 +7,8 @@ import { ForgeLoader } from "@/app/components/ForgeLoader";
 
 interface RankedDev {
   wallet_address: string;
+  name: string | null;
+  title: string | null;
   avatar_url: string | null;
   twitter: string | null;
   github: string | null;
@@ -44,7 +46,7 @@ export default function LeaderboardPage() {
       setLoading(true);
       const { data, error } = await supabase
         .from("profiles")
-        .select("wallet_address, avatar_url, twitter, github, rank, forge_score")
+        .select("wallet_address, name, title, avatar_url, twitter, github, rank, forge_score")
         .gt("forge_score", 0)
         .order("forge_score", { ascending: false })
         .limit(50);
@@ -133,14 +135,17 @@ export default function LeaderboardPage() {
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="font-mono text-xs text-black/60 truncate">
-                      {dev.wallet_address.slice(0, 4)}...{dev.wallet_address.slice(-4)}
+                    <p className="font-black text-sm uppercase truncate">
+                      {dev.name || "Anonymous Dev"}
                     </p>
                     {isYou && (
                       <span className="bg-primary text-white px-2 py-0.5 text-[10px] font-black border border-black">YOU</span>
                     )}
                   </div>
                   <div className="flex items-center gap-2 mt-1">
+                    <span className="font-mono text-[10px] text-black/40 border border-black/10 bg-black/5 px-1.5 py-0.5">
+                      {dev.wallet_address.slice(0, 4)}...{dev.wallet_address.slice(-4)}
+                    </span>
                     {dev.twitter && (
                       <a href={`https://x.com/${dev.twitter.replace("@","")}`} target="_blank" className="text-[10px] font-bold text-black/30 hover:text-black transition-colors">
                         {dev.twitter}

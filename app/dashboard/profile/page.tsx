@@ -302,6 +302,7 @@ export default function ProfilePage() {
 
   const handleDownloadCard = async () => {
     try {
+      // @ts-ignore
       const { toPng } = await import("html-to-image");
       const card = document.getElementById("profile-card");
       if (!card) return;
@@ -337,6 +338,7 @@ export default function ProfilePage() {
     setGeneratingShare(true);
     setShowShareModal(true);
     try {
+      // @ts-ignore
       const { toPng } = await import("html-to-image");
       const card = document.getElementById("profile-card");
       if (!card) return;

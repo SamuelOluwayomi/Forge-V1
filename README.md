@@ -83,6 +83,18 @@ Forge is not just a marketplace. The SBT system creates something the web3 space
 
 ---
 
+## Monetization & Protocol Fees
+
+Forge is built to be a self-sustaining ecosystem. To support ongoing development and infrastructure costs, the platform implements a small protocol fee on successfully completed transactions.
+
+- **Protocol Fee**: 2% of the total escrow amount.
+- **Treasury Wallet**: `EPpNW3G47SAJ4j1DatpjW7mJMLRTH9Z8K7LJtBfhR8Mt`
+- **Fee Logic**: When a client approves a task or a worker claims their funds after the review window, the `forge_escrow` program automatically deducts 2% and sends it to the treasury. The remaining 98% is released to the developer.
+
+This fee is only charged upon successful payment release. Posting tasks, applying for work, and minting reputation badges are currently subsidized by Forge (Zero-Gas).
+
+---
+
 ## Architecture: Anchor Programs
 
 Forge relies on robust smart contracts built with the Anchor framework on Solana.

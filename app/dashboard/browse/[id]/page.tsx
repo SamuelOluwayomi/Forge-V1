@@ -99,6 +99,7 @@ export default function TaskDetailPage() {
   const [activeTab, setActiveTab] = useState<"details" | "applicants">("details");
   const [estimatedDays, setEstimatedDays] = useState("");
   const [showApplyModal, setShowApplyModal] = useState(false);
+  const [feeAcknowledged, setFeeAcknowledged] = useState(false);
 
   const hasApplied = applicants.some(a => a.worker_address === address);
   const isClient = task?.client === address;
@@ -483,11 +484,30 @@ export default function TaskDetailPage() {
               )}
             </div>
 
+            <div className="flex flex-col gap-4 mb-8">
+              <label className="flex items-start gap-3 cursor-pointer group">
+                <div className="relative flex items-center mt-1">
+                  <input
+                    type="checkbox"
+                    checked={feeAcknowledged}
+                    onChange={(e) => setFeeAcknowledged(e.target.checked)}
+                    className="peer appearance-none w-5 h-5 border-2 border-black bg-white checked:bg-primary transition-colors cursor-pointer"
+                  />
+                  <svg className="absolute w-5 h-5 text-white pointer-events-none hidden peer-checked:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
+                </div>
+                <p className="text-[10px] font-bold uppercase leading-tight text-black/60 group-hover:text-black transition-colors">
+                  I understand that a <span className="text-primary font-black">2% protocol fee</span> will be deducted from the final payout upon successful task completion.
+                </p>
+              </label>
+            </div>
+
             <div className="flex items-center gap-3">
               <button
                 onClick={handleApply}
-                disabled={applying}
-                className="brutalist-button flex-1 py-3 bg-black text-white border-black disabled:opacity-50 text-sm"
+                disabled={applying || !feeAcknowledged}
+                className="brutalist-button flex-1 py-3 bg-black text-white border-black disabled:opacity-30 disabled:grayscale text-sm"
               >
                 {applying ? "Submitting..." : "Confirm Application"}
               </button>

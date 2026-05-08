@@ -393,7 +393,7 @@ export default function ProfilePage() {
       await navigator.clipboard.write([
         new ClipboardItem({ 'image/png': blob })
       ]);
-      toast.success("Image copied to clipboard! You can now paste it directly on X.");
+      toast.success("Image copied to clipboard! You can now paste it directly on your post.");
     } catch (err) {
       console.error(err);
       toast.error("Failed to copy image.");

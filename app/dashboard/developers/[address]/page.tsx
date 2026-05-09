@@ -416,7 +416,6 @@ export default function DeveloperProfilePage() {
               )}
             </div>
           </div>
-        </div>
 
           {/* Tech Stack */}
           {profile.tech_stack && (

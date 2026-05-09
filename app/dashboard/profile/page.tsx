@@ -84,6 +84,7 @@ export default function ProfilePage() {
   const [founderPdaAddr, setFounderPdaAddr] = useState<string | null>(null);
   const [showStackModal, setShowStackModal] = useState(false);
   const [techStack, setTechStack] = useState<string | null>(null);
+  const [techStackPdaAddr, setTechStackPdaAddr] = useState<string | null>(null);
 
   const [stats, setStats] = useState([
     { label: "Tasks Completed", value: 0 },
@@ -167,6 +168,12 @@ export default function ProfilePage() {
           await (sbtProgram.account as any).specialNft.fetch(founderPda);
           setHasFounder(true);
         } catch {}
+        
+        const [techStackPda] = await PublicKey.findProgramAddress(
+          [Buffer.from("tech_stack_mint"), userPubkey.toBuffer()],
+          sbtProgram.programId
+        );
+        setTechStackPdaAddr(techStackPda.toBase58());
         
       } catch (error) {
         console.error("Error fetching rewards:", error);
@@ -376,26 +383,7 @@ export default function ProfilePage() {
   };
 
   const handleShareTwitter = async () => {
-    // Try Web Share API first (supports image files)
-    if (navigator.share && shareImage) {
-      try {
-        const response = await fetch(shareImage);
-        const blob = await response.blob();
-        const file = new File([blob], `forge-profile-${address.slice(0, 8)}.png`, { type: 'image/png' });
-        
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            text: shareText,
-            files: [file]
-          });
-          return;
-        }
-      } catch (err) {
-        console.error("Web Share failed:", err);
-      }
-    }
-
-    // Fallback to URL intent (text only)
+    // Directly open Twitter intent to ensure we actually go to X (bypassing generic OS share dialog)
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
     window.open(twitterUrl, "_blank");
   };
@@ -721,8 +709,13 @@ export default function ProfilePage() {
                   )}
                 </div>
 
+                {/* Verified Tech Stack */}
+                {techStack && (
+                  <TechStackInline stack={techStack} />
+                )}
+
                 {/* Wallet Details */}
-                <div className="border-t-2 border-dashed border-black/10 pt-5">
+                <div className="border-t-2 border-dashed border-black/10 pt-5 mt-5">
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/40 mb-2">Authenticated Wallet</p>
                   <p className="font-mono text-[10px] font-black text-black bg-white/20 border-2 border-black/10 px-3 py-1.5 inline-block truncate w-full md:max-w-md mb-3">
                     {address || "Not Connected"}
@@ -761,9 +754,24 @@ export default function ProfilePage() {
                   </div>
 
                   {/* NFT PDA on-chain links */}
-                  {(hasPioneer || hasFounder) && (
+                  {(hasPioneer || hasFounder || techStack) && (
                     <div className="mt-3 flex flex-col gap-1.5">
                       <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/40 mb-1">On-Chain NFT Accounts</p>
+                      
+                      {techStack && techStackPdaAddr && (
+                        <a
+                          href={`https://explorer.solana.com/address/${techStackPdaAddr}?cluster=devnet`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-[9px] font-black uppercase border-2 border-black bg-black/5 px-2 py-1.5 hover:bg-black hover:text-white transition-colors w-fit"
+                        >
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
+                          </svg>
+                          Tech Stack NFT — {techStackPdaAddr.slice(0, 8)}...{techStackPdaAddr.slice(-6)}
+                        </a>
+                      )}
+
                       {hasPioneer && pioneerPdaAddr && (
                         <a
                           href={`https://explorer.solana.com/address/${pioneerPdaAddr}?cluster=devnet`}
@@ -1146,10 +1154,6 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* Verified Tech Stack */}
-                {techStack && (
-                  <TechStackInline stack={techStack} />
-                )}
               </div>
             )}
           </div>

@@ -174,8 +174,15 @@ export function TechStackVerification({ isOpen, onClose, currentGithub, onSucces
           {step === "challenge" && (
             <div className="space-y-6">
               <div className="bg-black/5 border-2 border-dashed border-black p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-[10px] font-black uppercase text-black/40">Verifying:</span>
+                  <span className="font-mono font-black text-sm bg-black text-white px-2 py-0.5">@{githubUsername}</span>
+                  <button onClick={() => setStep("input")} className="text-[10px] font-black text-primary underline ml-auto">
+                    Change
+                  </button>
+                </div>
                 <p className="text-sm font-bold leading-relaxed">
-                  Please add the following code to your **GitHub Bio** so we can verify you own the account, you can remove it later:
+                  Add this code to your <strong>GitHub Bio</strong>, then click Verify:
                 </p>
                 <div className="mt-4 bg-white border-2 border-black p-3 text-center font-mono font-black text-xl select-all">
                   {challengeCode}
@@ -193,7 +200,7 @@ export function TechStackVerification({ isOpen, onClose, currentGithub, onSucces
                   onClick={checkAndAnalyze}
                   className="flex-2 brutalist-button py-3 text-xs bg-black text-white font-black uppercase tracking-widest"
                 >
-                  Verify & Analyze
+                  Verify &amp; Analyze
                 </button>
               </div>
             </div>

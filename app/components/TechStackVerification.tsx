@@ -108,29 +108,27 @@ export function TechStackVerification({ isOpen, onClose, currentGithub, onSucces
         },
       };
 
-      // 2. Upload metadata JSON to Supabase Storage
-      const { supabase } = await import("@/app/lib/supabase");
+      // 2. Upload metadata JSON via server API (uses service role key to bypass RLS)
       let metadataUri = "";
-
-      if (supabase) {
-        const fileName = `tech-stack-${wallet?.account.address.toString().slice(-8)}.json`;
-        const blob = new Blob([JSON.stringify(metadata)], { type: "application/json" });
-
-        const { error: uploadError } = await supabase.storage
-          .from("nft-metadata")
-          .upload(fileName, blob, { upsert: true, contentType: "application/json" });
-
-        if (!uploadError) {
-          const { data: { publicUrl } } = supabase.storage
-            .from("nft-metadata")
-            .getPublicUrl(fileName);
-          metadataUri = publicUrl;
+      const fileName = `tech-stack-${wallet?.account.address.toString().slice(-8)}.json`;
+      
+      try {
+        const uploadRes = await fetch("/api/upload-metadata", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ metadata, fileName }),
+        });
+        if (uploadRes.ok) {
+          const { url } = await uploadRes.json();
+          metadataUri = url;
         }
+      } catch (uploadErr) {
+        console.warn("Metadata upload failed, using fallback URI", uploadErr);
       }
 
-      // Fallback: use a data URI if Supabase upload fails
+      // Fallback: short static URI — avoids Solana buffer overrun from base64 data URIs
       if (!metadataUri) {
-        metadataUri = `data:application/json;base64,${btoa(JSON.stringify(metadata))}`;
+        metadataUri = `${process.env.NEXT_PUBLIC_APP_URL || "https://forge-frontier.vercel.app"}/api/stack-metadata?w=${wallet?.account.address.toString().slice(-8)}`;
       }
 
       // 3. Mint the on-chain SBT

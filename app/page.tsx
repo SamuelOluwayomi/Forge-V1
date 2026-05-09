@@ -210,7 +210,7 @@ export default function Home() {
         {/* ── PHILOSOPHY QUOTE ── */}
         <section className="mt-32 pt-20 border-t-4 border-black relative">
           <AnimateIn variant="fadeUp">
-            <div className="brutalist-card bg-black text-white p-10 md:p-16 relative overflow-hidden flex flex-col md:flex-row items-center gap-8">
+            <div className="bg-black text-white p-10 md:p-16 relative overflow-hidden flex flex-col md:flex-row items-center gap-8 border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 hover:-translate-x-1 transition-all">
               {/* decorative quote mark */}
               <div className="absolute -top-6 -left-4 font-black text-[12rem] leading-none text-white/5 select-none pointer-events-none">&ldquo;</div>
               <div className="absolute -bottom-10 -right-4 font-black text-[12rem] leading-none text-white/5 select-none pointer-events-none rotate-180">&ldquo;</div>
@@ -218,13 +218,13 @@ export default function Home() {
                 <div className="w-1 h-24 bg-primary hidden md:block" />
               </div>
               <div className="relative z-10">
-                <p className="font-black text-2xl md:text-4xl uppercase italic leading-tight tracking-tight mb-4">
+                <p className="font-black text-2xl md:text-4xl uppercase italic leading-tight tracking-tight mb-4 text-white">
                   Your greatest investment is your mind.
                 </p>
                 <p className="font-bold text-lg text-white/70 leading-relaxed max-w-2xl">
                   At Forge, we foster growth by turning real work into verifiable proof — introducing friendly competition that pushes every developer to be sharper, faster, and more valuable than yesterday.
                 </p>
-                <div className="brutalist-tape mt-6 text-xs px-3 py-1 self-start inline-block rotate-1">Earn it. Prove it. Forge it.</div>
+                <div className="brutalist-tape mt-6 text-xs px-3 py-1 self-start inline-block rotate-1 border-white text-white">Earn it. Prove it. Forge it.</div>
               </div>
             </div>
           </AnimateIn>

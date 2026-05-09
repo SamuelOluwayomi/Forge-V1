@@ -31,7 +31,8 @@ export interface UseEscrowReturn {
   initializeMintTracker: () => Promise<string>;
   mintFounderNft: (recipient: web3.PublicKey, metadataUri: string) => Promise<string>;
   mintPioneerNft: (recipient: web3.PublicKey, metadataUri: string) => Promise<string>;
-  mintWorkerBadge: (taskId: number, workerPubkey: web3.PublicKey, skillCategory: string, rating: number, wasOnTime: boolean, amountEarned: bigint) => Promise<string>;
+  mintWorkerBadge: (taskId: number, workerPubkey: web3.PublicKey, skillCategory: string, rating: number, wasOnTime: boolean, amountEarned: bigint, metadataUri: string) => Promise<string>;
+  mintClientBadge: (taskId: number, amountPaid: bigint, approvedOnTime: boolean, metadataUri: string) => Promise<string>;
 }
 
 const TREASURY_PUBKEY = new web3.PublicKey("EPpNW3G47SAJ4j1DatpjW7mJMLRTH9Z8K7LJtBfhR8Mt"); // Forge Protocol Treasury
@@ -461,7 +462,7 @@ export function useEscrow(): UseEscrowReturn {
 
   /** Mint worker badge — SPONSORED */
   const mintWorkerBadge = useCallback(
-    async (taskId: number, workerPubkey: web3.PublicKey, skillCategory: string, rating: number, wasOnTime: boolean, amountEarned: bigint) => {
+    async (taskId: number, workerPubkey: web3.PublicKey, skillCategory: string, rating: number, wasOnTime: boolean, amountEarned: bigint, metadataUri: string) => {
       if (!sbtProgram || !walletPublicKey) throw new Error("Wallet not connected");
 
       const [badgeMint] = await web3.PublicKey.findProgramAddress([
@@ -501,7 +502,7 @@ export function useEscrow(): UseEscrowReturn {
       ], sbtProgram.programId);
 
       const tx = await (sbtProgram.methods as any)
-        .mintWorkerBadge(new BN(taskId), skillCategory, rating, wasOnTime, new BN(amountEarned.toString()))
+        .mintWorkerBadge(new BN(taskId), skillCategory, rating, wasOnTime, new BN(amountEarned.toString()), metadataUri)
         .accounts({
           badgeMint,
           workerBadgeAccount,
@@ -596,6 +597,70 @@ export function useEscrow(): UseEscrowReturn {
     return await sendSponsoredTransaction(tx, signTransaction);
   }, [sbtProgram, walletPublicKey, signTransaction]);
 
+  /** Mint Client Badge — SPONSORED */
+  const mintClientBadge = useCallback(async (taskId: number, amountPaid: bigint, approvedOnTime: boolean, metadataUri: string) => {
+    if (!sbtProgram || !walletPublicKey) throw new Error("Wallet not connected");
+
+    const [badgeMint] = await web3.PublicKey.findProgramAddress([
+      Buffer.from("client_badge_mint"),
+      walletPublicKey.toBuffer(),
+      Buffer.from([...new BN(taskId).toArray('le', 8)]),
+    ], sbtProgram.programId);
+
+    const [clientBadgeAccount] = await web3.PublicKey.findProgramAddress([
+      walletPublicKey.toBuffer(),
+      TOKEN_PROGRAM_ID.toBuffer(),
+      badgeMint.toBuffer(),
+    ], ASSOCIATED_TOKEN_PROGRAM_ID);
+
+    const [badgeMetadata] = await web3.PublicKey.findProgramAddress([
+      Buffer.from("metadata"),
+      TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+      badgeMint.toBuffer(),
+    ], TOKEN_METADATA_PROGRAM_ID);
+
+    const [badgeEdition] = await web3.PublicKey.findProgramAddress([
+      Buffer.from("metadata"),
+      TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+      badgeMint.toBuffer(),
+      Buffer.from("edition"),
+    ], TOKEN_METADATA_PROGRAM_ID);
+
+    const [clientReputation] = await web3.PublicKey.findProgramAddress([
+      Buffer.from("reputation"),
+      walletPublicKey.toBuffer(),
+    ], sbtProgram.programId);
+
+    const tx = await (sbtProgram.methods as any)
+      .mintClientBadge(new BN(taskId), new BN(amountPaid.toString()), approvedOnTime, metadataUri)
+      .accounts({
+        badgeMint,
+        clientBadgeAccount,
+        badgeMetadata,
+        badgeEdition,
+        clientReputation,
+        client: walletPublicKey,
+        payer: walletPublicKey,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+        rent: SYSVAR_RENT_PUBKEY,
+      })
+      .transaction();
+
+    const { FORGE_FEE_PAYER_PUBKEY } = await import("@/app/lib/sponsored-tx");
+    tx.instructions.unshift(
+      SystemProgram.transfer({
+        fromPubkey: new PublicKey(FORGE_FEE_PAYER_PUBKEY),
+        toPubkey: walletPublicKey,
+        lamports: 20_000_000, 
+      })
+    );
+
+    return await sendSponsoredTransaction(tx, signTransaction);
+  }, [sbtProgram, walletPublicKey, signTransaction]);
+
   return {
     program,
     sbtProgram,
@@ -613,5 +678,6 @@ export function useEscrow(): UseEscrowReturn {
     mintPioneerNft,
     mintWorkerBadge,
     mintTechStackBadge,
+    mintClientBadge,
   };
 }

@@ -82,6 +82,7 @@ pub mod forge_sbt {
         rating: u8,
         was_on_time: bool,
         amount_earned: u64,
+        metadata_uri: String,
     ) -> Result<()> {
         require!(rating >= 1 && rating <= 5, SbtError::InvalidRating);
         require!(skill_category.len() <= 50, SbtError::StringTooLong);
@@ -114,11 +115,6 @@ pub mod forge_sbt {
         // Create metadata for the badge
         let metadata_name = format!("Forge Worker Badge - {}", skill_category);
         let metadata_symbol = "FORGE".to_string();
-        let metadata_uri = format!(
-            "https://forge.xyz/badges/worker/{}/{}",
-            ctx.accounts.worker.key(),
-            task_id
-        );
 
         create_metadata_accounts_v3(
             CpiContext::new_with_signer(
@@ -147,8 +143,8 @@ pub mod forge_sbt {
                 collection: None,
                 uses: None,
             },
-            true,
-            false, // is_mutable = false (Makes it a true SBT)
+            false, // is_mutable = false (Immutable SBT)
+            false,
             None,
         )?;
 
@@ -224,6 +220,7 @@ pub mod forge_sbt {
         task_id: u64,
         amount_paid: u64,
         approved_on_time: bool,
+        metadata_uri: String,
     ) -> Result<()> {
         let bump = ctx.bumps.badge_mint;
         let task_id_bytes = task_id.to_le_bytes();
@@ -249,13 +246,6 @@ pub mod forge_sbt {
             ),
             1,
         )?;
-
-        // Metadata
-        let metadata_uri = format!(
-            "https://forge.xyz/badges/client/{}/{}",
-            ctx.accounts.client.key(),
-            task_id
-        );
 
         create_metadata_accounts_v3(
             CpiContext::new_with_signer(
@@ -284,8 +274,8 @@ pub mod forge_sbt {
                 collection: None,
                 uses: None,
             },
-            true,
-            false, // is_mutable = false
+            false, // is_mutable = false (Immutable SBT)
+            false,
             None,
         )?;
 
@@ -750,8 +740,8 @@ pub mod forge_sbt {
                 collection: None,
                 uses: None,
             },
-            true,
-            false, // Immutable
+            false, // is_mutable = false (Immutable SBT)
+            false,
             None,
         )?;
 

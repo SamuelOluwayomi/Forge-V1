@@ -166,7 +166,7 @@ export default function ManageTaskPage() {
   const pda = params.id as string;
   const { wallet } = useWallet();
   const address = wallet?.account.address;
-  const { program, acceptWorker, approveWork, raiseDispute, mintWorkerBadge } = useEscrow();
+  const { program, acceptWorker, approveWork, raiseDispute, mintWorkerBadge, mintClientBadge } = useEscrow();
 
   const [task, setTask] = useState<TaskDetail | null>(null);
   const [applicants, setApplicants] = useState<Applicant[]>([]);
@@ -308,8 +308,86 @@ export default function ManageTaskPage() {
         const wasOnTime = true; // Assume on time
         const amountEarned = BigInt(Math.floor((task?.amount || 0) * 1_000_000_000));
         
-        const badgeSig = await mintWorkerBadge(onChainTaskId, workerPubkey, skillCategory, rating, wasOnTime, amountEarned);
+        // 1. Build Worker Badge Metadata
+        const metadata = {
+          name: `Forge Worker Badge: ${skillCategory}`,
+          symbol: "FORGE",
+          description: `On-chain proof of work for task #${onChainTaskId}. Verified by Forge Protocol.`,
+          image: `${window.location.origin}/forge1.png`,
+          attributes: [
+            { trait_type: "Skill", value: skillCategory },
+            { trait_type: "Rating", value: rating.toString() },
+            { trait_type: "On Time", value: wasOnTime.toString() },
+            { trait_type: "Task ID", value: onChainTaskId.toString() },
+          ],
+          properties: {
+            category: "image",
+            creators: [{ address: address, share: 100 }],
+          },
+        };
+
+        // 2. Upload metadata
+        let metadataUri = "";
+        try {
+          const fileName = `worker-badge-${onChainTaskId}-${workerPubkey.toString().slice(-4)}.json`;
+          const uploadRes = await fetch("/api/upload-metadata", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ metadata, fileName }),
+          });
+          if (uploadRes.ok) {
+            const { url } = await uploadRes.json();
+            metadataUri = url;
+          }
+        } catch (uploadErr) {
+          console.warn("Worker badge metadata upload failed, using fallback", uploadErr);
+        }
+
+        if (!metadataUri) {
+          metadataUri = `${window.location.origin}/api/worker-metadata?t=${onChainTaskId}`;
+        }
+
+        const badgeSig = await mintWorkerBadge(onChainTaskId, workerPubkey, skillCategory, rating, wasOnTime, amountEarned, metadataUri);
         await program.provider.connection.confirmTransaction(badgeSig, "confirmed");
+
+        // 3. Mint Client Badge SBT
+        try {
+          const clientMetadata = {
+            name: `Forge Client Badge #${onChainTaskId}`,
+            symbol: "FORGE",
+            description: `On-chain proof of payment for task #${onChainTaskId}. Verified by Forge Protocol.`,
+            image: `${window.location.origin}/forge1.png`,
+            attributes: [
+              { trait_type: "Task ID", value: onChainTaskId.toString() },
+              { trait_type: "Amount Paid", value: (Number(amountEarned) / 1_000_000_000).toString() + " SOL" },
+            ],
+            properties: {
+              category: "image",
+              creators: [{ address: address, share: 100 }],
+            },
+          };
+          
+          let clientMetadataUri = "";
+          const clientFileName = `client-badge-${onChainTaskId}.json`;
+          const clientUploadRes = await fetch("/api/upload-metadata", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ metadata: clientMetadata, fileName: clientFileName }),
+          });
+          if (clientUploadRes.ok) {
+            const { url } = await clientUploadRes.json();
+            clientMetadataUri = url;
+          }
+
+          if (!clientMetadataUri) {
+            clientMetadataUri = `${window.location.origin}/api/client-metadata?t=${onChainTaskId}`;
+          }
+
+          const clientBadgeSig = await mintClientBadge(onChainTaskId, amountEarned, true, clientMetadataUri);
+          await program.provider.connection.confirmTransaction(clientBadgeSig, "confirmed");
+        } catch (clientErr) {
+          console.error("Non-critical: Failed to mint client badge:", clientErr);
+        }
       } catch (badgeErr) {
         console.error("Non-critical: Failed to mint worker badge:", badgeErr);
       }

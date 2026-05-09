@@ -21,24 +21,39 @@ import { XLogo, GithubLogo, DiscordLogo, TelegramLogo } from "@phosphor-icons/re
 import { TechStackVerification } from "@/app/components/TechStackVerification";
 import { TechStackInline } from "@/app/components/TechStackBadges";
 
-function BadgeCard({ index }: { index: number }) {
+function BadgeCard({ badge, index }: { badge: any; index: number }) {
   const colors = ["#FF4500", "#FFD700", "#4ADE80", "#60A5FA", "#FF90E8"];
   const color = colors[index % colors.length];
+  
+  const typeLabel = badge.badgeType?.workerCompletion ? "Worker" : 
+                    badge.badgeType?.clientPayment ? "Client" : 
+                    badge.badgeType?.techStackVerification ? "Stack" : "SBT";
+  
+  const isOnChain = badge.onChain !== false;
+
   return (
     <div
-      className="brutalist-card bg-white p-5 flex flex-col items-center gap-3 relative"
+      className={`brutalist-card bg-white p-4 flex flex-col items-center gap-2 relative min-w-[110px] transition-transform hover:-translate-y-1 ${!isOnChain ? 'opacity-80 border-dashed' : ''}`}
       style={{ borderColor: "black" }}
     >
       <div
-        className="w-16 h-16 border-4 border-black flex items-center justify-center font-black text-2xl"
+        className="w-14 h-14 border-4 border-black flex items-center justify-center font-black text-xl"
         style={{ background: color }}
       >
-        #{index + 1}
+        {typeLabel === "Worker" && "🛠️"}
+        {typeLabel === "Client" && "💰"}
+        {typeLabel === "Stack" && "💻"}
+        {typeLabel === "SBT" && "✨"}
       </div>
-      <p className="font-black text-sm uppercase text-center">SBT Badge</p>
-      <p className="text-[10px] font-bold text-black/40 uppercase tracking-widest">
-        On-chain
-      </p>
+      <div className="text-center">
+        <p className="font-black text-[9px] uppercase tracking-tighter">{typeLabel} Badge</p>
+        <p className="text-[7px] font-bold text-black/60 uppercase tracking-widest truncate max-w-[90px]">
+          {badge.skillCategory || `Task #${badge.taskId}`}
+        </p>
+      </div>
+      <div className={`${isOnChain ? 'bg-black text-white' : 'bg-gray-200 text-gray-600'} text-[6px] font-black px-2 py-0.5 uppercase tracking-widest`}>
+        {isOnChain ? 'On-Chain' : 'Verified'}
+      </div>
     </div>
   );
 }
@@ -95,7 +110,7 @@ export default function ProfilePage() {
 
   const { program, sbtProgram } = useEscrow();
 
-  const [badges, setBadges] = useState<number[]>([]);
+  const [badges, setBadges] = useState<any[]>([]);
   const achievements: string[] = [];
 
   // Fetch profile on load
@@ -250,18 +265,38 @@ export default function ProfilePage() {
           { label: "Forge Score", value: forgeScore },
         ]);
         
+        let onChainBadges: any[] = [];
         if (sbtProgram) {
           try {
             const allBadges = await (sbtProgram.account as any).badgeRecord.all();
             const userBadges = allBadges.filter((b: any) => b.account.owner.toBase58() === address);
-            setBadges(Array.from({ length: userBadges.length }).map((_, i) => i));
+            onChainBadges = userBadges.map((b: any) => ({ ...b.account, onChain: true }));
           } catch (err) {
             console.error("Failed to fetch SBT badges:", err);
-            setBadges([]);
           }
-        } else {
-          setBadges([]);
         }
+
+        // 2. Generate "Verified" (off-chain) badges from database if on-chain doesn't exist yet
+        const offChainBadges = completedEscrows.map((e: any) => {
+          const taskId = Number(e.account.taskId);
+          // Check if we already have an on-chain badge for this task
+          const hasOnChain = onChainBadges.some(b => Number(b.taskId) === taskId && b.badgeType?.workerCompletion);
+          
+          if (!hasOnChain) {
+            return {
+              owner: address,
+              badgeType: { workerCompletion: {} },
+              taskId: taskId,
+              skillCategory: "Verified Task",
+              rating: 5,
+              onChain: false,
+              amount: e.account.amount,
+            };
+          }
+          return null;
+        }).filter(Boolean);
+
+        setBadges([...onChainBadges, ...offChainBadges]);
 
         // Sync forge_score to Supabase for rankings
         if (supabase && forgeScore > 0) {
@@ -656,12 +691,12 @@ export default function ProfilePage() {
                 <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} accept="image/*" className="hidden" />
 
                 {/* Action Buttons */}
-                <div className="flex flex-col w-full md:w-32 gap-2 mt-2" data-html2canvas-ignore="true">
-                  <button onClick={handleDownloadCard} className="w-full bg-white border-2 border-black py-2 font-black text-[10px] uppercase tracking-widest hover:bg-black hover:text-white transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5">
+                <div className="flex flex-row md:flex-col w-full md:w-32 gap-2 mt-2" data-html2canvas-ignore="true">
+                  <button onClick={handleDownloadCard} className="flex-1 bg-white border-2 border-black py-2 font-black text-[10px] uppercase tracking-widest hover:bg-black hover:text-white transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5">
                     Download
                   </button>
-                  <button onClick={handleOpenShare} disabled={generatingShare} className="w-full bg-black text-white border-2 border-black py-2 font-black text-[10px] uppercase tracking-widest hover:bg-primary hover:text-black transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 disabled:opacity-50">
-                    {generatingShare ? "Loading..." : "Share"}
+                  <button onClick={handleOpenShare} disabled={generatingShare} className="flex-1 bg-black text-white border-2 border-black py-2 font-black text-[10px] uppercase tracking-widest hover:bg-primary hover:text-black transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 disabled:opacity-50">
+                    {generatingShare ? "..." : "Share"}
                   </button>
                 </div>
               </div>
@@ -725,38 +760,44 @@ export default function ProfilePage() {
 
                 {/* Wallet Details */}
                 <div className="border-t-2 border-dashed border-black/10 pt-5 mt-5">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/40 mb-2">Authenticated Wallet</p>
-                  <p className="font-mono text-[10px] font-black text-black bg-white/20 border-2 border-black/10 px-3 py-1.5 inline-block truncate w-full md:max-w-md mb-3">
-                    {address || "Not Connected"}
-                  </p>
+                  <div className="flex flex-col md:flex-row md:items-end gap-4">
+                    <div className="flex-1">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/40 mb-1">Authenticated Wallet</p>
+                      <div className="bg-white border-2 border-black/10 px-3 py-2 font-mono text-[10px] break-all">
+                        {address || "Not Connected"}
+                      </div>
+                    </div>
 
-                  <div className="flex gap-2 flex-wrap items-center">
-                    {address && (
-                      <>
-                        <a href={`https://solscan.io/account/${address}?cluster=devnet`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[9px] font-black uppercase border-2 border-black px-2 py-1 bg-white hover:bg-black hover:text-white transition-colors">
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
-                          </svg>
-                          Solscan
-                        </a>
-                        <a href={`https://explorer.solana.com/address/${address}?cluster=devnet`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[9px] font-black uppercase border-2 border-black px-2 py-1 bg-white hover:bg-black hover:text-white transition-colors">
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
-                          </svg>
-                          Explorer
-                        </a>
-                      </>
-                    )}
+                    <div className="flex flex-row gap-2 h-fit">
+                      {address && (
+                        <>
+                          <a href={`https://solscan.io/account/${address}?cluster=devnet`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[8px] font-black uppercase border-2 border-black px-2 py-1.5 hover:bg-black hover:text-white transition-colors">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                              <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
+                            </svg>
+                            Solscan
+                          </a>
+                          <a href={`https://explorer.solana.com/address/${address}?cluster=devnet`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[8px] font-black uppercase border-2 border-black px-2 py-1.5 hover:bg-black hover:text-white transition-colors">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                              <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
+                            </svg>
+                            Explorer
+                          </a>
+                        </>
+                      )}
+                    </div>
+                  </div>
 
+                  <div className="flex gap-2 flex-wrap items-center mt-4">
                     {sbtMint ? (
-                      <a href={`https://explorer.solana.com/address/${sbtMint}?cluster=devnet`} target="_blank" className="flex items-center gap-2 text-[9px] font-black uppercase text-black hover:underline ml-2">
+                      <a href={`https://explorer.solana.com/address/${sbtMint}?cluster=devnet`} target="_blank" className="flex items-center gap-2 text-[9px] font-black uppercase text-black hover:underline">
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                           <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
                         </svg>
                         On-Chain Identity
                       </a>
                     ) : (
-                      <button onClick={handleMintSBT} disabled={sbtMinting} className="flex items-center gap-2 text-[9px] font-black uppercase text-white bg-black px-3 py-1 border-2 border-black hover:bg-primary hover:text-black transition-colors disabled:opacity-50 ml-0 md:ml-2">
+                      <button onClick={handleMintSBT} disabled={sbtMinting} className="flex items-center gap-2 text-[9px] font-black uppercase text-white bg-black px-3 py-1 border-2 border-black hover:bg-primary hover:text-black transition-colors disabled:opacity-50">
                         {sbtMinting ? "Forging..." : "★ Forge Identity"}
                       </button>
                     )}
@@ -764,42 +805,42 @@ export default function ProfilePage() {
 
                   {/* NFT PDA on-chain links */}
                   {(hasPioneer || hasFounder || techStack) && (
-                    <div className="mt-3 flex flex-col gap-1.5">
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/40 mb-1">On-Chain NFT Accounts</p>
-                      
-                      {techStack && techStackPdaAddr && (
-                        <a
-                          href={`https://explorer.solana.com/address/${techStackPdaAddr}?cluster=devnet`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 text-[9px] font-black uppercase border-2 border-black bg-black/5 px-2 py-1.5 hover:bg-black hover:text-white transition-colors w-fit"
-                        >
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
-                          </svg>
-                          Tech Stack NFT — {techStackPdaAddr.slice(0, 8)}...{techStackPdaAddr.slice(-6)}
-                        </a>
-                      )}
+                    <div className="mt-4">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/40 mb-2">On-Chain NFT Accounts</p>
+                      <div className="flex flex-row flex-wrap gap-2">
+                        {techStack && techStackPdaAddr && (
+                          <a
+                            href={`https://explorer.solana.com/address/${techStackPdaAddr}?cluster=devnet`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 text-[9px] font-black uppercase border-2 border-black bg-black/5 px-2 py-1.5 hover:bg-black hover:text-white transition-colors"
+                          >
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                              <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
+                            </svg>
+                            Tech Stack — {techStackPdaAddr.slice(0, 4)}...{techStackPdaAddr.slice(-4)}
+                          </a>
+                        )}
 
-                      {hasPioneer && pioneerPdaAddr && (
-                        <a
-                          href={`https://explorer.solana.com/address/${pioneerPdaAddr}?cluster=devnet`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 text-[9px] font-black uppercase border-2 border-[#FFD700] bg-[#FFD700]/10 px-2 py-1.5 hover:bg-[#FFD700] transition-colors w-fit"
-                        >
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
-                          </svg>
-                          Pioneer NFT — {pioneerPdaAddr.slice(0, 8)}...{pioneerPdaAddr.slice(-6)}
-                        </a>
-                      )}
-                      {hasFounder && founderPdaAddr && (
-                        <a
-                          href={`https://explorer.solana.com/address/${founderPdaAddr}?cluster=devnet`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 text-[9px] font-black uppercase border-2 border-[#FF4500] bg-[#FF4500]/10 px-2 py-1.5 hover:bg-[#FF4500] hover:text-white transition-colors w-fit"
+                        {hasPioneer && pioneerPdaAddr && (
+                          <a
+                            href={`https://explorer.solana.com/address/${pioneerPdaAddr}?cluster=devnet`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 text-[9px] font-black uppercase border-2 border-[#FFD700] bg-[#FFD700]/10 px-2 py-1.5 hover:bg-[#FFD700] transition-colors"
+                          >
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                              <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
+                            </svg>
+                            Pioneer — {pioneerPdaAddr.slice(0, 4)}...{pioneerPdaAddr.slice(-4)}
+                          </a>
+                        )}
+                        {hasFounder && founderPdaAddr && (
+                          <a
+                            href={`https://explorer.solana.com/address/${founderPdaAddr}?cluster=devnet`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 text-[9px] font-black uppercase border-2 border-[#FF4500] bg-[#FF4500]/10 px-2 py-1.5 hover:bg-[#FF4500] hover:text-white transition-colors"
                         >
                           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                             <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
@@ -1199,8 +1240,8 @@ export default function ProfilePage() {
               </div>
             ) : (
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
-                {badges.map((_, i) => (
-                  <BadgeCard key={i} index={i} />
+                {badges.map((badge, i) => (
+                  <BadgeCard key={i} index={i} badge={badge} />
                 ))}
               </div>
             )}

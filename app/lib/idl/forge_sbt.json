@@ -416,6 +416,10 @@
         {
           "name": "approved_on_time",
           "type": "bool"
+        },
+        {
+          "name": "metadata_uri",
+          "type": "string"
         }
       ]
     },
@@ -1586,6 +1590,10 @@
         {
           "name": "amount_earned",
           "type": "u64"
+        },
+        {
+          "name": "metadata_uri",
+          "type": "string"
         }
       ]
     }

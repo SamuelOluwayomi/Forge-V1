@@ -93,7 +93,7 @@ export function TechStackVerification({ isOpen, onClose, currentGithub, onSucces
         name: `Forge Stack: ${finalStack}`,
         symbol: "STACK",
         description: `AI-verified tech stack for GitHub user @${githubUsername}, minted as a Soulbound Token on Forge Protocol.`,
-        image: `${window.location.origin}/forge.png`,
+        image: `${window.location.origin}/forge1.png`,
         external_url: `https://github.com/${githubUsername}`,
         attributes: [
           { trait_type: "GitHub", value: githubUsername },

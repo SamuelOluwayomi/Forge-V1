@@ -58,6 +58,12 @@ Workers browse and apply with enriched profiles featuring **On-Chain Ranks** and
 
 ## Features
 
+### AI-Verified Tech Stack (GitHub Attestation)
+To combat resume inflation and provide undeniable proof of capability, Forge features an AI-powered GitHub verification system.
+1. **Bio Challenge**: Users prove ownership of their GitHub account by temporarily adding a Forge-generated deterministic code to their GitHub bio.
+2. **AI Analysis**: Once ownership is verified, Forge's AI (powered by Groq) scans the user's public repositories, languages, and commit history to accurately summarize their core tech stack (e.g., `React | Rust | Solana`).
+3. **On-Chain Attestation**: The verified tech stack is then minted as an immutable, Soulbound "Tech Stack Badge" directly to the user's wallet via the `forge_sbt` contract. This allows clients to hire with confidence based on cryptographically verified code history, rather than just self-reported skills.
+
 ### Global Ranking & Reputation
 Forge implements a daily ranking system that scores developers based on their on-chain performance. Top-ranked developers receive a golden Rank Badge on their profile and an exportable Identity Card, making them more attractive to high-paying clients.
 

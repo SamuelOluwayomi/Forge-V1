@@ -29,6 +29,8 @@ export function TechStackVerification({ isOpen, onClose, currentGithub, onSucces
   const [step, setStep] = useState<"input" | "challenge" | "verifying" | "minting">("input");
   const [challengeCode, setChallengeCode] = useState("");
   const [analyzedStack, setAnalyzedStack] = useState("");
+  const [techList, setTechList] = useState<string[]>([]);
+  const [selectedTechs, setSelectedTechs] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
   const startVerification = () => {
@@ -67,6 +69,9 @@ export function TechStackVerification({ isOpen, onClose, currentGithub, onSucces
       }
 
       toast.success("GitHub Verified! AI suggests: " + data.stack, { id: tid });
+      const returnedArray = data.stackArray || data.stack.split("|").map((s: string) => s.trim());
+      setTechList(returnedArray);
+      setSelectedTechs(returnedArray);
       setAnalyzedStack(data.stack);
       setStep("minting");
     } catch (err: any) {
@@ -83,15 +88,16 @@ export function TechStackVerification({ isOpen, onClose, currentGithub, onSucces
 
     try {
       // 1. Build standard NFT metadata JSON
+      const finalStack = selectedTechs.join(" | ");
       const metadata = {
-        name: `Forge Stack: ${analyzedStack}`,
+        name: `Forge Stack: ${finalStack}`,
         symbol: "STACK",
         description: `AI-verified tech stack for GitHub user @${githubUsername}, minted as a Soulbound Token on Forge Protocol.`,
-        image: `https://ui-avatars.com/api/?name=${encodeURIComponent(analyzedStack.slice(0, 2))}&background=000000&color=fff&size=256&font-size=0.4&bold=true`,
+        image: `https://ui-avatars.com/api/?name=${encodeURIComponent(finalStack.slice(0, 2))}&background=000000&color=fff&size=256&font-size=0.4&bold=true`,
         external_url: `https://github.com/${githubUsername}`,
         attributes: [
           { trait_type: "GitHub", value: githubUsername },
-          { trait_type: "Tech Stack", value: analyzedStack },
+          { trait_type: "Tech Stack", value: finalStack },
           { trait_type: "Badge Type", value: "Tech Stack Verification" },
           { trait_type: "Verified By", value: "Forge AI" },
           { trait_type: "Soulbound", value: "true" },
@@ -128,9 +134,9 @@ export function TechStackVerification({ isOpen, onClose, currentGithub, onSucces
       }
 
       // 3. Mint the on-chain SBT
-      const sig = await mintTechStackBadge(analyzedStack, metadataUri);
+      const sig = await mintTechStackBadge(finalStack, metadataUri);
       toast.success(`✓ Tech Stack SBT minted! Tx: ${sig.slice(0, 8)}...`, { id: tid });
-      onSuccess(analyzedStack);
+      onSuccess(finalStack);
       onClose();
     } catch (err: any) {
       toast.error("Minting failed: " + err.message, { id: tid });
@@ -216,8 +222,32 @@ export function TechStackVerification({ isOpen, onClose, currentGithub, onSucces
           {step === "minting" && (
             <div className="space-y-6 text-center">
               <div className="brutalist-card bg-[#4ADE80] p-6 inline-block w-full">
-                <p className="text-[10px] font-black uppercase mb-1">AI Detected Stack</p>
-                <h3 className="text-2xl font-black uppercase italic break-words">{analyzedStack}</h3>
+                <p className="text-[10px] font-black uppercase mb-3">Select Stack to Mint</p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {techList.map((tech) => (
+                    <label 
+                      key={tech} 
+                      className={`cursor-pointer px-3 py-1.5 border-2 border-black font-black uppercase text-sm transition-all ${
+                        selectedTechs.includes(tech) ? "bg-black text-white" : "bg-white text-black opacity-50"
+                      }`}
+                      style={{ boxShadow: selectedTechs.includes(tech) ? "2px 2px 0px 0px rgba(0,0,0,1)" : "none" }}
+                    >
+                      <input 
+                        type="checkbox" 
+                        className="hidden"
+                        checked={selectedTechs.includes(tech)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedTechs([...selectedTechs, tech]);
+                          } else {
+                            setSelectedTechs(selectedTechs.filter(t => t !== tech));
+                          }
+                        }}
+                      />
+                      {tech}
+                    </label>
+                  ))}
+                </div>
               </div>
               
               <p className="text-xs font-bold text-black/60 italic leading-relaxed">

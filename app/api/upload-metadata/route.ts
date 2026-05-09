@@ -21,11 +21,10 @@ export async function POST(req: NextRequest) {
     }
 
     const fileContent = JSON.stringify(metadata);
-    const blob = Buffer.from(fileContent, "utf-8");
 
     const { error: uploadError } = await supabaseAdmin.storage
       .from("nft-metadata")
-      .upload(fileName, blob, {
+      .upload(fileName, fileContent, {
         upsert: true,
         contentType: "application/json",
       });

@@ -132,7 +132,12 @@ export function TechStackVerification({ isOpen, onClose, currentGithub, onSucces
       }
 
       // 3. Mint the on-chain SBT
-      const sig = await mintTechStackBadge(finalStack, metadataUri);
+      // Truncate the stack string for the on-chain transaction to avoid buffer overruns
+      // (The Metaplex name is capped at 32 bytes, and the old BadgeRecord is capped at 50 bytes)
+      // The full list is still safely stored in the metadata JSON!
+      const shortStack = finalStack.length > 15 ? finalStack.substring(0, 15) + "..." : finalStack;
+      
+      const sig = await mintTechStackBadge(shortStack, metadataUri);
       toast.success(`✓ Tech Stack SBT minted! Tx: ${sig.slice(0, 8)}...`, { id: tid });
       onSuccess(finalStack);
       onClose();

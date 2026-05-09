@@ -88,14 +88,11 @@ pub mod forge_sbt {
         require!(skill_category.len() <= 50, SbtError::StringTooLong);
 
         // Mint 1 token to worker's associated token account
-        let bump = ctx.bumps.badge_mint;
-        let task_id_bytes = task_id.to_le_bytes();
-        let worker_key = ctx.accounts.worker.key();
         let seeds = &[
-            b"worker_badge_mint",
-            worker_key.as_ref(),
-            task_id_bytes.as_ref(),
-            &[bump],
+            b"worker_badge_v2",
+            ctx.accounts.worker.key().as_ref(),
+            task_id.to_le_bytes().as_ref(),
+            &[ctx.bumps.badge_mint],
         ];
         let signer_seeds = &[&seeds[..]];
 
@@ -222,14 +219,11 @@ pub mod forge_sbt {
         approved_on_time: bool,
         metadata_uri: String,
     ) -> Result<()> {
-        let bump = ctx.bumps.badge_mint;
-        let task_id_bytes = task_id.to_le_bytes();
-        let client_key = ctx.accounts.client.key();
         let seeds = &[
-            b"client_badge_mint",
-            client_key.as_ref(),
-            task_id_bytes.as_ref(),
-            &[bump],
+            b"client_badge_v2",
+            ctx.accounts.client.key().as_ref(),
+            task_id.to_le_bytes().as_ref(),
+            &[ctx.bumps.badge_mint],
         ];
         let signer_seeds = &[&seeds[..]];
 
@@ -362,12 +356,11 @@ pub mod forge_sbt {
         profile.bump = ctx.bumps.profile_sbt;
 
         // 1. Mint 1 token for the profile identity
-        let bump = ctx.bumps.badge_mint;
         let owner_key = ctx.accounts.owner.key();
         let seeds = &[
-            b"profile_sbt_mint",
+            b"profile_mint_v2",
             owner_key.as_ref(),
-            &[bump],
+            &[ctx.bumps.badge_mint],
         ];
         let signer_seeds = &[&seeds[..]];
 
@@ -485,12 +478,11 @@ pub mod forge_sbt {
         nft.bump = ctx.bumps.founder_nft;
 
         // 1. Mint 1 token
-        let bump = ctx.bumps.badge_mint;
         let recipient_key = ctx.accounts.recipient.key();
         let seeds = &[
-            b"founder_nft_mint",
+            b"founder_mint_v2",
             recipient_key.as_ref(),
-            &[bump],
+            &[ctx.bumps.badge_mint],
         ];
         let signer_seeds = &[&seeds[..]];
 
@@ -595,12 +587,11 @@ pub mod forge_sbt {
         tracker.pioneer_minted += 1;
 
         // 1. Mint 1 token
-        let bump = ctx.bumps.badge_mint;
         let recipient_key = ctx.accounts.recipient.key();
         let seeds = &[
-            b"pioneer_nft_mint",
+            b"pioneer_mint_v2",
             recipient_key.as_ref(),
-            &[bump],
+            &[ctx.bumps.badge_mint],
         ];
         let signer_seeds = &[&seeds[..]];
 
@@ -693,7 +684,7 @@ pub mod forge_sbt {
         // 1. Mint 1 token
         let owner_key = ctx.accounts.owner.key();
         let seeds = &[
-            b"tech_stack_mint",
+            b"stack_mint_v2",
             owner_key.as_ref(),
             &[ctx.bumps.badge_mint],
         ];

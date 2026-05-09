@@ -128,7 +128,7 @@ export default function RewardsPage() {
         }
 
         const [pioneerPda] = await PublicKey.findProgramAddress(
-          [Buffer.from("pioneer_nft"), userPubkey.toBuffer()],
+          [Buffer.from("pioneer_v2"), userPubkey.toBuffer()],
           sbtProgram.programId
         );
         let hasPioneer = false;
@@ -138,7 +138,7 @@ export default function RewardsPage() {
         } catch {}
 
         const [founderPda] = await PublicKey.findProgramAddress(
-          [Buffer.from("founder_nft"), userPubkey.toBuffer()],
+          [Buffer.from("founder_v2"), userPubkey.toBuffer()],
           sbtProgram.programId
         );
         let hasFounder = false;

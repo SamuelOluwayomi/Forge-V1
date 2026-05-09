@@ -332,12 +332,12 @@ export function useEscrow(): UseEscrowReturn {
     const TOKEN_METADATA_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
 
     const [founderNftPda] = await web3.PublicKey.findProgramAddress(
-      [Buffer.from("founder_nft"), recipient.toBuffer()],
+      [Buffer.from("founder_v2"), recipient.toBuffer()],
       sbtProgram.programId
     );
 
     const [badgeMint] = await web3.PublicKey.findProgramAddress([
-      Buffer.from("founder_nft_mint"),
+      Buffer.from("founder_mint_v2"),
       recipient.toBuffer(),
     ], sbtProgram.programId);
 
@@ -396,7 +396,7 @@ export function useEscrow(): UseEscrowReturn {
     const TOKEN_METADATA_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
 
     const [badgeMint] = await web3.PublicKey.findProgramAddress([
-      Buffer.from("pioneer_nft_mint"),
+      Buffer.from("pioneer_mint_v2"),
       recipient.toBuffer(),
     ], sbtProgram.programId);
 
@@ -420,7 +420,7 @@ export function useEscrow(): UseEscrowReturn {
     ], TOKEN_METADATA_PROGRAM_ID);
 
     const [pioneerNftPda] = await web3.PublicKey.findProgramAddress(
-      [Buffer.from("pioneer_nft"), recipient.toBuffer()],
+      [Buffer.from("pioneer_v2"), recipient.toBuffer()],
       sbtProgram.programId
     );
 
@@ -466,7 +466,7 @@ export function useEscrow(): UseEscrowReturn {
       if (!sbtProgram || !walletPublicKey) throw new Error("Wallet not connected");
 
       const [badgeMint] = await web3.PublicKey.findProgramAddress([
-        Buffer.from("worker_badge_mint"),
+        Buffer.from("worker_badge_v2"),
         workerPubkey.toBuffer(),
         Buffer.from([...new BN(taskId).toArray('le', 8)]),
       ], sbtProgram.programId);
@@ -491,7 +491,7 @@ export function useEscrow(): UseEscrowReturn {
       ], TOKEN_METADATA_PROGRAM_ID);
 
       const [workerBadgeRecord] = await web3.PublicKey.findProgramAddress([
-        Buffer.from("worker_badge_record"),
+        Buffer.from("worker_record_v2"),
         workerPubkey.toBuffer(),
         Buffer.from([...new BN(taskId).toArray('le', 8)]),
       ], sbtProgram.programId);
@@ -540,7 +540,7 @@ export function useEscrow(): UseEscrowReturn {
     const TOKEN_METADATA_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
 
     const [badgeMint] = await web3.PublicKey.findProgramAddress([
-      Buffer.from("tech_stack_mint"),
+      Buffer.from("stack_mint_v2"),
       walletPublicKey.toBuffer(),
     ], sbtProgram.programId);
 
@@ -564,7 +564,7 @@ export function useEscrow(): UseEscrowReturn {
     ], TOKEN_METADATA_PROGRAM_ID);
 
     const [badgeRecord] = await web3.PublicKey.findProgramAddress([
-      Buffer.from("tech_stack_record"),
+      Buffer.from("stack_record_v2"),
       walletPublicKey.toBuffer(),
     ], sbtProgram.programId);
 
@@ -601,8 +601,14 @@ export function useEscrow(): UseEscrowReturn {
   const mintClientBadge = useCallback(async (taskId: number, amountPaid: bigint, approvedOnTime: boolean, metadataUri: string) => {
     if (!sbtProgram || !walletPublicKey) throw new Error("Wallet not connected");
 
+    const [clientBadgeRecord] = await web3.PublicKey.findProgramAddress([
+      Buffer.from("client_record_v2"),
+      walletPublicKey.toBuffer(),
+      Buffer.from([...new BN(taskId).toArray('le', 8)]),
+    ], sbtProgram.programId);
+
     const [badgeMint] = await web3.PublicKey.findProgramAddress([
-      Buffer.from("client_badge_mint"),
+      Buffer.from("client_badge_v2"),
       walletPublicKey.toBuffer(),
       Buffer.from([...new BN(taskId).toArray('le', 8)]),
     ], sbtProgram.programId);

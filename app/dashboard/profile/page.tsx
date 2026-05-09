@@ -17,11 +17,12 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID 
 } from "@solana/spl-token";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { XLogo, GithubLogo, DiscordLogo, TelegramLogo } from "@phosphor-icons/react";
 import { TechStackVerification } from "@/app/components/TechStackVerification";
 import { TechStackInline } from "@/app/components/TechStackBadges";
 
-function BadgeCard({ badge, index }: { badge: any; index: number }) {
+function BadgeCard({ badge, index, onMint }: { badge: any; index: number; onMint?: () => void }) {
   const colors = ["#FF4500", "#FFD700", "#4ADE80", "#60A5FA", "#FF90E8"];
   const color = colors[index % colors.length];
   
@@ -33,7 +34,7 @@ function BadgeCard({ badge, index }: { badge: any; index: number }) {
 
   return (
     <div
-      className={`brutalist-card bg-white p-4 flex flex-col items-center gap-2 relative min-w-[110px] transition-transform hover:-translate-y-1 ${!isOnChain ? 'opacity-80 border-dashed' : ''}`}
+      className={`brutalist-card bg-white p-4 flex flex-col items-center gap-2 relative min-w-[110px] transition-transform hover:-translate-y-1 ${!isOnChain ? 'opacity-90 border-dashed' : ''}`}
       style={{ borderColor: "black" }}
     >
       <div
@@ -51,15 +52,26 @@ function BadgeCard({ badge, index }: { badge: any; index: number }) {
           {badge.skillCategory || `Task #${badge.taskId}`}
         </p>
       </div>
-      <div className={`${isOnChain ? 'bg-black text-white' : 'bg-gray-200 text-gray-600'} text-[6px] font-black px-2 py-0.5 uppercase tracking-widest`}>
-        {isOnChain ? 'On-Chain' : 'Verified'}
-      </div>
+      
+      {!isOnChain ? (
+        <button 
+          onClick={(e) => { e.stopPropagation(); onMint?.(); }}
+          className="bg-primary text-white text-[8px] font-black px-3 py-1 uppercase tracking-widest border-2 border-black hover:bg-black hover:text-primary transition-all mt-1"
+        >
+          Mint
+        </button>
+      ) : (
+        <div className="bg-black text-white text-[6px] font-black px-2 py-0.5 uppercase tracking-widest">
+          On-Chain
+        </div>
+      )}
     </div>
   );
 }
 
 export default function ProfilePage() {
   const { wallet } = useWallet();
+  const router = useRouter();
   const address = wallet?.account.address ?? "";
 
   const [displayPhoto, setDisplayPhoto] = useState<string | null>(null);
@@ -165,7 +177,7 @@ export default function ProfilePage() {
         const userPubkey = new PublicKey(address);
         
         const [pioneerPda] = await PublicKey.findProgramAddress(
-          [Buffer.from("pioneer_nft"), userPubkey.toBuffer()],
+          [Buffer.from("pioneer_v2"), userPubkey.toBuffer()],
           sbtProgram.programId
         );
         setPioneerPdaAddr(pioneerPda.toBase58());
@@ -175,7 +187,7 @@ export default function ProfilePage() {
         } catch {}
 
         const [founderPda] = await PublicKey.findProgramAddress(
-          [Buffer.from("founder_nft"), userPubkey.toBuffer()],
+          [Buffer.from("founder_v2"), userPubkey.toBuffer()],
           sbtProgram.programId
         );
         setFounderPdaAddr(founderPda.toBase58());
@@ -185,7 +197,7 @@ export default function ProfilePage() {
         } catch {}
         
         const [techStackPda] = await PublicKey.findProgramAddress(
-          [Buffer.from("tech_stack_mint"), userPubkey.toBuffer()],
+          [Buffer.from("stack_mint_v2"), userPubkey.toBuffer()],
           sbtProgram.programId
         );
         
@@ -522,7 +534,7 @@ export default function ProfilePage() {
       // 2. Compute PDAs
       const ownerPubkey = new PublicKey(address);
       const [profileSbtPda] = await PublicKey.findProgramAddress(
-        [Buffer.from("profile_sbt"), ownerPubkey.toBuffer()],
+        [Buffer.from("profile_v2"), ownerPubkey.toBuffer()],
         sbtProgram.programId
       );
       const [reputationPda] = await PublicKey.findProgramAddress(
@@ -533,7 +545,7 @@ export default function ProfilePage() {
       const TOKEN_METADATA_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
 
       const [badgeMint] = await PublicKey.findProgramAddress(
-        [Buffer.from("profile_sbt_mint"), ownerPubkey.toBuffer()],
+        [Buffer.from("profile_mint_v2"), ownerPubkey.toBuffer()],
         sbtProgram.programId
       );
 
@@ -790,12 +802,17 @@ export default function ProfilePage() {
 
                   <div className="flex gap-2 flex-wrap items-center mt-4">
                     {sbtMint ? (
-                      <a href={`https://explorer.solana.com/address/${sbtMint}?cluster=devnet`} target="_blank" className="flex items-center gap-2 text-[9px] font-black uppercase text-black hover:underline">
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                          <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
-                        </svg>
-                        On-Chain Identity
-                      </a>
+                      <div className="flex items-center gap-2">
+                        <a href={`https://explorer.solana.com/address/${sbtMint}?cluster=devnet`} target="_blank" className="flex items-center gap-2 text-[9px] font-black uppercase text-black hover:underline">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
+                          </svg>
+                          Identity v2
+                        </a>
+                        <button onClick={handleMintSBT} disabled={sbtMinting} className="text-[7px] font-black uppercase text-black/40 hover:text-black transition-colors underline">
+                          Upgrade
+                        </button>
+                      </div>
                     ) : (
                       <button onClick={handleMintSBT} disabled={sbtMinting} className="flex items-center gap-2 text-[9px] font-black uppercase text-white bg-black px-3 py-1 border-2 border-black hover:bg-primary hover:text-black transition-colors disabled:opacity-50">
                         {sbtMinting ? "Forging..." : "★ Forge Identity"}
@@ -841,13 +858,14 @@ export default function ProfilePage() {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-2 text-[9px] font-black uppercase border-2 border-[#FF4500] bg-[#FF4500]/10 px-2 py-1.5 hover:bg-[#FF4500] hover:text-white transition-colors"
-                        >
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
-                          </svg>
-                          Founder NFT (1/1) — {founderPdaAddr.slice(0, 8)}...{founderPdaAddr.slice(-6)}
-                        </a>
-                      )}
+                          >
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                              <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
+                            </svg>
+                            Founder — {founderPdaAddr.slice(0, 4)}...{founderPdaAddr.slice(-4)}
+                          </a>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1241,7 +1259,19 @@ export default function ProfilePage() {
             ) : (
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
                 {badges.map((badge, i) => (
-                  <BadgeCard key={i} index={i} badge={badge} />
+                  <BadgeCard 
+                    key={i} 
+                    index={i} 
+                    badge={badge} 
+                    onMint={() => {
+                      if (badge.badgeType?.workerCompletion) {
+                        router.push(`/dashboard/tasks/${badge.taskId}`);
+                      } else if (badge.badgeType?.techStackVerification) {
+                        // Show verification modal or similar
+                        toast.info("Please use the 'Verified Tech Stack' section to mint.");
+                      }
+                    }}
+                  />
                 ))}
               </div>
             )}

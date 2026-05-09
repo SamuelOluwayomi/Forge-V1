@@ -949,7 +949,7 @@ pub struct MintWorkerBadge<'info> {
         mint::decimals = 0,
         mint::authority = badge_mint,
         mint::freeze_authority = badge_mint,
-        seeds = [b"worker_badge_mint", worker.key().as_ref(), task_id.to_le_bytes().as_ref()],
+        seeds = [b"worker_badge_v2", worker.key().as_ref(), task_id.to_le_bytes().as_ref()],
         bump
     )]
     pub badge_mint: Account<'info, Mint>,
@@ -976,7 +976,7 @@ pub struct MintWorkerBadge<'info> {
         init,
         payer = payer,
         space = BadgeRecord::LEN,
-        seeds = [b"worker_badge_record", worker.key().as_ref(), task_id.to_le_bytes().as_ref()],
+        seeds = [b"worker_record_v2", worker.key().as_ref(), task_id.to_le_bytes().as_ref()],
         bump
     )]
     pub worker_badge_record: Account<'info, BadgeRecord>,
@@ -1011,7 +1011,7 @@ pub struct MintClientBadge<'info> {
         mint::decimals = 0,
         mint::authority = badge_mint,
         mint::freeze_authority = badge_mint,
-        seeds = [b"client_badge_mint", client.key().as_ref(), task_id.to_le_bytes().as_ref()],
+        seeds = [b"client_badge_v2", client.key().as_ref(), task_id.to_le_bytes().as_ref()],
         bump
     )]
     pub badge_mint: Account<'info, Mint>,
@@ -1036,7 +1036,7 @@ pub struct MintClientBadge<'info> {
         init,
         payer = payer,
         space = BadgeRecord::LEN,
-        seeds = [b"client_badge_record", client.key().as_ref(), task_id.to_le_bytes().as_ref()],
+        seeds = [b"client_record_v2", client.key().as_ref(), task_id.to_le_bytes().as_ref()],
         bump
     )]
     pub client_badge_record: Account<'info, BadgeRecord>,
@@ -1067,7 +1067,7 @@ pub struct MintProfileSbt<'info> {
         init,
         payer = owner,
         space = ProfileSbt::LEN,
-        seeds = [b"profile_sbt", owner.key().as_ref()],
+        seeds = [b"profile_v2", owner.key().as_ref()],
         bump
     )]
     pub profile_sbt: Account<'info, ProfileSbt>,
@@ -1089,7 +1089,7 @@ pub struct MintProfileSbt<'info> {
         mint::decimals = 0,
         mint::authority = badge_mint,
         mint::freeze_authority = badge_mint,
-        seeds = [b"profile_sbt_mint", owner.key().as_ref()],
+        seeds = [b"profile_mint_v2", owner.key().as_ref()],
         bump
     )]
     pub badge_mint: Account<'info, Mint>,
@@ -1140,7 +1140,7 @@ pub struct MintFounderNft<'info> {
         init,
         payer = authority,
         space = SpecialNft::LEN,
-        seeds = [b"founder_nft", recipient.key().as_ref()],
+        seeds = [b"founder_v2", recipient.key().as_ref()],
         bump
     )]
     pub founder_nft: Account<'info, SpecialNft>,
@@ -1157,7 +1157,7 @@ pub struct MintFounderNft<'info> {
         mint::decimals = 0,
         mint::authority = badge_mint,
         mint::freeze_authority = badge_mint,
-        seeds = [b"founder_nft_mint", recipient.key().as_ref()],
+        seeds = [b"founder_mint_v2", recipient.key().as_ref()],
         bump
     )]
     pub badge_mint: Account<'info, Mint>,
@@ -1191,7 +1191,7 @@ pub struct MintPioneerNft<'info> {
         init,
         payer = payer,
         space = SpecialNft::LEN,
-        seeds = [b"pioneer_nft", recipient.key().as_ref()],
+        seeds = [b"pioneer_v2", recipient.key().as_ref()],
         bump
     )]
     pub pioneer_nft: Account<'info, SpecialNft>,
@@ -1215,7 +1215,7 @@ pub struct MintPioneerNft<'info> {
         mint::decimals = 0,
         mint::authority = badge_mint,
         mint::freeze_authority = badge_mint,
-        seeds = [b"pioneer_nft_mint", recipient.key().as_ref()],
+        seeds = [b"pioneer_mint_v2", recipient.key().as_ref()],
         bump
     )]
     pub badge_mint: Account<'info, Mint>,
@@ -1324,7 +1324,7 @@ pub struct MintTechStackBadge<'info> {
         mint::decimals = 0,
         mint::authority = badge_mint,
         mint::freeze_authority = badge_mint,
-        seeds = [b"tech_stack_mint", owner.key().as_ref()],
+        seeds = [b"stack_mint_v2", owner.key().as_ref()],
         bump
     )]
     pub badge_mint: Account<'info, Mint>,
@@ -1349,7 +1349,7 @@ pub struct MintTechStackBadge<'info> {
         init,
         payer = owner,
         space = BadgeRecord::LEN,
-        seeds = [b"tech_stack_record", owner.key().as_ref()],
+        seeds = [b"stack_record_v2", owner.key().as_ref()],
         bump
     )]
     pub badge_record: Account<'info, BadgeRecord>,

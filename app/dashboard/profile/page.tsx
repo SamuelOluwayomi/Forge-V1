@@ -7,7 +7,15 @@ import { useBalance } from "@/app/lib/hooks/use-balance";
 import { toast } from "sonner";
 import { supabase } from "@/app/lib/supabase";
 import { ForgeLoader } from "@/app/components/ForgeLoader";
-import { PublicKey, SystemProgram } from "@solana/web3.js";
+import { 
+  PublicKey, 
+  SystemProgram, 
+  SYSVAR_RENT_PUBKEY 
+} from "@solana/web3.js";
+import { 
+  TOKEN_PROGRAM_ID, 
+  ASSOCIATED_TOKEN_PROGRAM_ID 
+} from "@solana/spl-token";
 import Image from "next/image";
 import { XLogo, GithubLogo, DiscordLogo, TelegramLogo } from "@phosphor-icons/react";
 
@@ -485,6 +493,28 @@ export default function ProfilePage() {
         sbtProgram.programId
       );
 
+      const TOKEN_METADATA_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
+
+      const [badgeMint] = await PublicKey.findProgramAddress(
+        [Buffer.from("profile_sbt_mint"), ownerPubkey.toBuffer()],
+        sbtProgram.programId
+      );
+
+      const [workerBadgeAccount] = await PublicKey.findProgramAddress(
+        [ownerPubkey.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), badgeMint.toBuffer()],
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      );
+
+      const [badgeMetadata] = await PublicKey.findProgramAddress(
+        [Buffer.from("metadata"), TOKEN_METADATA_PROGRAM_ID.toBuffer(), badgeMint.toBuffer()],
+        TOKEN_METADATA_PROGRAM_ID
+      );
+
+      const [badgeEdition] = await PublicKey.findProgramAddress(
+        [Buffer.from("metadata"), TOKEN_METADATA_PROGRAM_ID.toBuffer(), badgeMint.toBuffer(), Buffer.from("edition")],
+        TOKEN_METADATA_PROGRAM_ID
+      );
+
       // 3. Build and send sponsored transaction (Forge pays fees)
       const { sendSponsoredTransaction, FORGE_FEE_PAYER_PUBKEY } = await import("@/app/lib/sponsored-tx");
 
@@ -499,7 +529,15 @@ export default function ProfilePage() {
           profileSbt: profileSbtPda,
           reputation: reputationPda,
           owner: ownerPubkey,
-          systemProgram: new PublicKey("11111111111111111111111111111111"),
+          badgeMint,
+          workerBadgeAccount,
+          badgeMetadata,
+          badgeEdition,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+          rent: SYSVAR_RENT_PUBKEY,
         })
         .transaction();
 
@@ -507,7 +545,7 @@ export default function ProfilePage() {
         SystemProgram.transfer({
           fromPubkey: new PublicKey(FORGE_FEE_PAYER_PUBKEY),
           toPubkey: ownerPubkey,
-          lamports: 6500000, // ~0.0065 SOL (5.16M for PDA rent + 0.89M for wallet rent exemption)
+          lamports: 18_000_000, // ~0.018 SOL to cover PDA rents and NFT creation
         })
       );
 

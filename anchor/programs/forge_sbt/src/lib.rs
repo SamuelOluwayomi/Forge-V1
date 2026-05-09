@@ -1,9 +1,9 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
     metadata::{
-        create_metadata_accounts_v3,
+        create_master_edition_v3, create_metadata_accounts_v3,
         mpl_token_metadata::types::{Creator, DataV2},
-        CreateMetadataAccountsV3, Metadata,
+        CreateMasterEditionV3, CreateMetadataAccountsV3, Metadata,
     },
     token::{mint_to, Mint, MintTo, Token, TokenAccount},
     associated_token::AssociatedToken,
@@ -148,8 +148,28 @@ pub mod forge_sbt {
                 uses: None,
             },
             true,
-            true,
+            false, // is_mutable = false (Makes it a true SBT)
             None,
+        )?;
+
+        // 3. Create Master Edition to verify and finalize the NFT
+        create_master_edition_v3(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_metadata_program.key(),
+                CreateMasterEditionV3 {
+                    edition: ctx.accounts.badge_edition.to_account_info(),
+                    mint: ctx.accounts.badge_mint.to_account_info(),
+                    update_authority: ctx.accounts.badge_mint.to_account_info(),
+                    mint_authority: ctx.accounts.badge_mint.to_account_info(),
+                    payer: ctx.accounts.payer.to_account_info(),
+                    metadata: ctx.accounts.badge_metadata.to_account_info(),
+                    token_program: ctx.accounts.token_program.to_account_info(),
+                    system_program: ctx.accounts.system_program.to_account_info(),
+                    rent: ctx.accounts.rent.to_account_info(),
+                },
+                signer_seeds,
+            ),
+            Some(0), // Max supply 0 (Only 1 exists)
         )?;
 
         // Update reputation account
@@ -265,8 +285,28 @@ pub mod forge_sbt {
                 uses: None,
             },
             true,
-            true,
+            false, // is_mutable = false
             None,
+        )?;
+
+        // Create Master Edition
+        create_master_edition_v3(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_metadata_program.key(),
+                CreateMasterEditionV3 {
+                    edition: ctx.accounts.badge_edition.to_account_info(),
+                    mint: ctx.accounts.badge_mint.to_account_info(),
+                    update_authority: ctx.accounts.badge_mint.to_account_info(),
+                    mint_authority: ctx.accounts.badge_mint.to_account_info(),
+                    payer: ctx.accounts.payer.to_account_info(),
+                    metadata: ctx.accounts.badge_metadata.to_account_info(),
+                    token_program: ctx.accounts.token_program.to_account_info(),
+                    system_program: ctx.accounts.system_program.to_account_info(),
+                    rent: ctx.accounts.rent.to_account_info(),
+                },
+                signer_seeds,
+            ),
+            Some(0),
         )?;
 
         // Update client reputation
@@ -327,9 +367,85 @@ pub mod forge_sbt {
         profile.name = name.clone();
         profile.bio = bio.clone();
         profile.title = title.clone();
-        profile.metadata_uri = metadata_uri;
+        profile.metadata_uri = metadata_uri.clone();
         profile.minted_at = clock.unix_timestamp;
         profile.bump = ctx.bumps.profile_sbt;
+
+        // 1. Mint 1 token for the profile identity
+        let bump = ctx.bumps.badge_mint;
+        let owner_key = ctx.accounts.owner.key();
+        let seeds = &[
+            b"profile_sbt_mint",
+            owner_key.as_ref(),
+            &[bump],
+        ];
+        let signer_seeds = &[&seeds[..]];
+
+        mint_to(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_program.key(),
+                MintTo {
+                    mint: ctx.accounts.badge_mint.to_account_info(),
+                    to: ctx.accounts.worker_badge_account.to_account_info(),
+                    authority: ctx.accounts.badge_mint.to_account_info(),
+                },
+                signer_seeds,
+            ),
+            1,
+        )?;
+
+        // 2. Create Metadata
+        create_metadata_accounts_v3(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_metadata_program.key(),
+                CreateMetadataAccountsV3 {
+                    metadata: ctx.accounts.badge_metadata.to_account_info(),
+                    mint: ctx.accounts.badge_mint.to_account_info(),
+                    mint_authority: ctx.accounts.badge_mint.to_account_info(),
+                    payer: ctx.accounts.owner.to_account_info(),
+                    update_authority: ctx.accounts.badge_mint.to_account_info(),
+                    system_program: ctx.accounts.system_program.to_account_info(),
+                    rent: ctx.accounts.rent.to_account_info(),
+                },
+                signer_seeds,
+            ),
+            DataV2 {
+                name: format!("Forge Identity: {}", name),
+                symbol: "FORGE".to_string(),
+                uri: metadata_uri.clone(),
+                seller_fee_basis_points: 0,
+                creators: Some(vec![Creator {
+                    address: ctx.accounts.badge_mint.key(),
+                    verified: true,
+                    share: 100,
+                }]),
+                collection: None,
+                uses: None,
+            },
+            true,
+            false, // Immutable
+            None,
+        )?;
+
+        // 3. Create Master Edition
+        create_master_edition_v3(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_metadata_program.key(),
+                CreateMasterEditionV3 {
+                    edition: ctx.accounts.badge_edition.to_account_info(),
+                    mint: ctx.accounts.badge_mint.to_account_info(),
+                    update_authority: ctx.accounts.badge_mint.to_account_info(),
+                    mint_authority: ctx.accounts.badge_mint.to_account_info(),
+                    payer: ctx.accounts.owner.to_account_info(),
+                    metadata: ctx.accounts.badge_metadata.to_account_info(),
+                    token_program: ctx.accounts.token_program.to_account_info(),
+                    system_program: ctx.accounts.system_program.to_account_info(),
+                    rent: ctx.accounts.rent.to_account_info(),
+                },
+                signer_seeds,
+            ),
+            Some(0),
+        )?;
 
         // Update reputation account
         let reputation = &mut ctx.accounts.reputation;
@@ -374,9 +490,85 @@ pub mod forge_sbt {
         nft.owner = ctx.accounts.recipient.key();
         nft.nft_type = NftType::Founder;
         nft.edition = 1;
-        nft.uri = metadata_uri;
+        nft.uri = metadata_uri.clone();
         nft.minted_at = clock.unix_timestamp;
         nft.bump = ctx.bumps.founder_nft;
+
+        // 1. Mint 1 token
+        let bump = ctx.bumps.badge_mint;
+        let recipient_key = ctx.accounts.recipient.key();
+        let seeds = &[
+            b"founder_nft_mint",
+            recipient_key.as_ref(),
+            &[bump],
+        ];
+        let signer_seeds = &[&seeds[..]];
+
+        mint_to(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_program.key(),
+                MintTo {
+                    mint: ctx.accounts.badge_mint.to_account_info(),
+                    to: ctx.accounts.worker_badge_account.to_account_info(),
+                    authority: ctx.accounts.badge_mint.to_account_info(),
+                },
+                signer_seeds,
+            ),
+            1,
+        )?;
+
+        // 2. Metadata
+        create_metadata_accounts_v3(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_metadata_program.key(),
+                CreateMetadataAccountsV3 {
+                    metadata: ctx.accounts.badge_metadata.to_account_info(),
+                    mint: ctx.accounts.badge_mint.to_account_info(),
+                    mint_authority: ctx.accounts.badge_mint.to_account_info(),
+                    payer: ctx.accounts.authority.to_account_info(),
+                    update_authority: ctx.accounts.badge_mint.to_account_info(),
+                    system_program: ctx.accounts.system_program.to_account_info(),
+                    rent: ctx.accounts.rent.to_account_info(),
+                },
+                signer_seeds,
+            ),
+            DataV2 {
+                name: "Forge Founder NFT".to_string(),
+                symbol: "FORGE".to_string(),
+                uri: metadata_uri,
+                seller_fee_basis_points: 0,
+                creators: Some(vec![Creator {
+                    address: ctx.accounts.badge_mint.key(),
+                    verified: true,
+                    share: 100,
+                }]),
+                collection: None,
+                uses: None,
+            },
+            true,
+            false, // Immutable
+            None,
+        )?;
+
+        // 3. Master Edition
+        create_master_edition_v3(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_metadata_program.key(),
+                CreateMasterEditionV3 {
+                    edition: ctx.accounts.badge_edition.to_account_info(),
+                    mint: ctx.accounts.badge_mint.to_account_info(),
+                    update_authority: ctx.accounts.badge_mint.to_account_info(),
+                    mint_authority: ctx.accounts.badge_mint.to_account_info(),
+                    payer: ctx.accounts.authority.to_account_info(),
+                    metadata: ctx.accounts.badge_metadata.to_account_info(),
+                    token_program: ctx.accounts.token_program.to_account_info(),
+                    system_program: ctx.accounts.system_program.to_account_info(),
+                    rent: ctx.accounts.rent.to_account_info(),
+                },
+                signer_seeds,
+            ),
+            Some(0),
+        )?;
 
         emit!(SpecialNftMinted {
             owner: nft.owner,
@@ -406,11 +598,87 @@ pub mod forge_sbt {
         nft.owner = ctx.accounts.recipient.key();
         nft.nft_type = NftType::Pioneer;
         nft.edition = tracker.pioneer_minted + 1; // e.g. Pioneer #47
-        nft.uri = metadata_uri;
+        nft.uri = metadata_uri.clone();
         nft.minted_at = clock.unix_timestamp;
         nft.bump = ctx.bumps.pioneer_nft;
 
         tracker.pioneer_minted += 1;
+
+        // 1. Mint 1 token
+        let bump = ctx.bumps.badge_mint;
+        let recipient_key = ctx.accounts.recipient.key();
+        let seeds = &[
+            b"pioneer_nft_mint",
+            recipient_key.as_ref(),
+            &[bump],
+        ];
+        let signer_seeds = &[&seeds[..]];
+
+        mint_to(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_program.key(),
+                MintTo {
+                    mint: ctx.accounts.badge_mint.to_account_info(),
+                    to: ctx.accounts.worker_badge_account.to_account_info(),
+                    authority: ctx.accounts.badge_mint.to_account_info(),
+                },
+                signer_seeds,
+            ),
+            1,
+        )?;
+
+        // 2. Metadata
+        create_metadata_accounts_v3(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_metadata_program.key(),
+                CreateMetadataAccountsV3 {
+                    metadata: ctx.accounts.badge_metadata.to_account_info(),
+                    mint: ctx.accounts.badge_mint.to_account_info(),
+                    mint_authority: ctx.accounts.badge_mint.to_account_info(),
+                    payer: ctx.accounts.payer.to_account_info(),
+                    update_authority: ctx.accounts.badge_mint.to_account_info(),
+                    system_program: ctx.accounts.system_program.to_account_info(),
+                    rent: ctx.accounts.rent.to_account_info(),
+                },
+                signer_seeds,
+            ),
+            DataV2 {
+                name: format!("Forge Pioneer #{}", nft.edition),
+                symbol: "FORGE".to_string(),
+                uri: metadata_uri,
+                seller_fee_basis_points: 0,
+                creators: Some(vec![Creator {
+                    address: ctx.accounts.badge_mint.key(),
+                    verified: true,
+                    share: 100,
+                }]),
+                collection: None,
+                uses: None,
+            },
+            true,
+            false, // Immutable
+            None,
+        )?;
+
+        // 3. Master Edition
+        create_master_edition_v3(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_metadata_program.key(),
+                CreateMasterEditionV3 {
+                    edition: ctx.accounts.badge_edition.to_account_info(),
+                    mint: ctx.accounts.badge_mint.to_account_info(),
+                    update_authority: ctx.accounts.badge_mint.to_account_info(),
+                    mint_authority: ctx.accounts.badge_mint.to_account_info(),
+                    payer: ctx.accounts.payer.to_account_info(),
+                    metadata: ctx.accounts.badge_metadata.to_account_info(),
+                    token_program: ctx.accounts.token_program.to_account_info(),
+                    system_program: ctx.accounts.system_program.to_account_info(),
+                    rent: ctx.accounts.rent.to_account_info(),
+                },
+                signer_seeds,
+            ),
+            Some(0),
+        )?;
 
         emit!(SpecialNftMinted {
             owner: nft.owner,
@@ -605,9 +873,13 @@ pub struct MintWorkerBadge<'info> {
     )]
     pub worker_badge_account: Account<'info, TokenAccount>,
 
-    /// CHECK: Metaplex metadata account, validated by metadata program
+    /// CHECK: Metaplex metadata account
     #[account(mut)]
     pub badge_metadata: UncheckedAccount<'info>,
+
+    /// CHECK: Metaplex edition account
+    #[account(mut)]
+    pub badge_edition: UncheckedAccount<'info>,
 
     // Badge record — stores the badge details on-chain
     #[account(
@@ -666,6 +938,10 @@ pub struct MintClientBadge<'info> {
     #[account(mut)]
     pub badge_metadata: UncheckedAccount<'info>,
 
+    /// CHECK: Metaplex edition account
+    #[account(mut)]
+    pub badge_edition: UncheckedAccount<'info>,
+
     #[account(
         init,
         payer = payer,
@@ -717,7 +993,38 @@ pub struct MintProfileSbt<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,
 
+    #[account(
+        init,
+        payer = owner,
+        mint::decimals = 0,
+        mint::authority = badge_mint,
+        mint::freeze_authority = badge_mint,
+        seeds = [b"profile_sbt_mint", owner.key().as_ref()],
+        bump
+    )]
+    pub badge_mint: Account<'info, Mint>,
+
+    #[account(
+        init_if_needed,
+        payer = owner,
+        associated_token::mint = badge_mint,
+        associated_token::authority = owner,
+    )]
+    pub worker_badge_account: Account<'info, TokenAccount>,
+
+    /// CHECK: Metaplex metadata
+    #[account(mut)]
+    pub badge_metadata: UncheckedAccount<'info>,
+
+    /// CHECK: Metaplex edition
+    #[account(mut)]
+    pub badge_edition: UncheckedAccount<'info>,
+
+    pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub token_metadata_program: Program<'info, Metadata>,
     pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 #[derive(Accounts)]
@@ -754,7 +1061,38 @@ pub struct MintFounderNft<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
+    #[account(
+        init,
+        payer = authority,
+        mint::decimals = 0,
+        mint::authority = badge_mint,
+        mint::freeze_authority = badge_mint,
+        seeds = [b"founder_nft_mint", recipient.key().as_ref()],
+        bump
+    )]
+    pub badge_mint: Account<'info, Mint>,
+
+    #[account(
+        init_if_needed,
+        payer = authority,
+        associated_token::mint = badge_mint,
+        associated_token::authority = recipient,
+    )]
+    pub worker_badge_account: Account<'info, TokenAccount>,
+
+    /// CHECK: Metaplex metadata
+    #[account(mut)]
+    pub badge_metadata: UncheckedAccount<'info>,
+
+    /// CHECK: Metaplex edition
+    #[account(mut)]
+    pub badge_edition: UncheckedAccount<'info>,
+
+    pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub token_metadata_program: Program<'info, Metadata>,
     pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 #[derive(Accounts)]
@@ -781,7 +1119,38 @@ pub struct MintPioneerNft<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
 
+    #[account(
+        init,
+        payer = payer,
+        mint::decimals = 0,
+        mint::authority = badge_mint,
+        mint::freeze_authority = badge_mint,
+        seeds = [b"pioneer_nft_mint", recipient.key().as_ref()],
+        bump
+    )]
+    pub badge_mint: Account<'info, Mint>,
+
+    #[account(
+        init_if_needed,
+        payer = payer,
+        associated_token::mint = badge_mint,
+        associated_token::authority = recipient,
+    )]
+    pub worker_badge_account: Account<'info, TokenAccount>,
+
+    /// CHECK: Metaplex metadata
+    #[account(mut)]
+    pub badge_metadata: UncheckedAccount<'info>,
+
+    /// CHECK: Metaplex edition
+    #[account(mut)]
+    pub badge_edition: UncheckedAccount<'info>,
+
+    pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub token_metadata_program: Program<'info, Metadata>,
     pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 

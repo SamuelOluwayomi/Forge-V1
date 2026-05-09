@@ -687,6 +687,103 @@ pub mod forge_sbt {
         });
 
         Ok(())
+    // ─────────────────────────────────────────────
+    // 9. MINT TECH STACK BADGE
+    // Called after AI analyzes the user's GitHub stack.
+    // ─────────────────────────────────────────────
+    pub fn mint_tech_stack_badge(
+        ctx: Context<MintTechStackBadge>,
+        stack: String,
+        metadata_uri: String,
+    ) -> Result<()> {
+        require!(stack.len() <= 100, SbtError::StringTooLong);
+
+        // 1. Mint 1 token
+        let owner_key = ctx.accounts.owner.key();
+        let seeds = &[
+            b"tech_stack_mint",
+            owner_key.as_ref(),
+            &[ctx.bumps.badge_mint],
+        ];
+        let signer_seeds = &[&seeds[..]];
+
+        mint_to(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_program.key(),
+                MintTo {
+                    mint: ctx.accounts.badge_mint.to_account_info(),
+                    to: ctx.accounts.worker_badge_account.to_account_info(),
+                    authority: ctx.accounts.badge_mint.to_account_info(),
+                },
+                signer_seeds,
+            ),
+            1,
+        )?;
+
+        // 2. Metadata
+        create_metadata_accounts_v3(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_metadata_program.key(),
+                CreateMetadataAccountsV3 {
+                    metadata: ctx.accounts.badge_metadata.to_account_info(),
+                    mint: ctx.accounts.badge_mint.to_account_info(),
+                    mint_authority: ctx.accounts.badge_mint.to_account_info(),
+                    payer: ctx.accounts.owner.to_account_info(),
+                    update_authority: ctx.accounts.badge_mint.to_account_info(),
+                    system_program: ctx.accounts.system_program.to_account_info(),
+                    rent: ctx.accounts.rent.to_account_info(),
+                },
+                signer_seeds,
+            ),
+            DataV2 {
+                name: format!("Forge Stack: {}", stack),
+                symbol: "STACK".to_string(),
+                uri: metadata_uri,
+                seller_fee_basis_points: 0,
+                creators: Some(vec![Creator {
+                    address: ctx.accounts.badge_mint.key(),
+                    verified: true,
+                    share: 100,
+                }]),
+                collection: None,
+                uses: None,
+            },
+            true,
+            false, // Immutable
+            None,
+        )?;
+
+        // 3. Master Edition
+        create_master_edition_v3(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_metadata_program.key(),
+                CreateMasterEditionV3 {
+                    edition: ctx.accounts.badge_edition.to_account_info(),
+                    mint: ctx.accounts.badge_mint.to_account_info(),
+                    update_authority: ctx.accounts.badge_mint.to_account_info(),
+                    mint_authority: ctx.accounts.badge_mint.to_account_info(),
+                    payer: ctx.accounts.owner.to_account_info(),
+                    metadata: ctx.accounts.badge_metadata.to_account_info(),
+                    token_program: ctx.accounts.token_program.to_account_info(),
+                    system_program: ctx.accounts.system_program.to_account_info(),
+                    rent: ctx.accounts.rent.to_account_info(),
+                },
+                signer_seeds,
+            ),
+            Some(0),
+        )?;
+
+        // Store badge record
+        let badge = &mut ctx.accounts.badge_record;
+        let clock = Clock::get()?;
+        badge.owner = owner_key;
+        badge.badge_type = BadgeType::TechStackVerification;
+        badge.skill_category = stack;
+        badge.minted_at = clock.unix_timestamp;
+        badge.mint = ctx.accounts.badge_mint.key();
+        badge.bump = ctx.bumps.badge_record;
+
+        Ok(())
     }
 }
 
@@ -807,6 +904,7 @@ impl SpecialNft {
 pub enum BadgeType {
     WorkerCompletion,
     ClientPayment,
+    TechStackVerification,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
@@ -1225,4 +1323,51 @@ pub enum SbtError {
 
     #[msg("Pioneer NFT supply of 100 has been exhausted")]
     SupplyExhausted,
+}
+#[derive(Accounts)]
+pub struct MintTechStackBadge<'info> {
+    #[account(
+        init,
+        payer = owner,
+        mint::decimals = 0,
+        mint::authority = badge_mint,
+        mint::freeze_authority = badge_mint,
+        seeds = [b"tech_stack_mint", owner.key().as_ref()],
+        bump
+    )]
+    pub badge_mint: Account<'info, Mint>,
+
+    #[account(
+        init_if_needed,
+        payer = owner,
+        associated_token::mint = badge_mint,
+        associated_token::authority = owner,
+    )]
+    pub worker_badge_account: Account<'info, TokenAccount>,
+
+    /// CHECK: Metaplex metadata
+    #[account(mut)]
+    pub badge_metadata: UncheckedAccount<'info>,
+
+    /// CHECK: Metaplex edition
+    #[account(mut)]
+    pub badge_edition: UncheckedAccount<'info>,
+
+    #[account(
+        init,
+        payer = owner,
+        space = BadgeRecord::LEN,
+        seeds = [b"tech_stack_record", owner.key().as_ref()],
+        bump
+    )]
+    pub badge_record: Account<'info, BadgeRecord>,
+
+    #[account(mut)]
+    pub owner: Signer<'info>,
+
+    pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub token_metadata_program: Program<'info, Metadata>,
+    pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
 }

@@ -18,6 +18,7 @@ import {
 } from "@solana/spl-token";
 import Image from "next/image";
 import { XLogo, GithubLogo, DiscordLogo, TelegramLogo } from "@phosphor-icons/react";
+import { TechStackVerification } from "@/app/components/TechStackVerification";
 
 function BadgeCard({ index }: { index: number }) {
   const colors = ["#FF4500", "#FFD700", "#4ADE80", "#60A5FA", "#FF90E8"];
@@ -80,6 +81,8 @@ export default function ProfilePage() {
   const [generatingShare, setGeneratingShare] = useState(false);
   const [pioneerPdaAddr, setPioneerPdaAddr] = useState<string | null>(null);
   const [founderPdaAddr, setFounderPdaAddr] = useState<string | null>(null);
+  const [showStackModal, setShowStackModal] = useState(false);
+  const [techStack, setTechStack] = useState<string | null>(null);
 
   const [stats, setStats] = useState([
     { label: "Tasks Completed", value: 0 },
@@ -1070,21 +1073,29 @@ export default function ProfilePage() {
                       </a>
                     )}
                     {socials.github && (
-                      <a
-                        href={`https://github.com/${socials.github.replace("@", "")}`}
-                        target="_blank"
-                        className="flex items-center gap-3 p-3 border-2 border-black/10 hover:border-black hover:bg-black/5 transition-all group"
-                      >
-                        <GithubLogo className="w-5 h-5 group-hover:text-[#333]" weight="bold" />
-                        <div>
-                          <p className="text-[10px] font-black uppercase tracking-widest text-black/40 mb-0.5">
-                            GitHub
-                          </p>
-                          <p className="font-mono text-xs font-bold truncate block group-hover:underline">
-                            {socials.github}
-                          </p>
-                        </div>
-                      </a>
+                      <div className="flex flex-col gap-2">
+                        <a
+                          href={`https://github.com/${socials.github.replace("@", "")}`}
+                          target="_blank"
+                          className="flex items-center gap-3 p-3 border-2 border-black/10 hover:border-black hover:bg-black/5 transition-all group"
+                        >
+                          <GithubLogo className="w-5 h-5 group-hover:text-[#333]" weight="bold" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-black/40 mb-0.5">
+                              GitHub
+                            </p>
+                            <p className="font-mono text-xs font-bold truncate block group-hover:underline">
+                              {socials.github}
+                            </p>
+                          </div>
+                        </a>
+                        <button 
+                          onClick={() => setShowStackModal(true)}
+                          className="brutalist-button py-2 bg-black text-white text-[10px] uppercase font-black tracking-widest border-black"
+                        >
+                          {techStack ? "Update Tech Stack" : "Verify Tech Stack"}
+                        </button>
+                      </div>
                     )}
                     {socials.discord && (
                       <div
@@ -1303,6 +1314,15 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+      <TechStackVerification
+        isOpen={showStackModal}
+        onClose={() => setShowStackModal(false)}
+        currentGithub={socials.github}
+        onSuccess={(stack) => {
+          setTechStack(stack);
+          // Optional: refresh profile data or badges here
+        }}
+      />
     </div>
   );
 }

@@ -26,6 +26,7 @@ export interface UseEscrowReturn {
   claimCompletion: (taskId: number, clientPubkey: web3.PublicKey) => Promise<string>;
   raiseDispute: (taskId: number, clientPubkey: web3.PublicKey, reasonUri: string) => Promise<string>;
   resolveDispute: (taskId: number, clientPubkey: web3.PublicKey, recipientPubkey: web3.PublicKey, releaseToWorker: boolean) => Promise<string>;
+  mintTechStackBadge: (stack: string, metadataUri: string) => Promise<string>;
   provider: AnchorProvider | null;
   initializeMintTracker: () => Promise<string>;
   mintFounderNft: (recipient: web3.PublicKey, metadataUri: string) => Promise<string>;
@@ -532,6 +533,69 @@ export function useEscrow(): UseEscrowReturn {
     [sbtProgram, walletPublicKey, signTransaction]
   );
 
+  /** Mint Tech Stack Badge — SPONSORED */
+  const mintTechStackBadge = useCallback(async (stack: string, metadataUri: string) => {
+    if (!sbtProgram || !walletPublicKey) throw new Error("Wallet not connected");
+    const TOKEN_METADATA_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
+
+    const [badgeMint] = await web3.PublicKey.findProgramAddress([
+      Buffer.from("tech_stack_mint"),
+      walletPublicKey.toBuffer(),
+    ], sbtProgram.programId);
+
+    const [workerBadgeAccount] = await web3.PublicKey.findProgramAddress([
+      walletPublicKey.toBuffer(),
+      TOKEN_PROGRAM_ID.toBuffer(),
+      badgeMint.toBuffer(),
+    ], ASSOCIATED_TOKEN_PROGRAM_ID);
+
+    const [badgeMetadata] = await web3.PublicKey.findProgramAddress([
+      Buffer.from("metadata"),
+      TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+      badgeMint.toBuffer(),
+    ], TOKEN_METADATA_PROGRAM_ID);
+
+    const [badgeEdition] = await web3.PublicKey.findProgramAddress([
+      Buffer.from("metadata"),
+      TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+      badgeMint.toBuffer(),
+      Buffer.from("edition"),
+    ], TOKEN_METADATA_PROGRAM_ID);
+
+    const [badgeRecord] = await web3.PublicKey.findProgramAddress([
+      Buffer.from("tech_stack_record"),
+      walletPublicKey.toBuffer(),
+    ], sbtProgram.programId);
+
+    const tx = await (sbtProgram.methods as any)
+      .mintTechStackBadge(stack, metadataUri)
+      .accounts({
+        badgeMint,
+        workerBadgeAccount,
+        badgeMetadata,
+        badgeEdition,
+        badgeRecord,
+        owner: walletPublicKey,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+        rent: SYSVAR_RENT_PUBKEY,
+      })
+      .transaction();
+
+    const { FORGE_FEE_PAYER_PUBKEY } = await import("@/app/lib/sponsored-tx");
+    tx.instructions.unshift(
+      SystemProgram.transfer({
+        fromPubkey: new PublicKey(FORGE_FEE_PAYER_PUBKEY),
+        toPubkey: walletPublicKey,
+        lamports: 20_000_000, 
+      })
+    );
+
+    return await sendSponsoredTransaction(tx, signTransaction);
+  }, [sbtProgram, walletPublicKey, signTransaction]);
+
   return {
     program,
     sbtProgram,
@@ -548,5 +612,6 @@ export function useEscrow(): UseEscrowReturn {
     mintFounderNft,
     mintPioneerNft,
     mintWorkerBadge,
+    mintTechStackBadge,
   };
 }

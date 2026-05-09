@@ -165,7 +165,7 @@ export function TechStackVerification({ isOpen, onClose, currentGithub, onSucces
             <div className="space-y-6">
               <div className="bg-black/5 border-2 border-dashed border-black p-4">
                 <p className="text-sm font-bold leading-relaxed">
-                  Please add the following code to your **GitHub Bio** so we can verify you own the account:
+                  Please add the following code to your **GitHub Bio** so we can verify you own the account, you can remove it later:
                 </p>
                 <div className="mt-4 bg-white border-2 border-black p-3 text-center font-mono font-black text-xl select-all">
                   {challengeCode}

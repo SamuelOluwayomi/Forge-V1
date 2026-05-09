@@ -131,18 +131,25 @@ export function TechStackVerification({ isOpen, onClose, currentGithub, onSucces
         metadataUri = `${process.env.NEXT_PUBLIC_APP_URL || "https://forge-frontier.vercel.app"}/api/stack-metadata?w=${wallet?.account.address.toString().slice(-8)}`;
       }
 
-      // 3. Mint the on-chain SBT
-      // Truncate the stack string for the on-chain transaction to avoid buffer overruns
-      // (The Metaplex name is capped at 32 bytes, and the old BadgeRecord is capped at 50 bytes)
-      // The full list is still safely stored in the metadata JSON!
+      // 3. Mint the on-chain SBT (graceful fallback)
       const shortStack = finalStack.length > 15 ? finalStack.substring(0, 15) + "..." : finalStack;
       
-      const sig = await mintTechStackBadge(shortStack, metadataUri);
-      toast.success(`✓ Tech Stack SBT minted! Tx: ${sig.slice(0, 8)}...`, { id: tid });
+      let mintSig: string | null = null;
+      try {
+        mintSig = await mintTechStackBadge(shortStack, metadataUri);
+      } catch (mintErr: any) {
+        console.warn("On-chain mint failed (likely old contract limits), but profile will still be updated:", mintErr);
+      }
+
+      if (mintSig) {
+        toast.success(`✓ Tech Stack SBT minted! Tx: ${mintSig.slice(0, 8)}...`, { id: tid });
+      } else {
+        toast.success("✓ GitHub verified! Tech stack saved to your profile.", { id: tid });
+      }
       onSuccess(finalStack);
       onClose();
     } catch (err: any) {
-      toast.error("Minting failed: " + err.message, { id: tid });
+      toast.error("Verification failed: " + err.message, { id: tid });
     } finally {
       setLoading(false);
     }

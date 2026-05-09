@@ -18,6 +18,7 @@ interface RewardStatus {
   loading: boolean;
 }
 
+
 interface NFTCard {
   id: "pioneer" | "founder";
   name: string;
@@ -92,13 +93,7 @@ export default function RewardsPage() {
   const [selected, setSelected] = useState<NFTCard | null>(null);
 
   // Debug: log the wallet address to help troubleshoot founder matching
-  useEffect(() => {
-    if (address) {
-      console.log("[Rewards] Connected wallet:", address);
-      console.log("[Rewards] FORGE_FOUNDER:", FORGE_FOUNDER);
-      console.log("[Rewards] isFounder:", address === FORGE_FOUNDER);
-    }
-  }, [address]);
+    // Logs removed - bug fixed
 
   const isFounder = address === FORGE_FOUNDER;
   const pioneerSlotsLeft = 100 - status.pioneerMinted;
@@ -112,7 +107,7 @@ export default function RewardsPage() {
       try {
         const userPubkey = new PublicKey(address);
         const [trackerPda] = await PublicKey.findProgramAddress(
-          [Buffer.from("mint_tracker")],
+          [Buffer.from("mint_tracker_v2")],
           sbtProgram.programId
         );
         let pioneerMinted = 0,
@@ -195,11 +190,12 @@ export default function RewardsPage() {
       }
       setSelected(null);
     } catch (err: any) {
+      console.error("Claim error:", err);
       const msg = err.message?.includes("SupplyExhausted")
         ? "All 100 Pioneer NFTs have been claimed."
         : err.message?.includes("Unauthorized")
           ? "Not authorized to claim this NFT."
-          : "Failed to claim. Please try again.";
+          : `Failed to claim: ${err.message || "Please try again."}`;
       toast.error(msg);
     } finally {
       setClaiming(null);

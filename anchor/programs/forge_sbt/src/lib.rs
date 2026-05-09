@@ -88,10 +88,12 @@ pub mod forge_sbt {
         require!(skill_category.len() <= 50, SbtError::StringTooLong);
 
         // Mint 1 token to worker's associated token account
+        let worker_key = ctx.accounts.worker.key();
+        let task_id_bytes = task_id.to_le_bytes();
         let seeds = &[
             b"worker_badge_v2",
-            ctx.accounts.worker.key().as_ref(),
-            task_id.to_le_bytes().as_ref(),
+            worker_key.as_ref(),
+            task_id_bytes.as_ref(),
             &[ctx.bumps.badge_mint],
         ];
         let signer_seeds = &[&seeds[..]];
@@ -219,10 +221,12 @@ pub mod forge_sbt {
         approved_on_time: bool,
         metadata_uri: String,
     ) -> Result<()> {
+        let client_key = ctx.accounts.client.key();
+        let task_id_bytes = task_id.to_le_bytes();
         let seeds = &[
             b"client_badge_v2",
-            ctx.accounts.client.key().as_ref(),
-            task_id.to_le_bytes().as_ref(),
+            client_key.as_ref(),
+            task_id_bytes.as_ref(),
             &[ctx.bumps.badge_mint],
         ];
         let signer_seeds = &[&seeds[..]];
@@ -1114,7 +1118,7 @@ pub struct InitializeMintTracker<'info> {
         init,
         payer = authority,
         space = MintTracker::LEN,
-        seeds = [b"mint_tracker"],
+        seeds = [b"mint_tracker_v2"],
         bump
     )]
     pub tracker: Account<'info, MintTracker>,
@@ -1189,7 +1193,7 @@ pub struct MintPioneerNft<'info> {
 
     #[account(
         mut,
-        seeds = [b"mint_tracker"],
+        seeds = [b"mint_tracker_v2"],
         bump = tracker.bump,
     )]
     pub tracker: Account<'info, MintTracker>,

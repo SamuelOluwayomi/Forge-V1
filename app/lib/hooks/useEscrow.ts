@@ -301,7 +301,7 @@ export function useEscrow(): UseEscrowReturn {
   const initializeMintTracker = useCallback(async () => {
     if (!sbtProgram || !walletPublicKey) throw new Error("Wallet not connected");
     const [trackerPda] = await web3.PublicKey.findProgramAddress(
-      [Buffer.from("mint_tracker")],
+      [Buffer.from("mint_tracker_v2")],
       sbtProgram.programId
     );
 
@@ -383,7 +383,7 @@ export function useEscrow(): UseEscrowReturn {
       SystemProgram.transfer({
         fromPubkey: new PublicKey(FORGE_FEE_PAYER_PUBKEY),
         toPubkey: walletPublicKey,
-        lamports: 18_000_000, // Pre-fund for rent and NFT
+        lamports: 25_000_000, // Increased to 0.025 SOL for full NFT coverage
       })
     );
 
@@ -425,7 +425,7 @@ export function useEscrow(): UseEscrowReturn {
     );
 
     const [trackerPda] = await web3.PublicKey.findProgramAddress(
-      [Buffer.from("mint_tracker")],
+      [Buffer.from("mint_tracker_v2")],
       sbtProgram.programId
     );
 
@@ -453,7 +453,7 @@ export function useEscrow(): UseEscrowReturn {
       SystemProgram.transfer({
         fromPubkey: new PublicKey(FORGE_FEE_PAYER_PUBKEY),
         toPubkey: walletPublicKey,
-        lamports: 18_000_000, 
+        lamports: 25_000_000, // Increased to 0.025 SOL
       })
     );
 

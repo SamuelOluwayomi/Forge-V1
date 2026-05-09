@@ -15,7 +15,17 @@ interface TechStackVerificationProps {
 export function TechStackVerification({ isOpen, onClose, currentGithub, onSuccess }: TechStackVerificationProps) {
   const { wallet } = useWallet();
   const { mintTechStackBadge } = useEscrow();
-  const [githubUsername, setGithubUsername] = useState(currentGithub || "");
+  // Strip @ prefix and full GitHub URLs → bare username only
+  const cleanUsername = (val: string) => {
+    if (!val) return "";
+    return val
+      .replace(/^@/, "")
+      .replace(/^https?:\/\/(www\.)?github\.com\//, "")
+      .replace(/\/$/, "")
+      .trim();
+  };
+
+  const [githubUsername, setGithubUsername] = useState(cleanUsername(currentGithub || ""));
   const [step, setStep] = useState<"input" | "challenge" | "verifying" | "minting">("input");
   const [challengeCode, setChallengeCode] = useState("");
   const [analyzedStack, setAnalyzedStack] = useState("");
@@ -147,7 +157,7 @@ export function TechStackVerification({ isOpen, onClose, currentGithub, onSucces
                 <input
                   type="text"
                   value={githubUsername}
-                  onChange={(e) => setGithubUsername(e.target.value)}
+                  onChange={(e) => setGithubUsername(cleanUsername(e.target.value))}
                   placeholder="e.g. satoshinakamoto"
                   className="brutalist-input w-full px-4 py-3 bg-black/5 text-sm font-bold"
                 />

@@ -738,7 +738,7 @@ pub mod forge_sbt {
                 signer_seeds,
             ),
             DataV2 {
-                name: format!("Forge Stack: {}", stack),
+                name: "Forge Tech Stack".to_string(),
                 symbol: "STACK".to_string(),
                 uri: metadata_uri,
                 seller_fee_basis_points: 0,
@@ -846,7 +846,7 @@ impl BadgeRecord {
         + 32   // owner
         + 1    // badge_type
         + 8    // task_id
-        + 4+50 // skill_category
+        + 4+100 // skill_category
         + 1    // rating
         + 1    // was_on_time
         + 8    // amount

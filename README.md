@@ -61,8 +61,9 @@ Workers browse and apply with enriched profiles featuring **On-Chain Ranks** and
 ### AI-Verified Tech Stack (GitHub Attestation)
 To combat resume inflation and provide undeniable proof of capability, Forge features an AI-powered GitHub verification system.
 1. **Bio Challenge**: Users prove ownership of their GitHub account by temporarily adding a Forge-generated deterministic code to their GitHub bio.
-2. **AI Analysis**: Once ownership is verified, Forge's AI (powered by Groq) scans the user's public repositories, languages, and commit history to accurately summarize their core tech stack (e.g., `React | Rust | Solana`).
-3. **On-Chain Attestation**: The verified tech stack is then minted as an immutable, Soulbound "Tech Stack Badge" directly to the user's wallet via the `forge_sbt` contract. This allows clients to hire with confidence based on cryptographically verified code history, rather than just self-reported skills.
+2. **Deep AI Analysis**: Once ownership is verified, Forge's AI (powered by Groq's LLaMa-3.3) paginates through the user's entire GitHub history (up to 500 repos). It pre-aggregates language frequencies and extracts repository topics to accurately identify their core programming languages, frameworks, and blockchain ecosystems.
+3. **Interactive Selection**: The AI returns a comprehensive list of detected technologies. Users can then interactively select exactly which detected skills they want to highlight on their profile.
+4. **On-Chain Attestation**: The selected tech stack is minted as an immutable, Soulbound "Tech Stack Badge" directly to the user's wallet via the `forge_sbt` contract. This allows clients to hire with confidence based on cryptographically verified code history, rather than just self-reported skills.
 
 ### Global Ranking & Reputation
 Forge implements a daily ranking system that scores developers based on their on-chain performance. Top-ranked developers receive a golden Rank Badge on their profile and an exportable Identity Card, making them more attractive to high-paying clients.

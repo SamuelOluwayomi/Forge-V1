@@ -227,14 +227,14 @@ export function TechStackVerification({ isOpen, onClose, currentGithub, onSucces
                   {techList.map((tech) => (
                     <label 
                       key={tech} 
-                      className={`cursor-pointer px-3 py-1.5 border-2 border-black font-black uppercase text-sm transition-all ${
-                        selectedTechs.includes(tech) ? "bg-black text-white" : "bg-white text-black opacity-50"
+                      className={`cursor-pointer flex items-center gap-2 px-3 py-2 border-2 border-black font-black uppercase text-sm transition-all ${
+                        selectedTechs.includes(tech) ? "bg-black text-white" : "bg-white text-black opacity-50 hover:opacity-100"
                       }`}
                       style={{ boxShadow: selectedTechs.includes(tech) ? "2px 2px 0px 0px rgba(0,0,0,1)" : "none" }}
                     >
                       <input 
                         type="checkbox" 
-                        className="hidden"
+                        className="w-4 h-4 accent-primary"
                         checked={selectedTechs.includes(tech)}
                         onChange={(e) => {
                           if (e.target.checked) {

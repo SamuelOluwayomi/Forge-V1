@@ -173,7 +173,16 @@ export default function ProfilePage() {
           [Buffer.from("tech_stack_mint"), userPubkey.toBuffer()],
           sbtProgram.programId
         );
-        setTechStackPdaAddr(techStackPda.toBase58());
+        
+        // Only set the address if the token mint account actually exists on-chain
+        try {
+          const accountInfo = await sbtProgram.provider.connection.getAccountInfo(techStackPda);
+          if (accountInfo !== null) {
+            setTechStackPdaAddr(techStackPda.toBase58());
+          }
+        } catch (e) {
+          console.error("Failed to fetch tech stack mint account info", e);
+        }
         
       } catch (error) {
         console.error("Error fetching rewards:", error);

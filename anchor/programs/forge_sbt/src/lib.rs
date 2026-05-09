@@ -687,6 +687,8 @@ pub mod forge_sbt {
         });
 
         Ok(())
+    }
+
     // ─────────────────────────────────────────────
     // 9. MINT TECH STACK BADGE
     // Called after AI analyzes the user's GitHub stack.

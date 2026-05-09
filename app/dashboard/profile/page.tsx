@@ -19,6 +19,7 @@ import {
 import Image from "next/image";
 import { XLogo, GithubLogo, DiscordLogo, TelegramLogo } from "@phosphor-icons/react";
 import { TechStackVerification } from "@/app/components/TechStackVerification";
+import { TechStackInline } from "@/app/components/TechStackBadges";
 
 function BadgeCard({ index }: { index: number }) {
   const colors = ["#FF4500", "#FFD700", "#4ADE80", "#60A5FA", "#FF90E8"];
@@ -105,7 +106,7 @@ export default function ProfilePage() {
       const { data, error } = await supabase!
         .from("profiles")
         .select(
-          "avatar_url, twitter, github, discord, telegram, rank, name, title, bio, profile_sbt_mint"
+          "avatar_url, twitter, github, discord, telegram, rank, name, title, bio, profile_sbt_mint, tech_stack"
         )
         .eq("wallet_address", address)
         .single();
@@ -126,6 +127,7 @@ export default function ProfilePage() {
           telegram: data.telegram || "",
         });
         if (data.rank) setRank(data.rank);
+        if (data.tech_stack) setTechStack(data.tech_stack);
       }
       setLoading(false);
     };
@@ -1143,6 +1145,11 @@ export default function ProfilePage() {
                       )}
                   </div>
                 </div>
+
+                {/* Verified Tech Stack */}
+                {techStack && (
+                  <TechStackInline stack={techStack} />
+                )}
               </div>
             )}
           </div>
@@ -1318,9 +1325,15 @@ export default function ProfilePage() {
         isOpen={showStackModal}
         onClose={() => setShowStackModal(false)}
         currentGithub={socials.github}
-        onSuccess={(stack) => {
+        onSuccess={async (stack) => {
           setTechStack(stack);
-          // Optional: refresh profile data or badges here
+          if (supabase && address) {
+            await supabase.from("profiles").upsert({
+              wallet_address: address,
+              tech_stack: stack,
+              updated_at: new Date().toISOString(),
+            });
+          }
         }}
       />
     </div>

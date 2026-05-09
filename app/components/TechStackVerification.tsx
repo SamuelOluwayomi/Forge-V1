@@ -72,23 +72,54 @@ export function TechStackVerification({ isOpen, onClose, currentGithub, onSucces
     const tid = toast.loading("Minting On-Chain Badge...");
 
     try {
-      // 1. Create a simple metadata JSON for the badge (could be more elaborate)
+      // 1. Build standard NFT metadata JSON
       const metadata = {
-        name: `Forge Tech Stack: ${analyzedStack}`,
-        description: `Verified tech stack for GitHub user ${githubUsername}. Analyzed by Forge AI.`,
-        image: "https://forge-sbt.vercel.app/badges/tech-stack.png", // Placeholder
+        name: `Forge Stack: ${analyzedStack}`,
+        symbol: "STACK",
+        description: `AI-verified tech stack for GitHub user @${githubUsername}, minted as a Soulbound Token on Forge Protocol.`,
+        image: `https://ui-avatars.com/api/?name=${encodeURIComponent(analyzedStack.slice(0, 2))}&background=000000&color=fff&size=256&font-size=0.4&bold=true`,
+        external_url: `https://github.com/${githubUsername}`,
         attributes: [
           { trait_type: "GitHub", value: githubUsername },
-          { trait_type: "Tech Stack", value: analyzedStack }
-        ]
+          { trait_type: "Tech Stack", value: analyzedStack },
+          { trait_type: "Badge Type", value: "Tech Stack Verification" },
+          { trait_type: "Verified By", value: "Forge AI" },
+          { trait_type: "Soulbound", value: "true" },
+        ],
+        properties: {
+          category: "image",
+          creators: [{ address: wallet?.account.address.toString(), share: 100 }],
+        },
       };
-      
-      // For this demo, we'll use a fixed URI or upload to Supabase if needed.
-      // Let's just use a placeholder for now to speed up the process.
-      const metadataUri = "https://gateway.pinata.cloud/ipfs/QmZ..."; 
 
+      // 2. Upload metadata JSON to Supabase Storage
+      const { supabase } = await import("@/app/lib/supabase");
+      let metadataUri = "";
+
+      if (supabase) {
+        const fileName = `tech-stack-${wallet?.account.address.toString().slice(-8)}.json`;
+        const blob = new Blob([JSON.stringify(metadata)], { type: "application/json" });
+
+        const { error: uploadError } = await supabase.storage
+          .from("nft-metadata")
+          .upload(fileName, blob, { upsert: true, contentType: "application/json" });
+
+        if (!uploadError) {
+          const { data: { publicUrl } } = supabase.storage
+            .from("nft-metadata")
+            .getPublicUrl(fileName);
+          metadataUri = publicUrl;
+        }
+      }
+
+      // Fallback: use a data URI if Supabase upload fails
+      if (!metadataUri) {
+        metadataUri = `data:application/json;base64,${btoa(JSON.stringify(metadata))}`;
+      }
+
+      // 3. Mint the on-chain SBT
       const sig = await mintTechStackBadge(analyzedStack, metadataUri);
-      toast.success("Badge Minted Successfully!", { id: tid });
+      toast.success(`✓ Tech Stack SBT minted! Tx: ${sig.slice(0, 8)}...`, { id: tid });
       onSuccess(analyzedStack);
       onClose();
     } catch (err: any) {

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/app/lib/supabase";
 import { useWallet } from "@/app/lib/wallet/context";
 import { ForgeLoader } from "@/app/components/ForgeLoader";
+import Link from "next/link";
 
 interface RankedDev {
   wallet_address: string;
@@ -14,11 +15,144 @@ interface RankedDev {
   github: string | null;
   rank: number;
   forge_score: number;
+  tech_stack?: string | null;
+  bio?: string | null;
+}
+
+function DevModal({ dev, onClose }: { dev: RankedDev; onClose: () => void }) {
+  const techItems = dev.tech_stack
+    ? dev.tech_stack.split("|").map((t) => t.trim()).filter(Boolean)
+    : [];
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white border-4 border-black w-full max-w-md animate-in zoom-in-95 duration-200"
+        style={{ boxShadow: "8px 8px 0px 0px rgba(0,0,0,1)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="bg-primary p-6 relative overflow-hidden border-b-4 border-black">
+          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(#000 1px, transparent 1px)", backgroundSize: "20px 20px" }} />
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 w-8 h-8 bg-black text-white flex items-center justify-center font-black text-sm hover:bg-white hover:text-black transition-colors z-10"
+          >
+            ✕
+          </button>
+          <div className="relative z-10 flex items-center gap-4">
+            <div className="w-20 h-20 border-[3px] border-black overflow-hidden bg-white shrink-0">
+              {dev.avatar_url ? (
+                <img src={dev.avatar_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center font-black text-3xl text-black/10">
+                  {dev.name?.charAt(0) ?? "?"}
+                </div>
+              )}
+            </div>
+            <div>
+              <h3 className="font-black text-2xl uppercase italic leading-none text-black">
+                {dev.name || "Anonymous Dev"}
+              </h3>
+              <p className="font-bold text-xs text-black/60 uppercase mt-1">
+                {dev.title || "Forge Developer"}
+              </p>
+              <div className="flex items-center gap-2 mt-2">
+                <span className="bg-[#FFD700] text-black px-2 py-0.5 text-[10px] font-black border border-black">
+                  RANK #{dev.rank}
+                </span>
+                <span className="bg-black text-white px-2 py-0.5 text-[10px] font-black border border-black">
+                  {dev.forge_score} PTS
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="p-6 flex flex-col gap-5">
+          {/* Bio */}
+          {dev.bio && (
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-black/40 mb-2">Bio</p>
+              <p className="font-bold text-sm text-black/70 leading-relaxed">{dev.bio}</p>
+            </div>
+          )}
+
+          {/* Tech Stack */}
+          {techItems.length > 0 && (
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-black/40 mb-2">
+                Verified Tech Stack
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {techItems.map((tech, i) => (
+                  <span
+                    key={i}
+                    className="border-2 border-black px-2 py-1 text-[10px] font-black uppercase bg-black/5"
+                    style={{ boxShadow: "2px 2px 0px 0px rgba(0,0,0,1)" }}
+                  >
+                    {tech}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Socials */}
+          <div className="flex flex-wrap gap-2">
+            {dev.twitter && (
+              <a
+                href={`https://x.com/${dev.twitter.replace("@", "")}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1.5 border-2 border-black px-3 py-1.5 text-xs font-black uppercase hover:bg-black hover:text-white transition-all"
+                style={{ boxShadow: "2px 2px 0px 0px rgba(0,0,0,1)" }}
+              >
+                𝕏 {dev.twitter}
+              </a>
+            )}
+            {dev.github && (
+              <a
+                href={`https://github.com/${dev.github}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1.5 border-2 border-black px-3 py-1.5 text-xs font-black uppercase hover:bg-black hover:text-white transition-all"
+                style={{ boxShadow: "2px 2px 0px 0px rgba(0,0,0,1)" }}
+              >
+                GH {dev.github}
+              </a>
+            )}
+          </div>
+
+          {/* Wallet */}
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-black/40 mb-1">Wallet</p>
+            <p className="font-mono text-xs text-black/60 bg-black/5 border-2 border-black/10 px-3 py-2">
+              {dev.wallet_address}
+            </p>
+          </div>
+
+          {/* CTA */}
+          <Link
+            href={`/dashboard/developers/${dev.wallet_address}`}
+            className="brutalist-button w-full py-3 text-xs bg-black text-white border-black text-center font-black uppercase"
+          >
+            View Full Profile →
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function LeaderboardPage() {
   const [devs, setDevs] = useState<RankedDev[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedDev, setSelectedDev] = useState<RankedDev | null>(null);
   const { wallet } = useWallet();
   const address = wallet?.account.address;
 
@@ -44,15 +178,14 @@ export default function LeaderboardPage() {
     const fetchLeaderboard = async () => {
       if (!supabase) return;
       setLoading(true);
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("profiles")
-        .select("wallet_address, name, title, avatar_url, twitter, github, rank, forge_score")
+        .select("wallet_address, name, title, avatar_url, twitter, github, rank, forge_score, tech_stack, bio")
         .gt("forge_score", 0)
         .order("forge_score", { ascending: false })
         .limit(50);
-      
+
       if (data) {
-        // Assign ranks client-side based on score order
         const ranked = data.map((d, i) => ({ ...d, rank: d.rank || i + 1 }));
         setDevs(ranked);
       }
@@ -103,10 +236,11 @@ export default function LeaderboardPage() {
           {devs.map((dev, i) => {
             const isYou = dev.wallet_address === address;
             return (
-              <div
+              <button
                 key={dev.wallet_address}
-                className={`flex items-center gap-4 p-4 border-2 border-black transition-all ${
-                  isYou ? "bg-primary/10 border-primary" : i < 3 ? "bg-white" : "bg-white"
+                onClick={() => setSelectedDev(dev)}
+                className={`w-full flex items-center gap-4 p-4 border-2 border-black transition-all text-left hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] ${
+                  isYou ? "bg-primary/10 border-primary" : "bg-white"
                 }`}
                 style={{ boxShadow: i < 3 ? "4px 4px 0px 0px rgba(0,0,0,1)" : "3px 3px 0px 0px rgba(0,0,0,1)" }}
               >
@@ -147,14 +281,10 @@ export default function LeaderboardPage() {
                       {dev.wallet_address.slice(0, 4)}...{dev.wallet_address.slice(-4)}
                     </span>
                     {dev.twitter && (
-                      <a href={`https://x.com/${dev.twitter.replace("@","")}`} target="_blank" className="text-[10px] font-bold text-black/30 hover:text-black transition-colors">
-                        {dev.twitter}
-                      </a>
+                      <span className="text-[10px] font-bold text-black/30">{dev.twitter}</span>
                     )}
                     {dev.github && (
-                      <a href={`https://github.com/${dev.github}`} target="_blank" className="text-[10px] font-bold text-black/30 hover:text-black transition-colors">
-                        {dev.github}
-                      </a>
+                      <span className="text-[10px] font-bold text-black/30">{dev.github}</span>
                     )}
                   </div>
                 </div>
@@ -164,10 +294,20 @@ export default function LeaderboardPage() {
                   <span className="font-black text-xl tabular-nums">{dev.forge_score}</span>
                   <p className="text-[10px] font-black uppercase text-black/30">Points</p>
                 </div>
-              </div>
+
+                {/* Click hint */}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="shrink-0 text-black/20">
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              </button>
             );
           })}
         </div>
+      )}
+
+      {/* Dev Profile Modal */}
+      {selectedDev && (
+        <DevModal dev={selectedDev} onClose={() => setSelectedDev(null)} />
       )}
     </div>
   );

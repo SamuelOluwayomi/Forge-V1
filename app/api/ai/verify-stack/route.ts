@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import Groq from "groq-sdk";
+import { createClient } from "@supabase/supabase-js";
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function POST(req: NextRequest) {
   try {
@@ -31,11 +36,31 @@ export async function POST(req: NextRequest) {
     const bio = userData.bio || "";
 
     if (!bio.includes(challengeCode)) {
-      return NextResponse.json({ 
-        error: "Verification failed", 
-        message: `Please add the code '${challengeCode}' to your GitHub bio and try again.` 
+      return NextResponse.json({
+        error: "Verification failed",
+        message: `Please add the code '${challengeCode}' to your GitHub bio and try again.`
       }, { status: 403 });
     }
+
+    // 1b. Security: check this GitHub username isn't already claimed by a DIFFERENT wallet
+    const cleanGithub = githubUsername.toLowerCase().trim();
+    const { data: existingProfiles } = await supabase
+      .from("profiles")
+      .select("wallet_address, github, tech_stack")
+      .ilike("github", cleanGithub);
+
+    if (existingProfiles && existingProfiles.length > 0) {
+      const otherOwner = existingProfiles.find(
+        (p: any) => p.wallet_address !== walletAddress && p.tech_stack
+      );
+      if (otherOwner) {
+        return NextResponse.json({
+          error: "GitHub account already verified",
+          message: `This GitHub account (@${githubUsername}) has already been verified by another wallet. Each GitHub account can only be linked to one Forge identity.`
+        }, { status: 409 });
+      }
+    }
+
 
     // 2. Fetch ALL Repositories (paginate if needed)
     let allRepos: any[] = [];
@@ -117,8 +142,8 @@ Example output: TypeScript, React, Next.js, Rust, Solana, Python, Node.js, Tailw
     const stackArray = stackRaw.split(/[,|\n]/).map(s => s.trim()).filter(s => s.length > 0 && s.length < 30);
     const stack = stackArray.join(" | ");
 
-    return NextResponse.json({ 
-      verified: true, 
+    return NextResponse.json({
+      verified: true,
       stack: stack, // keeping for legacy fallback if needed
       stackArray: stackArray,
       githubData: {

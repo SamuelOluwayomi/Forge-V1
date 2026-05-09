@@ -207,7 +207,29 @@ export default function Home() {
           </StaggerIn>
         </section>
 
-        {/* ── GOALS ── */}
+        {/* ── PHILOSOPHY QUOTE ── */}
+        <section className="mt-32 pt-20 border-t-4 border-black relative">
+          <AnimateIn variant="fadeUp">
+            <div className="brutalist-card bg-black text-white p-10 md:p-16 relative overflow-hidden flex flex-col md:flex-row items-center gap-8">
+              {/* decorative quote mark */}
+              <div className="absolute -top-6 -left-4 font-black text-[12rem] leading-none text-white/5 select-none pointer-events-none">&ldquo;</div>
+              <div className="absolute -bottom-10 -right-4 font-black text-[12rem] leading-none text-white/5 select-none pointer-events-none rotate-180">&ldquo;</div>
+              <div className="relative z-10 shrink-0">
+                <div className="w-1 h-24 bg-primary hidden md:block" />
+              </div>
+              <div className="relative z-10">
+                <p className="font-black text-2xl md:text-4xl uppercase italic leading-tight tracking-tight mb-4">
+                  Your greatest investment is your mind.
+                </p>
+                <p className="font-bold text-lg text-white/70 leading-relaxed max-w-2xl">
+                  At Forge, we foster growth by turning real work into verifiable proof — introducing friendly competition that pushes every developer to be sharper, faster, and more valuable than yesterday.
+                </p>
+                <div className="brutalist-tape mt-6 text-xs px-3 py-1 self-start inline-block rotate-1">Earn it. Prove it. Forge it.</div>
+              </div>
+            </div>
+          </AnimateIn>
+        </section>
+
         <section id="goals" className="scroll-mt-28 mt-32 pt-20 border-t-4 border-black relative pb-32">
           <div className="flex flex-col md:flex-row md:items-end gap-4 mb-16 relative z-10">
             <AnimateIn variant="fadeLeft">
@@ -224,12 +246,12 @@ export default function Home() {
             {/* Hackathon Goals */}
             <StaggerChild variant="fadeLeft" className="brutalist-card bg-white relative flex flex-col overflow-hidden">
               <div className="bg-black text-white p-6 border-b-4 border-black relative">
-                <div className="absolute -top-0 -right-2 brutalist-tape bg-primary text-white text-xs px-3 py-1 rotate-3 z-10">NOW → MAY 11</div>
+                <div className="absolute -top-0 -right-2 brutalist-tape bg-primary text-white text-xs px-3 py-1 rotate-3 z-10">SHIPPED ✓</div>
                 <div className="flex items-center gap-3 mb-1">
                   <div className="w-3 h-3 rounded-full bg-[#4ADE80]"></div>
-                  <span className="font-black text-xs uppercase tracking-widest text-[#4ADE80]">Phase 1</span>
+                  <span className="font-black text-xs uppercase tracking-widest text-[#4ADE80]">Phase 1 — Live</span>
                 </div>
-                <h3 className="text-3xl md:text-4xl font-black uppercase">Hackathon<br />Sprint Goals</h3>
+                <h3 className="text-3xl md:text-4xl font-black uppercase">Hackathon<br />Sprint</h3>
                 <a href="https://colosseum.com/frontier" target="_blank" rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 mt-3 bg-white text-black px-4 py-2 font-black text-sm uppercase border-2 border-white hover:bg-primary hover:border-primary hover:text-white transition-all">
                   <div className="relative w-5 h-5 shrink-0">
@@ -238,26 +260,31 @@ export default function Home() {
                   Solana Frontier Hackathon →
                 </a>
               </div>
-              <div className="p-8 flex flex-col gap-5 flex-1">
+              <div className="p-8 flex flex-col gap-4 flex-1">
                 {[
-                  { week: "Week 1", label: "Ship forge_identity + forge_escrow programs to Solana devnet" },
-                  { week: "Week 2", label: "forge_sbt program live — full escrow lifecycle working end-to-end" },
-                  { week: "Week 3", label: "Frontend wired to all programs + Identity Pass + AI task generator" },
-                  { week: "Week 4", label: "UI polish, Vercel deploy, demo video & hackathon README pitch" },
-                ].map(({ week, label }) => (
-                  <div key={week} className="flex items-start gap-4">
-                    <div className="brutalist-tape shrink-0 text-xs px-2 py-1 mt-0.5 rotate-0">{week}</div>
-                    <p className="font-bold text-base leading-snug">{label}</p>
+                  "forge_identity, forge_escrow & forge_sbt programs on Solana devnet",
+                  "On-chain escrow with auto-release & dispute escalation",
+                  "Dual soulbound badge minting for workers & clients on task completion",
+                  "AI task generator + optional AI submission review (Gemini)",
+                  "Profile cards, on-chain identity (SBT), leaderboard & rewards",
+                  "Pioneer & Founder NFT drops with limited supply tracking",
+                ].map((label, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="shrink-0 w-5 h-5 border-2 border-black flex items-center justify-center mt-0.5 bg-[#4ADE80]">
+                      <span className="text-black font-black text-[10px]">✓</span>
+                    </div>
+                    <p className="font-bold text-sm leading-snug">{label}</p>
                   </div>
                 ))}
                 <div className="mt-4 w-full aspect-video relative border-2 border-black overflow-hidden bg-gray-100">
-                  <Image draggable={false} src="/illustration2.jpg" alt="Hackathon Sprint" fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover opacity-80" />
-                  <div className="absolute inset-0 bg-black/30 flex items-end p-4">
-                    <span className="font-black text-white text-lg uppercase tracking-wide">Building in public. Shipping on time.</span>
+                  <Image draggable={false} src="/og-image.jpg" alt="Forge Platform Live" fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" />
+                  <div className="absolute inset-0 bg-black/40 flex items-end p-4">
+                    <span className="font-black text-white text-lg uppercase tracking-wide">Shipped. Live. On Devnet.</span>
                   </div>
                 </div>
               </div>
             </StaggerChild>
+
 
             {/* Post-Hackathon Goals */}
             <StaggerChild variant="fadeRight" className="brutalist-card bg-white relative flex flex-col overflow-hidden">

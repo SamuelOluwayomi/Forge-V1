@@ -180,6 +180,9 @@ export default function WorkPage() {
   const [submissionUri, setSubmissionUri] = useState("");
   const [escalateMessage, setEscalateMessage] = useState("");
   const [processingEscalate, setProcessingEscalate] = useState(false);
+  const [enableAiReview, setEnableAiReview] = useState(false);
+  const [aiReport, setAiReport] = useState<any>(null);
+  const [aiReviewing, setAiReviewing] = useState(false);
 
   const { program, submitWork } = useEscrow();
   const { wallet } = useWallet();
@@ -252,7 +255,35 @@ export default function WorkPage() {
     setSubmissionUri("");
     setEscalateMessage("");
     setIsEscalating(!!isEscalate);
+    setEnableAiReview(false);
+    setAiReport(null);
     setShowSubmitModal(true);
+  };
+
+  const handleRunAiReview = async () => {
+    if (!submittingId || !submissionUri.trim()) {
+      toast.error("Please enter your submission link first.");
+      return;
+    }
+    setAiReviewing(true);
+    try {
+      const workItem = jobs.find(j => j.id === submittingId);
+      const res = await fetch("/api/ai/review-submission", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          task: { title: workItem?.title, description: "" },
+          submission: submissionUri,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "AI review failed");
+      setAiReport(data.report);
+    } catch (err: any) {
+      toast.error("AI review failed: " + err.message);
+    } finally {
+      setAiReviewing(false);
+    }
   };
 
   const handleConfirmSubmit = async () => {
@@ -267,7 +298,6 @@ export default function WorkPage() {
       const { PublicKey } = await import("@solana/web3.js");
       const clientPubkey = new PublicKey(submittingClient);
       const sig = await submitWork(parseInt(submittingId), clientPubkey, submissionUri);
-      
       if (program?.provider?.connection) {
         await program.provider.connection.confirmTransaction(sig, "confirmed");
       }
@@ -275,6 +305,7 @@ export default function WorkPage() {
       setShowSubmitModal(false);
       setSubmittingId(null);
       setSubmittingClient(null);
+      setAiReport(null);
       await fetchWork();
     } catch (err: any) {
       console.error("Submit failed:", err);
@@ -373,17 +404,17 @@ export default function WorkPage() {
       {/* Submission Modal */}
       {showSubmitModal && submittingId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="brutalist-card bg-white w-full max-w-md p-6 animate-in zoom-in-95 duration-200">
+          <div className="brutalist-card bg-white w-full max-w-lg p-6 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
             <h3 className={`text-2xl font-black uppercase italic tracking-tighter mb-2 ${isEscalating ? "text-[#FF4500]" : ""}`}>
               {isEscalating ? "Escalate to Admin" : "Submit Work"}
             </h3>
-            <p className="text-xs font-bold text-black/60 mb-6">
-              {isEscalating 
+            <p className="text-xs font-bold text-black/60 mb-5">
+              {isEscalating
                 ? "Provide a message to the admin explaining why you are escalating this dispute."
-                : "Provide a link to your completed work (e.g., GitHub PR, Google Doc, Figma file) so the client can review it."}
+                : "Provide a link to your completed work so the client can review it."}
             </p>
 
-            <div className="flex flex-col gap-3 mb-8">
+            <div className="flex flex-col gap-3 mb-5">
               <label htmlFor="submission-input" className="font-black text-xs uppercase tracking-widest text-black/40">
                 {isEscalating ? "Message to Admin" : "Submission Link / Details"} <span className="text-primary">*</span>
               </label>
@@ -392,10 +423,88 @@ export default function WorkPage() {
                 rows={isEscalating ? 4 : 3}
                 value={isEscalating ? escalateMessage : submissionUri}
                 onChange={(e) => isEscalating ? setEscalateMessage(e.target.value) : setSubmissionUri(e.target.value)}
-                placeholder={isEscalating ? "The client is rejecting my work unfairly..." : "https://github.com/..."}
+                placeholder={isEscalating ? "The client is rejecting my work unfairly..." : "https://github.com/your-repo/pr/1 — brief notes about what was built..."}
                 className="border-2 border-black bg-background px-4 py-3 font-bold text-sm text-black outline-none focus:border-primary placeholder:text-black/30 resize-none"
               />
             </div>
+
+            {/* AI Review Toggle — only on normal submit */}
+            {!isEscalating && (
+              <div className="mb-5">
+                <button
+                  type="button"
+                  onClick={() => { setEnableAiReview(v => !v); setAiReport(null); }}
+                  className="w-full flex items-center justify-between border-2 border-black px-4 py-3 bg-black/5 hover:bg-black/10 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">✦</span>
+                    <div className="text-left">
+                      <p className="font-black text-xs uppercase tracking-widest">AI Review Before Submit</p>
+                      <p className="text-[10px] font-bold text-black/50">Gemini checks your work against task requirements</p>
+                    </div>
+                  </div>
+                  <div className={`w-10 h-6 border-2 border-black relative transition-colors ${enableAiReview ? "bg-primary" : "bg-white"}`}>
+                    <div className={`absolute top-0.5 w-4 h-4 bg-black transition-all ${enableAiReview ? "left-[18px]" : "left-0.5"}`} />
+                  </div>
+                </button>
+
+                {enableAiReview && (
+                  <div className="border-2 border-black border-t-0 p-4 bg-black/5">
+                    {!aiReport ? (
+                      <button
+                        onClick={handleRunAiReview}
+                        disabled={aiReviewing || !submissionUri.trim()}
+                        className="brutalist-button w-full py-2.5 text-xs bg-black text-white border-black disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        {aiReviewing ? (
+                          <>
+                            <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity="0.2"/><path d="M12 3a9 9 0 019 9"/></svg>
+                            Analysing submission…
+                          </>
+                        ) : "✦ Run AI Analysis"}
+                      </button>
+                    ) : (
+                      <div className="flex flex-col gap-3">
+                        {/* Score bar */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-black/40">AI Score</span>
+                          <span className={`font-black text-sm px-2 py-0.5 border-2 border-black ${
+                            aiReport.overall_score >= 7 ? "bg-[#4ADE80] text-black"
+                            : aiReport.overall_score >= 5 ? "bg-[#FFD700] text-black"
+                            : "bg-[#FF4500] text-white"
+                          }`}>
+                            {aiReport.overall_score}/10 — {aiReport.recommendation?.replace("_", " ").toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="h-2 border-2 border-black bg-white">
+                          <div className="h-full bg-primary transition-all" style={{ width: `${aiReport.coverage_percent ?? 0}%` }} />
+                        </div>
+                        <p className="text-xs font-bold text-black/70 italic border-l-2 border-black pl-3">{aiReport.summary}</p>
+                        {aiReport.issues?.length > 0 && (
+                          <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-[#FF4500] mb-1">Issues Flagged</p>
+                            {aiReport.issues.map((iss: any, i: number) => (
+                              <p key={i} className="text-[11px] font-bold text-black/70 pl-2 border-l-2 border-[#FF4500]">{iss.severity?.toUpperCase()}: {iss.description}</p>
+                            ))}
+                          </div>
+                        )}
+                        {aiReport.strengths?.length > 0 && (
+                          <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-[#4ADE80] mb-1">Strengths</p>
+                            {aiReport.strengths.map((s: string, i: number) => (
+                              <p key={i} className="text-[11px] font-bold text-black/70 pl-2 border-l-2 border-[#4ADE80]">{s}</p>
+                            ))}
+                          </div>
+                        )}
+                        <button onClick={() => setAiReport(null)} className="text-[10px] font-black uppercase text-black/30 hover:text-black underline self-start transition-colors">
+                          Re-run analysis
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="flex items-center gap-3">
               {isEscalating ? (
@@ -415,10 +524,7 @@ export default function WorkPage() {
                 </button>
               )}
               <button
-                onClick={() => {
-                  setShowSubmitModal(false);
-                  setSubmittingId(null);
-                }}
+                onClick={() => { setShowSubmitModal(false); setSubmittingId(null); setAiReport(null); }}
                 className="brutalist-button px-6 py-3 bg-white text-black border-black text-sm hover:bg-black/5"
               >
                 Cancel
@@ -427,6 +533,7 @@ export default function WorkPage() {
           </div>
         </div>
       )}
+
     </div>
   );
 }

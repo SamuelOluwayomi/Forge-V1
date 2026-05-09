@@ -418,6 +418,29 @@ export default function DeveloperProfilePage() {
           </div>
         </div>
 
+          {/* Tech Stack */}
+          {profile.tech_stack && (
+            <div className="brutalist-card bg-white p-6">
+              <h3 className="font-black text-sm uppercase tracking-widest text-black/40 mb-1 flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                Verified Tech Stack
+              </h3>
+              <p className="text-[10px] font-bold text-black/30 uppercase tracking-widest mb-4">AI-verified via GitHub</p>
+              <div className="flex flex-wrap gap-2">
+                {profile.tech_stack.split("|").map((t: string) => t.trim()).filter(Boolean).map((tech: string, i: number) => (
+                  <span
+                    key={i}
+                    className="border-2 border-black px-3 py-1.5 text-xs font-black uppercase bg-black/5 hover:bg-black hover:text-white transition-colors cursor-default"
+                    style={{ boxShadow: "2px 2px 0px 0px rgba(0,0,0,1)" }}
+                  >
+                    {tech}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Right — Stats & Badges */}
         <div className="lg:col-span-2 flex flex-col gap-6">
           <div className="brutalist-card bg-white p-6">
@@ -445,7 +468,7 @@ export default function DeveloperProfilePage() {
                 {badges.length} Badges
               </span>
             </div>
-            
+
             {badges.length === 0 ? (
               <div className="border-2 border-dashed border-black/20 p-10 text-center flex flex-col items-center">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-black/20 mb-3">
@@ -455,15 +478,18 @@ export default function DeveloperProfilePage() {
                 <p className="font-bold text-xs text-black/30 mt-1">Badges are automatically minted when tasks are completed.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {badges.map((b, i) => (
-                  <BadgeCard key={i} index={i} />
-                ))}
+              <div className="overflow-x-auto pb-2">
+                <div className="flex gap-4" style={{ minWidth: "max-content" }}>
+                  {badges.map((b, i) => (
+                    <BadgeCard key={i} index={i} />
+                  ))}
+                </div>
               </div>
             )}
           </div>
         </div>
       </div>
+
 
       {/* NFT details modal */}
       {selectedNft && (

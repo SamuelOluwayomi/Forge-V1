@@ -69,7 +69,7 @@ export const metadata: Metadata = {
       "Find work, get paid in SOL, and permanently forge your onchain reputation. Forge uses smart contract escrow to protect both clients and developers — no middlemen, no disputes, just code.",
     images: [
       {
-        url: "/og-image.png",
+        url: "/og-image.jpg",
         width: 1200,
         height: 630,
         alt: "Forge — Trustless Developer Marketplace on Solana",
@@ -83,7 +83,7 @@ export const metadata: Metadata = {
     title: "Forge — Trustless Developer Marketplace on Solana",
     description:
       "Get paid in SOL. Prove your skills. Build a permanent onchain reputation with Soulbound Tokens — all secured by smart contract escrow on Solana.",
-    images: ["/og-image.png"],
+    images: ["/og-image.jpg"],
     creator: "@The_devsam",
     site: "@The_devsam",
   },

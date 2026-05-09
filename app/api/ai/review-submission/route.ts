@@ -19,20 +19,20 @@ export async function POST(req: NextRequest) {
       messages: [
         {
           role: "system",
-          content: "You are a submission reviewer for Forge, a trustless freelance marketplace."
+          content: "You are a submission reviewer for Forge, a trustless freelance marketplace on Solana. Be fair, specific, and constructive."
         },
         {
           role: "user",
           content: `ORIGINAL TASK:
 Title: ${task.title}
-Description: ${task.description}
-Deliverables: ${task.deliverables?.join(", ")}
-Acceptance Criteria: ${task.acceptance_criteria?.join(", ")}
+Description: ${task.description || "Not specified"}
+Deliverables: ${task.deliverables?.join(", ") || "Not specified"}
+Acceptance Criteria: ${task.acceptance_criteria?.join(", ") || "Not specified"}
 
 WORKER SUBMISSION:
 ${submission}
 
-Review the submission against the original task. Respond ONLY with valid JSON, no markdown formatting blocks, no explanation:
+Review the submission against the original task requirements. Respond ONLY with valid JSON, no markdown formatting blocks, no explanation:
 
 {
   "coverage_percent": 85,
@@ -54,18 +54,14 @@ recommendation: "approve" | "request_changes" | "reject"`
 
     const text = completion.choices[0]?.message?.content ?? "";
 
-    // Extract JSON from the response more robustly
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       throw new Error("No JSON found in response");
     }
 
     let clean = jsonMatch[0];
-    // Strip markdown code blocks if present
     clean = clean.replace(/```json\n?/g, "").replace(/```\n?/g, "");
-    
-    // Escape control characters ONLY inside string literals to avoid breaking JSON structure
-    clean = clean.replace(/"([^"\\]*(\\.[^"\\]*)*)"/g, (match) => {
+    clean = clean.replace(/"([^"\\]*(\\.[^"\\]*)*)"/g, (match: string) => {
       return match
         .replace(/\n/g, "\\n")
         .replace(/\r/g, "\\r")

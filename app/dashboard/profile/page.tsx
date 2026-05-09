@@ -616,7 +616,7 @@ export default function ProfilePage() {
         .eq("wallet_address", address);
 
       setSbtMint(profileSbtPda.toString());
-      toast.success("Your on-chain identity has been forged! 🔥", { id: tid });
+      toast.success("Your on-chain identity has been forged!", { id: tid });
     } catch (err: any) {
       toast.error("Mint failed: " + (err.message || "Unknown error"), {
         id: tid,
@@ -650,6 +650,32 @@ export default function ProfilePage() {
       </div>
 
       <div className="flex flex-col gap-8">
+        {/* Onboarding Call-to-Action for new users */}
+        {!sbtMint && !loading && (
+          <div className="brutalist-card bg-primary p-6 border-[3px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden group animate-in slide-in-from-top duration-500">
+             {/* Decorative tape */}
+             <div className="absolute top-0 right-10 w-16 h-6 bg-black rotate-3 opacity-20 group-hover:rotate-6 transition-transform"></div>
+             
+             <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-black text-white flex items-center justify-center shrink-0 shadow-[4px_4px_0px_0px_rgba(255,255,255,1)]">
+                   <span className="font-black text-3xl">★</span>
+                </div>
+                <div>
+                   <h3 className="font-black text-2xl uppercase tracking-tight leading-none mb-2">Your Identity is Off-Chain</h3>
+                   <p className="font-bold text-xs text-black/70 max-w-md">Forge your on-chain identity to permanently anchor your skills, reputation, and achievements on the Solana blockchain.</p>
+                </div>
+             </div>
+             
+             <button 
+               onClick={handleMintSBT}
+               disabled={sbtMinting}
+               className="brutalist-button px-8 py-4 bg-black text-white border-black font-black uppercase text-sm hover:bg-white hover:text-black transition-all shadow-[6px_6px_0px_0px_rgba(255,255,255,0.3)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 active:translate-y-0 disabled:opacity-50 min-w-[200px]"
+             >
+                {sbtMinting ? "Forging Identity..." : "Forge Identity Now"}
+             </button>
+          </div>
+        )}
+
         {/* Top — Interactive Profile Card */}
         <div className="w-full flex flex-col gap-6">
           <div
@@ -807,14 +833,14 @@ export default function ProfilePage() {
                           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                             <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
                           </svg>
-                          Identity v2
+                          Forge Identity
                         </a>
                         <button onClick={handleMintSBT} disabled={sbtMinting} className="text-[7px] font-black uppercase text-black/40 hover:text-black transition-colors underline">
-                          Upgrade
+                          Refresh
                         </button>
                       </div>
                     ) : (
-                      <button onClick={handleMintSBT} disabled={sbtMinting} className="flex items-center gap-2 text-[9px] font-black uppercase text-white bg-black px-3 py-1 border-2 border-black hover:bg-primary hover:text-black transition-colors disabled:opacity-50">
+                      <button onClick={handleMintSBT} disabled={sbtMinting} className="flex items-center gap-2 text-[9px] font-black uppercase text-white bg-black px-4 py-2 border-2 border-black hover:bg-primary hover:text-black transition-colors disabled:opacity-50 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
                         {sbtMinting ? "Forging..." : "★ Forge Identity"}
                       </button>
                     )}

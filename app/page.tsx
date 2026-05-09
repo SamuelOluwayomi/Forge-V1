@@ -242,7 +242,7 @@ export default function Home() {
                 {[
                   { week: "Week 1", label: "Ship forge_identity + forge_escrow programs to Solana devnet" },
                   { week: "Week 2", label: "forge_sbt program live — full escrow lifecycle working end-to-end" },
-                  { week: "Week 3", label: "Frontend wired to all programs + Identity Pass (V2 Research) + AI task generator" },
+                  { week: "Week 3", label: "Frontend wired to all programs + Identity Pass + AI task generator" },
                   { week: "Week 4", label: "UI polish, Vercel deploy, demo video & hackathon README pitch" },
                 ].map(({ week, label }) => (
                   <div key={week} className="flex items-start gap-4">

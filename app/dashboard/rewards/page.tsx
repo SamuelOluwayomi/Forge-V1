@@ -177,7 +177,7 @@ export default function RewardsPage() {
     try {
       if (type === "pioneer") {
         await mintPioneerNft(userPubkey, NFT_METADATA.pioneer.uri);
-        toast.success("🎉 Pioneer NFT claimed!");
+        toast.success("Pioneer NFT claimed!");
         setStatus((s) => ({
           ...s,
           hasPioneer: true,
@@ -185,7 +185,7 @@ export default function RewardsPage() {
         }));
       } else {
         await mintFounderNft(userPubkey, NFT_METADATA.founder.uri);
-        toast.success("🔥 Founder NFT claimed!");
+        toast.success("Founder NFT claimed!");
         setStatus((s) => ({ ...s, hasFounder: true }));
       }
       setSelected(null);

@@ -223,42 +223,7 @@ function EscrowCard({
           </>
         )}
 
-        {/* Admin arbitrator controls — only shown when escalated */}
-        {isAdmin && isDisputed && (
-          <div className="flex flex-col gap-2 mt-1">
-            {escrow.escalatedToAdmin ? (
-              <>
-                <div className="bg-black text-white text-[10px] font-black uppercase tracking-widest py-1.5 text-center flex items-center justify-center gap-2">
-                  <span className="w-2 h-2 bg-[#FF4500] rounded-full animate-pulse inline-block" />
-                  Arbitrator Controls
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setConfirmAction(false)}
-                    disabled={isResolvingThis}
-                    className="flex-1 brutalist-button py-2.5 text-xs bg-[#FF4500] text-white border-black disabled:opacity-50"
-                  >
-                    Refund Client
-                  </button>
-                  <button
-                    onClick={() => setConfirmAction(true)}
-                    disabled={isResolvingThis}
-                    className="flex-1 brutalist-button py-2.5 text-xs bg-[#4ADE80] text-black border-black disabled:opacity-50"
-                  >
-                    Pay Worker
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="bg-black/5 border-2 border-dashed border-black/20 p-3 text-center">
-                <p className="text-[10px] font-black uppercase text-black/40 tracking-widest">Waiting for escalation</p>
-                <p className="text-[9px] font-bold text-black/30 mt-1 leading-tight">
-                  The client or worker must escalate this dispute before you can intervene.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
+
 
         <p className="text-[10px] font-bold text-black/40 uppercase tracking-widest">
           Created {escrow.createdAt}
@@ -417,25 +382,7 @@ export default function EscrowsPage() {
         </p>
       </div>
 
-      {/* Admin banner */}
-      {isAdmin && (
-        <div className="bg-[#FF4500] text-white border-4 border-black p-4 flex items-center gap-4 mb-6">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="shrink-0">
-            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
-          </svg>
-          <div>
-            <p className="font-black text-sm uppercase tracking-widest">Arbitrator Mode Active</p>
-            <p className="font-bold text-xs text-white/80 mt-0.5">
-              You are viewing all platform escrows. Escalated disputes are pinned to the top.
-            </p>
-          </div>
-          {escalatedCount > 0 && (
-            <div className="ml-auto bg-black text-white px-3 py-1 text-xs font-black uppercase border-2 border-white animate-pulse">
-              {escalatedCount} Needs Review
-            </div>
-          )}
-        </div>
-      )}
+
 
       {/* Info strip */}
       <div className="bg-black text-white border-4 border-black p-4 flex items-center gap-4 mb-8">

@@ -390,6 +390,7 @@ export function useEscrow(): UseEscrowReturn {
 
   /** Mint pioneer NFT — SPONSORED */
   const mintPioneerNft = useCallback(async (recipient: web3.PublicKey, metadataUri: string) => {
+    if (!sbtProgram || !walletPublicKey) throw new Error("Wallet not connected");
     const TOKEN_METADATA_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
 
     const [badgeMint] = await web3.PublicKey.findProgramAddress([

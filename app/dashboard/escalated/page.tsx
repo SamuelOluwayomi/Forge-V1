@@ -274,7 +274,10 @@ export default function EscalatedPage() {
           const wasOnTime = true;
           const amountEarned = BigInt(Math.floor(parseFloat(escrow.amount) * 1_000_000_000));
           
-          const badgeSig = await mintWorkerBadge(parseInt(escrow.id), workerPubkey, skillCategory, rating, wasOnTime, amountEarned);
+          // Use fallback metadata URI for simplicity in dispute resolution
+          const metadataUri = `${window.location.origin}/api/worker-metadata?t=${escrow.id}`;
+          
+          const badgeSig = await mintWorkerBadge(parseInt(escrow.id), workerPubkey, skillCategory, rating, wasOnTime, amountEarned, metadataUri);
           await program.provider.connection.confirmTransaction(badgeSig, "confirmed");
           toast.success("✓ Worker paid and badge minted.", { id: tid });
         } catch (badgeErr) {

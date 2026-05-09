@@ -12,15 +12,19 @@ export async function POST(req: NextRequest) {
     }
 
     // 1. Verify Bio
-    const userResponse = await fetch(`https://api.github.com/users/${githubUsername}`, {
-      headers: {
-        "Accept": "application/vnd.github+json",
-        "Authorization": `Bearer ${process.env.GITHUB_TOKEN}`, // Optional but recommended
-      }
-    });
+    const headers: Record<string, string> = {
+      "Accept": "application/vnd.github+json",
+    };
+    if (process.env.GITHUB_TOKEN) {
+      headers["Authorization"] = `Bearer ${process.env.GITHUB_TOKEN}`;
+    }
+
+    const userResponse = await fetch(`https://api.github.com/users/${githubUsername}`, { headers });
 
     if (!userResponse.ok) {
-      return NextResponse.json({ error: "GitHub user not found" }, { status: 404 });
+      const errorText = await userResponse.text();
+      console.error("GitHub API Error:", userResponse.status, errorText);
+      return NextResponse.json({ error: `GitHub API error: ${userResponse.statusText}` }, { status: userResponse.status });
     }
 
     const userData = await userResponse.json();
@@ -35,14 +39,13 @@ export async function POST(req: NextRequest) {
 
     // 2. Fetch Repositories
     const reposResponse = await fetch(`https://api.github.com/users/${githubUsername}/repos?per_page=50&sort=updated`, {
-      headers: {
-        "Accept": "application/vnd.github+json",
-        "Authorization": `Bearer ${process.env.GITHUB_TOKEN}`,
-      }
+      headers
     });
 
     if (!reposResponse.ok) {
-      return NextResponse.json({ error: "Failed to fetch repositories" }, { status: 500 });
+      const errorText = await reposResponse.text();
+      console.error("GitHub API Error (Repos):", reposResponse.status, errorText);
+      return NextResponse.json({ error: `Failed to fetch repositories: ${reposResponse.statusText}` }, { status: reposResponse.status });
     }
 
     const repos = await reposResponse.json();

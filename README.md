@@ -135,6 +135,34 @@ All inputs passing between the client and the off-chain database go through a st
 
 ---
 
+## System Architecture & Scalability (Load Estimates)
+
+Forge is built on a modern, serverless, and decentralized stack. Below is an honest, technical assessment of the platform's current scalability and infrastructure limits:
+
+1. **Frontend & Hosting (Vercel Edge Network)**
+   - **Capacity:** `100,000+ Concurrent Users`
+   - Next.js running on Vercel scales almost infinitely. The UI, static assets, and cached marketplace data can easily handle massive traffic spikes without going down.
+
+2. **Database (Supabase / PostgreSQL)**
+   - **Capacity:** `~1,000 - 5,000 Active Users (Standard Tier)`
+   - The primary bottleneck here is database connection pooling. The platform handles reads/writes smoothly up to a few thousand concurrent users before needing a dedicated database instance upgrade.
+
+3. **Blockchain RPC (Solana Web3.js)**
+   - **Capacity:** `~10-20 Transactions per Second (Public RPC)`
+   - Currently, Forge utilizes public Solana RPC nodes which enforce strict IP-based rate limiting. If 50 users attempt to escrow funds simultaneously, the RPC will throttle the app.
+   - **Scaling Solution:** For mainnet production, this requires migrating to a dedicated premium RPC provider (e.g., Helius or QuickNode) to unlock thousands of transactions per second.
+
+4. **Gasless Relayer (Sponsoring Wallet)**
+   - **Capacity:** `~5-10 Transactions per Second`
+   - Because Forge sponsors user transactions via a single server-side treasury wallet, high concurrent minting can cause blockhash or nonce collisions.
+   - **Scaling Solution:** Implement a fleet of 5-10 rotating fee-payer wallets to handle concurrent co-signing at scale.
+
+5. **AI Tech Verification (Groq + GitHub API)**
+   - **Capacity:** `~30-60 Users per Minute (Strictest Bottleneck)`
+   - The AI verification relies on paginating the user's GitHub repositories, which rapidly consumes GitHub API rate limits (5,000 requests/hr max). Additionally, free-tier Groq API limits enforce a strict Requests Per Minute (RPM) ceiling. If usage spikes, AI verification will throttle until limits reset.
+
+---
+
 ## Setup Instructions
 
 ### Prerequisites

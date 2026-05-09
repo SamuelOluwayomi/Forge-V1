@@ -32,6 +32,22 @@ const STATUS_STYLES: Record<TaskStatus, string> = {
 
 const DIFFICULTY_LABELS = ["", "Beginner", "Intermediate", "Advanced", "Expert"];
 
+function timeAgo(date: number) {
+  if (!date) return "Just now";
+  const seconds = Math.floor((new Date().getTime() - date) / 1000);
+  let interval = seconds / 31536000;
+  if (interval > 1) return Math.floor(interval) + " years ago";
+  interval = seconds / 2592000;
+  if (interval > 1) return Math.floor(interval) + " months ago";
+  interval = seconds / 86400;
+  if (interval > 1) return Math.floor(interval) + " days ago";
+  interval = seconds / 3600;
+  if (interval > 1) return Math.floor(interval) + " hours ago";
+  interval = seconds / 60;
+  if (interval > 1) return Math.floor(interval) + " minutes ago";
+  return Math.floor(seconds) + " seconds ago";
+}
+
 function TaskCard({ task, onCancel }: { task: Task; onCancel: (id: string) => void }) {
   const [copied, setCopied] = useState(false);
 
@@ -223,7 +239,7 @@ export default function TasksPage() {
              amount: (Number(e.account.amount) / 1_000_000_000).toString(),
              status: status as TaskStatus,
              worker: e.account.worker ? e.account.worker.toBase58() : null,
-             posted: "Just now",
+             posted: timeAgo(Number(e.account.createdAt) * 1000),
              difficulty: e.account.difficulty,
              applicant_count: applicantCounts[pdaStr] || 0,
           }

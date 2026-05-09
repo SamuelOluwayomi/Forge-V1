@@ -24,6 +24,7 @@ interface TaskDetail {
   expected_days: number | null;
   dispute_count?: number;
   escalated_to_admin?: boolean;
+  posted?: string;
 }
 
 interface Applicant {
@@ -41,6 +42,22 @@ interface Applicant {
 }
 
 const DIFFICULTY_LABELS = ["", "Beginner", "Intermediate", "Advanced", "Expert"];
+
+function timeAgo(date: number) {
+  if (!date) return "Just now";
+  const seconds = Math.floor((new Date().getTime() - date) / 1000);
+  let interval = seconds / 31536000;
+  if (interval > 1) return Math.floor(interval) + " years ago";
+  interval = seconds / 2592000;
+  if (interval > 1) return Math.floor(interval) + " months ago";
+  interval = seconds / 86400;
+  if (interval > 1) return Math.floor(interval) + " days ago";
+  interval = seconds / 3600;
+  if (interval > 1) return Math.floor(interval) + " hours ago";
+  interval = seconds / 60;
+  if (interval > 1) return Math.floor(interval) + " minutes ago";
+  return Math.floor(seconds) + " seconds ago";
+}
 
 // ── Applicant Profile Modal ──
 function ApplicantModal({ applicant, onClose, onAccept, accepting }: {
@@ -218,6 +235,10 @@ export default function ManageTaskPage() {
         else if (stateKeys.includes("completed")) setOnChainStatus("completed");
         else if (stateKeys.includes("active")) setOnChainStatus("active");
         else setOnChainStatus("open");
+
+        if (data.createdAt) {
+          setTask(prev => prev ? { ...prev, posted: timeAgo(Number(data.createdAt) * 1000) } : null);
+        }
 
       } catch (err) {
         console.error("Could not fetch on-chain escrow:", err);
@@ -522,6 +543,9 @@ export default function ManageTaskPage() {
           <h1 className="text-3xl md:text-4xl font-black uppercase leading-tight text-black italic">
             {task.title}
           </h1>
+          {task.posted && (
+            <p className="text-[10px] font-black text-black/40 uppercase tracking-widest mt-1">Posted {task.posted}</p>
+          )}
           <div className="flex items-center gap-4 mt-3">
             <div className="bg-black text-white px-3 py-1 border-2 border-black">
               <span className="font-black text-xl">{task.amount}</span>

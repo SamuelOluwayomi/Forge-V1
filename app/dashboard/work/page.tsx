@@ -18,6 +18,7 @@ interface WorkItem {
   amount: string;
   status: WorkStatus;
   difficulty: number;
+  posted: string;
   disputeReason?: string;
   disputeCount?: number;
   escalatedToAdmin?: boolean;
@@ -32,6 +33,22 @@ const STATUS_STYLES: Record<WorkStatus, string> = {
 };
 
 const DIFFICULTY_LABELS = ["", "Beginner", "Intermediate", "Advanced", "Expert"];
+
+function timeAgo(date: number) {
+  if (!date) return "Just now";
+  const seconds = Math.floor((new Date().getTime() - date) / 1000);
+  let interval = seconds / 31536000;
+  if (interval > 1) return Math.floor(interval) + " years ago";
+  interval = seconds / 2592000;
+  if (interval > 1) return Math.floor(interval) + " months ago";
+  interval = seconds / 86400;
+  if (interval > 1) return Math.floor(interval) + " days ago";
+  interval = seconds / 3600;
+  if (interval > 1) return Math.floor(interval) + " hours ago";
+  interval = seconds / 60;
+  if (interval > 1) return Math.floor(interval) + " minutes ago";
+  return Math.floor(seconds) + " seconds ago";
+}
 
 function CopyButton({ text, id }: { text: string; id: string }) {
   const [copied, setCopied] = useState(false);
@@ -143,6 +160,12 @@ function WorkCard({ item, onSubmit, submitting }: { item: WorkItem; onSubmit: (i
           <p className="text-xs font-black uppercase text-black">Escalated — Admin is reviewing</p>
         </div>
       )}
+
+      <div className="flex items-center justify-between pt-2 mt-auto">
+        <p className="text-[10px] font-bold text-black/40 uppercase tracking-widest">
+          Posted {item.posted}
+        </p>
+      </div>
     </div>
   );
 }
@@ -205,6 +228,7 @@ export default function WorkPage() {
           amount: (Number(e.account.amount) / 1_000_000_000).toString(),
           status,
           difficulty: e.account.difficulty,
+          posted: timeAgo(Number(e.account.createdAt) * 1000),
           disputeReason: (e.account.disputeReason || dbTask?.dispute_reason || "").replace(/\0/g, "").trim(),
           disputeCount: dbTask?.dispute_count || 0,
           escalatedToAdmin: dbTask?.escalated_to_admin || false,

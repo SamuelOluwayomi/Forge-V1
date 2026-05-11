@@ -48,9 +48,8 @@ export function useEscrow(): UseEscrowReturn {
     if (!wallet || !wallet.signTransaction) {
       throw new Error("Wallet does not support signing or is not connected");
     }
-    // The custom wallet interface accepts/returns raw Uint8Array (Solana Kit standard).
-    // Anchor passes a Transaction object, so we must serialize it first, then
-    // deserialize the signed bytes back into a Transaction for Anchor to use.
+    // Serialize the Transaction object for signing, then deserialize
+    // the signed bytes back into a Transaction for Anchor.
     const serialized = transaction.serialize({ requireAllSignatures: false });
     const signedBytes = await wallet.signTransaction(serialized, chain);
     return web3.Transaction.from(signedBytes);
@@ -76,7 +75,7 @@ export function useEscrow(): UseEscrowReturn {
     });
   }, [connection, walletPublicKey, signTransaction]);
 
-  // Program instance – memoised so we only load once per provider change
+  // Memoised program instance
   const program = useMemo(() => {
     if (!provider) return null;
     // Anchor 1.0.0+ resolves the programId automatically from the IDL root

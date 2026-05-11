@@ -82,9 +82,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         .transaction();
 
       // The initialize_reputation instruction requires the `owner` to pay the PDA rent.
-      // Since we want this to be completely gasless for the user (even if they have 0 SOL),
-      // we prepend a transfer of 0.002 SOL from the Forge fee payer to the user.
-      // The relay server will sign this transfer alongside paying the network fee.
+      // Prepend a transfer of 0.002 SOL from the Forge fee payer to the user to enable a gasless transaction.
+      // The relay server signs this transfer alongside paying the network fee.
       tx.instructions.unshift(
         SystemProgram.transfer({
           fromPubkey: new PublicKey(FORGE_FEE_PAYER_PUBKEY),

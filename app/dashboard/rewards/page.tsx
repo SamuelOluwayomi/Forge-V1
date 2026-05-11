@@ -92,8 +92,7 @@ export default function RewardsPage() {
   >(null);
   const [selected, setSelected] = useState<NFTCard | null>(null);
 
-  // Debug: log the wallet address to help troubleshoot founder matching
-    // Logs removed - bug fixed
+
 
   const isFounder = address === FORGE_FOUNDER;
   const pioneerSlotsLeft = 100 - status.pioneerMinted;

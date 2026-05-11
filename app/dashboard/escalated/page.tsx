@@ -274,7 +274,7 @@ export default function EscalatedPage() {
           const wasOnTime = true;
           const amountEarned = BigInt(Math.floor(parseFloat(escrow.amount) * 1_000_000_000));
           
-          // Use fallback metadata URI for simplicity in dispute resolution
+          // Fallback metadata URI
           const metadataUri = `${window.location.origin}/api/worker-metadata?t=${escrow.id}`;
           
           const badgeSig = await mintWorkerBadge(parseInt(escrow.id), workerPubkey, skillCategory, rating, wasOnTime, amountEarned, metadataUri);

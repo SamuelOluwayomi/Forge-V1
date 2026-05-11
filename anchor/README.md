@@ -1,76 +1,137 @@
-# Anchor Vault Program
+# Forge — Smart Contracts (Anchor / Rust)
 
-This template includes a simple SOL vault program built with [Anchor](https://www.anchor-lang.com/).
+This directory contains the two on-chain Anchor programs that power the Forge marketplace. All programs are deployed on Solana Devnet.
 
-## Pre-deployed Program
+---
 
-The vault program is deployed on **devnet** at:
+## Programs
+
+### forge_escrow
+**Program ID:** `AkoaVinz9Md94KsC2k6sULNdwvqh2uF16KdKiWdpr6ye`
+
+Manages the complete task lifecycle — from posting through payment release, dispute resolution, and cancellation. Funds are held in non-custodial PDAs keyed by `[b"escrow", client_pubkey, task_id]`.
+
+#### Instructions
+
+| Instruction | Description | Required Signer |
+|---|---|---|
+| `create_task` | Posts a new task and locks SOL into escrow. Sets status to Open. | client |
+| `accept_worker` | Client selects a developer. Sets status to Active. | client |
+| `submit_work` | Worker submits proof of completion. Sets status to Submitted. | worker |
+| `approve_work` | Client approves submission. Releases 98% to worker, 2% to treasury. Sets status to Completed. | client |
+| `claim_completion` | Worker claims funds after the review window expires without client action. | Any (permissionless) |
+| `raise_dispute` | Either party escalates a submitted task to dispute. | client or worker |
+| `resolve_dispute` | Arbitrator (treasury wallet) resolves a dispute. Releases funds to either party. | arbitrator (treasury) |
+| `cancel_task` | Client cancels an Open task (no worker assigned). Returns rent and funds to client. | client |
+
+#### Task Lifecycle
 
 ```
-F4jZpgbtTb6RWNWq6v35fUeiAsRJMrDczVPv9U23yXjB
+Open -> Active -> Submitted -> Completed
+                           -> Disputed -> Completed / Cancelled
+     -> Cancelled (client only, while Open)
 ```
 
-You can interact with it immediately by connecting your wallet to devnet.
+#### Protocol Fee
+- **Rate:** 2% of escrow amount
+- **Collection:** Automatic, on `approve_work` or `claim_completion`
+- **Treasury:** `EPpNW3G47SAJ4j1DatpjW7mJMLRTH9Z8K7LJtBfhR8Mt`
 
-## Deploying Your Own Program
+#### Account Structure (EscrowAccount)
+```rust
+pub struct EscrowAccount {
+    pub task_id: u64,
+    pub client: Pubkey,
+    pub worker: Pubkey,
+    pub amount: u64,
+    pub status: EscrowStatus,      // Open | Active | Submitted | Completed | Disputed | Cancelled
+    pub difficulty: u8,            // 1-4 (Apprentice to Grandmaster)
+    pub review_window_days: u8,    // 1-7 days
+    pub auto_release_window: i64,  // Unix timestamp
+    pub task_metadata_uri: String, // SHA-256 hash of off-chain task data
+    pub submission_uri: String,    // Link to submitted work
+    pub ai_report_hash: Option<[u8; 32]>,
+    pub submission_timestamp: Option<i64>,
+    pub created_at: i64,
+    pub dispute_reason: String,
+    pub bump: u8,
+}
+```
 
-To deploy your own version of the program:
+---
 
-### 1. Generate a new program keypair
+### forge_sbt
+**Program ID:** `B563uW8guVAhSasPR5S6MgMGHcYwtbaiwVv9kofkwZKZ`
+
+Mints non-transferable Soulbound Tokens (SBTs) to wallets for reputation, skill verification, and identity. All minted tokens are immutable once issued.
+
+#### Instructions
+
+| Instruction | Description |
+|---|---|
+| `initialize_mint_tracker` | Initializes the global mint tracker PDA (one-time setup) |
+| `initialize_reputation` | Creates a reputation account for a wallet (called on first login) |
+| `mint_profile_sbt` | Mints the base Forge Profile SBT to a new user's wallet |
+| `mint_worker_badge` | Mints a task-completion badge to the worker's wallet |
+| `mint_client_badge` | Mints a task-completion badge to the client's wallet |
+| `mint_founder_nft` | Mints the exclusive Forge Founder NFT (limited supply) |
+| `mint_pioneer_nft` | Mints the Pioneer NFT for early adopters |
+
+---
+
+### forge_identity (Planned)
+On-chain identity gate to mark wallets as human-verified (via Civic Pass or World ID). Status: In Research.
+
+---
+
+## Local Development
+
+### Prerequisites
+
+- Rust (stable)
+- Solana CLI
+- Anchor CLI 0.30.1
+- A funded Solana wallet on devnet (`solana airdrop 4 --url devnet`)
+
+### Build
 
 ```bash
 cd anchor
-solana-keygen new -o target/deploy/vault-keypair.json
-```
-
-### 2. Get the new program ID
-
-```bash
-solana address -k target/deploy/vault-keypair.json
-```
-
-### 3. Update the program ID
-
-Update the program ID in these files:
-
-- `anchor/Anchor.toml` - Update `vault = "..."` under `[programs.devnet]`
-- `anchor/programs/vault/src/lib.rs` - Update `declare_id!("...")`
-
-### 4. Build and deploy
-
-```bash
-# Build the program
 anchor build
-
-# Get devnet SOL for deployment (~2 SOL needed)
-solana airdrop 2 --url devnet
-
-# Deploy to devnet
-anchor deploy --provider.cluster devnet
 ```
 
-### 5. Regenerate the TypeScript client
+### Deploy to Devnet
 
 ```bash
-cd ..
-npm run codama:js
+anchor program deploy --program-name forge_escrow --provider.cluster devnet
+anchor program deploy --program-name forge_sbt --provider.cluster devnet
 ```
 
-This updates the generated client code in `app/generated/vault/` with your new program ID.
+After deploying, copy the generated IDLs to the frontend:
 
-## Program Overview
+```bash
+cp target/idl/forge_escrow.json ../app/lib/idl/
+cp target/idl/forge_sbt.json ../app/lib/idl/
+```
 
-The vault program allows users to:
-
-- **Deposit**: Send SOL to a personal vault PDA (Program Derived Address)
-- **Withdraw**: Retrieve all SOL from your vault
-
-Each user gets their own vault derived from their wallet address.
-
-## Testing
-
-Run the Anchor tests:
+### Run Tests
 
 ```bash
 anchor test --skip-deploy
 ```
+
+---
+
+## Key Design Decisions
+
+### Why PDAs for Escrow?
+Program Derived Addresses ensure the escrow account's private key is controlled by the program, not a human. This makes the escrow genuinely non-custodial — even Forge's team cannot access locked funds.
+
+### Why Native SOL (not USDC)?
+Native SOL simplifies the account model and eliminates the need for Associated Token Accounts (ATAs) for every escrow. This reduces transaction complexity, lowers rent costs, and makes the gasless relay architecture easier to implement.
+
+### Why SHA-256 for Metadata URI?
+The `task_metadata_uri` field stores a SHA-256 hash of the task's off-chain content (title, description, skills). This creates a cryptographic link between the on-chain escrow and the off-chain database record, allowing anyone to verify that marketplace details have not been tampered with.
+
+### Why 2% Protocol Fee?
+The fee is automatically enforced at the smart contract level — no invoicing, no disputes, no fraud. It only triggers on successful payment release, aligning Forge's revenue directly with genuine value delivery.

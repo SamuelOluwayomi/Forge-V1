@@ -12,8 +12,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Valid title and description are required" }, { status: 400 });
     }
 
-    // In a real implementation, we would call an LLM (e.g., OpenAI or Gemini) here.
-    // For now, we mock the AI generation to demonstrate the architecture.
+    // Mock the AI generation to demonstrate the architecture.
     
     // Simulate AI processing delay
     await new Promise((resolve) => setTimeout(resolve, 1500));

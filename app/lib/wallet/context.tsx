@@ -113,9 +113,8 @@ export function WalletProvider({ children }: PropsWithChildren) {
     const connector = connectorsRef.current.find((c) => c.id === connectorId);
     if (!connector) throw new Error(`Unknown connector: ${connectorId}`);
 
-    // Call connector.connect() FIRST to ensure the browser registers this as part of the
-    // user's click event. If we set React state first, React 18's asynchronous rendering
-    // might break the user gesture chain, causing extensions to block the popup.
+    // Call connector.connect() FIRST to register the browser click event.
+    // Setting React state first may break the user gesture chain.
     const connectPromise = connector.connect();
 
     setStatus(WALLET_STATUS.CONNECTING);

@@ -291,7 +291,7 @@ export default function ProfilePage() {
         // 2. Generate "Verified" (off-chain) badges from database if on-chain doesn't exist yet
         const offChainBadges = completedEscrows.map((e: any) => {
           const taskId = Number(e.account.taskId);
-          // Check if we already have an on-chain badge for this task
+          // Check for existing on-chain badge for this task
           const hasOnChain = onChainBadges.some(b => Number(b.taskId) === taskId && b.badgeType?.workerCompletion);
           
           if (!hasOnChain) {
@@ -439,7 +439,7 @@ export default function ProfilePage() {
   };
 
   const handleShareTwitter = async () => {
-    // Directly open Twitter intent to ensure we actually go to X (bypassing generic OS share dialog)
+    // Open Twitter intent directly to bypass generic OS share dialog
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
     window.open(twitterUrl, "_blank");
   };

@@ -1,203 +1,311 @@
 # Forge
 
-A trustless freelance marketplace on Solana where every participant is a verified unique human, every reputation is permanently on-chain, and every payment is governed by smart contract escrow. Forge creates the infrastructure layer for professional identity on Solana.
+**The Trustless Developer Marketplace on Solana**
 
-Built for the **Solana Frontier Hackathon 2026**.
+Where on-chain reputation replaces resumes, and smart contracts replace trust.
+
+- Live Demo: https://forge-frontier.vercel.app
+- Built with: Anchor 0.30.1, Next.js 15, Solana Devnet
+- Built for: Solana Frontier Hackathon 2026
+
+---
+
+## Overview
+
+Forge is a decentralized, trustless freelance marketplace built on Solana. Every payment is governed by a smart contract escrow, every reputation is permanently minted on-chain as a Soulbound Token, and every developer's skills are verified through AI-powered GitHub attestation — not self-reported claims.
 
 ---
 
 ## The Problem
 
-- **No trust between strangers**: Clients and workers cannot verify each other before committing money.
-- **Platform-locked reputation**: Your ratings disappear if the platform shuts down. You own nothing.
-- **Payment fraud**: Workers get ghosted. Clients get bad work. No trustless recourse exists.
-- **Fake accounts and bots**: Multi-wallet gaming inflates fake reputation. No proof of unique humanity.
-
-## The Solution — 4 Core Pillars
-
-### 01. Identity Pass (Coming Soon)
-
-Every user will eventually be verified as a unique human via Civic or World ID before interacting with Forge. This ensures one device, one identity — no bots, no sockpuppets, and no one gaming the system with multiple wallets. We are currently researching the best decentralized identity solution for Forge.
-
-### 02. On-Chain Escrow (Payment Layer)
-
-When a task owner selects a worker, SOL locks into a PDA (Program Derived Address) in the `forge_escrow` Anchor program. Funds release automatically when the owner approves completion. If disputed, funds freeze until resolution. No middleman, no chargebacks, no "trust me". The smart contract is the arbiter.
-
-### 03. Dual Soulbound Tokens (Reputation Layer)
-
-Every completed task mints a non-transferable SBT to both the worker and the client wallet via the `forge_sbt` program.
-
-- **Worker SBTs record**: skill category, tasks completed, average rating, on-time delivery rate.
-- **Client SBTs record**: tasks posted, successful payments, payment speed, dispute rate.
-
-These tokens are permanent, portable, and owned by the individual, not the platform.
-
-### 04. Unified Professional Marketplace (Application Layer)
-
-The front-end application built on top of the three programs. Forge offers two distinct work models:
-- **Challenge Mode (Selective)**: The client sets a deadline, reviews applicants, and selects exactly **one** developer to work on the task. Funds are released only to the selected developer.
-- **Bounty Mode (Open Submission)**: Multiple developers can submit work simultaneously. The client reviews all submissions and selects the best one to receive the payout.
-
-Workers browse and apply with enriched profiles featuring **On-Chain Ranks** and **Social Proof** (X, GitHub, Discord). Everything flows through the on-chain programs — the frontend is just the interface.
+| Problem | Status Quo | Forge's Answer |
+|---|---|---|
+| No trust between strangers | Clients and workers cannot verify each other before committing money | On-chain reputation history, AI-verified skills |
+| Platform-locked reputation | Your ratings disappear if the platform shuts down | Soulbound Tokens live in your wallet, forever |
+| Payment fraud | Workers get ghosted; clients receive bad work with no recourse | Non-custodial escrow with dispute escalation |
+| Fake accounts and bots | Multi-wallet gaming inflates fake reputation | Civic / World ID integration (in research) |
 
 ---
 
-## End-to-End User Flow
+## Core Architecture — 4 Pillars
 
-1. **Connect wallet + Profile Setup**: User connects Phantom or Backpack. On first launch, a Reputation account is initialized. Users can link their X, GitHub, Discord, and Telegram to build trust.
-2. **Client posts a task**: Selects between Challenge or Bounty mode. Sets a reward in SOL, a listing deadline, difficulty level, and skill tags. Transaction goes on-chain.
-3. **Marketplace Discovery**: Tasks appear in the marketplace with live countdown timers. Developers can view full details, including the client's reputation and linked socials.
-4. **Accepting Challenges**: 
-   - In **Challenge Mode**, developers "Apply" to express interest. They must provide an estimated time to completion, which the client sees alongside their profile. The client reviews the applicant list and picks a worker.
-   - In **Bounty Mode**, developers can begin work and submit their proof directly.
-5. **Worker completes work -> Funds lock**: Once a worker is selected (Challenge) or work is submitted (Bounty), funds are managed by the `forge_escrow` program.
-6. **Client approves -> Escrow releases**: Client clicks approve. Escrow program releases SOL to the worker wallet minus the Forge protocol fee.
-7. **SBTs & Rankings**: `forge_sbt` mints a badge to both parties. The worker's Forge Score increases, and their Global Rank is updated on the daily leaderboard.
+### 01 — Identity Pass (Coming Soon)
+Every user will be verified as a unique human via Civic or World ID. One device, one identity. No bots, no sockpuppets, no reputation gaming.
+
+### 02 — On-Chain Escrow (Payment Layer)
+When a client selects a worker, SOL locks into a PDA in the `forge_escrow` Anchor program. Funds release automatically on approval. If disputed, funds freeze until an arbitrator resolves the case. No middleman. The smart contract is the arbiter.
+
+### 03 — Dual Soulbound Tokens (Reputation Layer)
+Every completed task mints a non-transferable SBT to both the worker and the client wallet via the `forge_sbt` program.
+- Worker SBTs record: skill category, tasks completed, average rating, on-time delivery.
+- Client SBTs record: tasks posted, successful payments, payment speed, dispute rate.
+
+These tokens are permanent, portable, and owned by the individual — not the platform.
+
+### 04 — Unified Professional Marketplace (Application Layer)
+Two distinct work models:
+- **Challenge Mode (Selective):** Client sets a deadline, reviews applicants, and selects exactly one developer. Funds release only to the chosen worker.
+- **Bounty Mode (Open Submission):** Multiple developers can submit work simultaneously. Client picks the best submission to receive the payout.
 
 ---
 
 ## Features
 
 ### AI-Verified Tech Stack (GitHub Attestation)
-To combat resume inflation and provide undeniable proof of capability, Forge features an AI-powered GitHub verification system.
-1. **Bio Challenge**: Users prove ownership of their GitHub account by temporarily adding a Forge-generated deterministic code to their GitHub bio.
-2. **Deep AI Analysis**: Once ownership is verified, Forge's AI (powered by Groq's LLaMa-3.3) paginates through the user's entire GitHub history (up to 500 repos). It pre-aggregates language frequencies and extracts repository topics to accurately identify their core programming languages, frameworks, and blockchain ecosystems.
-3. **Interactive Selection**: The AI returns a comprehensive list of detected technologies. Users can then interactively select exactly which detected skills they want to highlight on their profile.
-4. **On-Chain Attestation**: The selected tech stack is minted as an immutable, Soulbound "Tech Stack Badge" directly to the user's wallet via the `forge_sbt` contract. This allows clients to hire with confidence based on cryptographically verified code history, rather than just self-reported skills.
+Forge's AI verification system eliminates resume inflation with cryptographic proof of capability.
 
-### Global Ranking & Reputation
-Forge implements a daily ranking system that scores developers based on their on-chain performance. Top-ranked developers receive a golden Rank Badge on their profile and an exportable Identity Card, making them more attractive to high-paying clients.
+1. **Bio Challenge** — Users prove GitHub ownership by temporarily adding a Forge-generated code to their bio.
+2. **Deep AI Analysis** — Forge's AI (Groq LLaMA-3.3) paginates through up to 500 repositories, aggregates language frequencies, and extracts repository topics.
+3. **Interactive Selection** — Users choose which detected skills to highlight on their profile.
+4. **On-Chain Attestation** — The selected tech stack is minted as an immutable "Tech Stack Badge" SBT to the user's wallet.
+
+Clients hire based on cryptographically verified code history, not self-reported keywords.
+
+### Global Ranking and Reputation
+A daily ranking system scores developers on on-chain performance. Top-ranked developers receive a Rank Badge and a downloadable Identity Card — shareable on X/Twitter or LinkedIn.
 
 ### Privacy-First Communication
-While profiles are public, sensitive Direct Contact Info (WhatsApp, Telegram, etc.) is encrypted and only revealed to the specific developer selected for a task, ensuring zero-spam for clients.
+Public profiles keep sensitive contact info (WhatsApp, Telegram, etc.) encrypted, revealed only to the developer selected for a task. Zero spam for clients.
 
 ### Identity Cards
-Users can download or share their Forge Identity Card — a high-fidelity, neo-brutalist social card that showcases their Forge Score, Global Rank, and authenticated wallet status.
+Downloadable, shareable Forge Identity Cards — high-fidelity, neo-brutalist social cards showcasing Forge Score, Global Rank, and authenticated wallet status.
 
 ### Zero-Gas Infrastructure (Fee Sponsorship)
-To ensure a frictionless onboarding experience, Forge operates a server-side transaction relay. Every infrastructure transaction — including account initialization, SBT minting, and profile updates — is co-signed by Forge's treasury wallet as the fee payer. Users only sign to prove identity and never pay network fees for using the platform. The only time a user pays is when locking their own funds into an escrow contract.
+Forge operates a server-side transaction relay. Every infrastructure transaction — account initialization, SBT minting, profile updates — is co-signed by Forge's treasury wallet as the fee payer.
+
+- Users never pay network fees for platform interactions.
+- The only time a user pays is when locking their own funds into an escrow contract.
 
 ---
 
-## The Bigger Picture — Onchain Professional Identity
+## End-to-End User Flow
 
-Forge is not just a marketplace. The SBT system creates something the web3 space has never had cleanly: a portable, human-verified, tamper-proof professional identity that lives in your wallet.
-
-- **For developers**: Share your wallet address in a job application. Employer verifies your entire work history on-chain in seconds.
-- **For DAOs**: Filter contributors by SBT credentials (e.g., "only wallets with 5+ Rust tasks can apply to this grant").
-- **For other protocols**: DeFi platforms, lending protocols, and other dApps can read Forge SBTs as trust signals.
-- **For emerging markets**: A freelancer in Lagos with 50 on-chain completions has equal credibility to anyone globally. No LinkedIn needed.
-
----
-
-## Monetization & Protocol Fees
-
-Forge is built to be a self-sustaining ecosystem. To support ongoing development and infrastructure costs, the platform implements a small protocol fee on successfully completed transactions.
-
-- **Protocol Fee**: 2% of the total escrow amount.
-- **Treasury Wallet**: `EPpNW3G47SAJ4j1DatpjW7mJMLRTH9Z8K7LJtBfhR8Mt`
-- **Fee Logic**: When a client approves a task or a worker claims their funds after the review window, the `forge_escrow` program automatically deducts 2% and sends it to the treasury. The remaining 98% is released to the developer.
-
-This fee is only charged upon successful payment release. Posting tasks, applying for work, and minting reputation badges are currently subsidized by Forge (Zero-Gas).
+```
+1. Connect Wallet        ->  Phantom or Backpack. Reputation account initialized on first launch.
+2. Build Profile         ->  Link X, GitHub, Discord, Telegram. Run AI GitHub verification.
+3. Post a Task (Client)  ->  Select Challenge or Bounty mode. Set SOL reward, deadline, skill tags.
+4. Browse & Apply (Dev)  ->  Filter marketplace by skill, difficulty, reward. Review client reputation.
+5. Work Selection        ->  Challenge: Client selects one dev. Bounty: Devs submit; client picks best.
+6. Funds Lock            ->  SOL locks in forge_escrow PDA. Both parties sign.
+7. Work & Submit         ->  Dev submits proof. AI agent reviews against original requirements.
+8. Approve & Release     ->  Client approves -> escrow releases 98% to dev, 2% to protocol treasury.
+9. Badges Minted         ->  forge_sbt mints SBTs to both wallets. Forge Score and rank updated.
+```
 
 ---
 
-## Architecture: Anchor Programs
+## Smart Contracts
 
-Forge relies on robust smart contracts built with the Anchor framework on Solana.
+### forge_escrow
+Manages the full task lifecycle — from posting to payment release.
 
-1. **`forge_escrow`**: Locks SOL into PDAs, handles task lifecycle, releases on approval.
-   - **Program ID**: `AkoaVinz9Md94KsC2k6sULNdwvqh2uF16KdKiWdpr6ye`
-   - **Instructions**: `create_task`, `accept_worker`, `submit_work`, `approve_work`, `cancel_task`, `raise_dispute`, `resolve_dispute`, `claim_completion`
+| | |
+|---|---|
+| **Program ID** | `AkoaVinz9Md94KsC2k6sULNdwvqh2uF16KdKiWdpr6ye` |
+| **Instructions** | `create_task`, `accept_worker`, `submit_work`, `approve_work`, `cancel_task`, `raise_dispute`, `resolve_dispute`, `claim_completion` |
 
-2. **`forge_sbt`**: Mints non-transferable badges to both wallets on task completion.
-   - **Program ID**: `B563uW8guVAhSasPR5S6MgMGHcYwtbaiwVv9kofkwZKZ`
-   - **Instructions**: `initialize_mint_tracker`, `initialize_reputation`, `mint_client_badge`, `mint_founder_nft`, `mint_pioneer_nft`, `mint_profile_sbt`, `mint_worker_badge`
+Task lifecycle state machine:
 
-3. **`forge_identity` (Planned)**: Identity gate. Marks wallets as human-verified on-chain.
-   - **Status**: *In Research*
+```
+Open -> Active -> Submitted -> Completed
+                           -> Disputed -> Completed / Cancelled
+     -> Cancelled (by client, Open status only)
+```
 
----
+Protocol fee: 2% of escrow amount, sent to treasury on completion.
+Treasury: `EPpNW3G47SAJ4j1DatpjW7mJMLRTH9Z8K7LJtBfhR8Mt`
 
-## Hybrid Storage Architecture & Security
+### forge_sbt
+Mints non-transferable Soulbound Tokens for reputation, skills, and identity.
 
-To maintain a fast, Web2-like experience while preserving Web3 trustlessness, Forge utilizes a Hybrid State Architecture:
+| | |
+|---|---|
+| **Program ID** | `B563uW8guVAhSasPR5S6MgMGHcYwtbaiwVv9kofkwZKZ` |
+| **Instructions** | `initialize_mint_tracker`, `initialize_reputation`, `mint_profile_sbt`, `mint_worker_badge`, `mint_client_badge`, `mint_founder_nft`, `mint_pioneer_nft` |
 
-- **On-Chain (Solana)**: Core state (Escrow PDA, task ID, client/worker wallets, SOL amount, deadlines, difficulty, status).
-- **Off-Chain (Supabase DB)**: Heavy metadata (Task title, description, skills, AI-generated briefs, applicant tracking, social profiles, and rankings).
-- **The Bridge (Integrity Hash)**: The off-chain data is hashed using SHA-256 (`content_hash`). This hash is stored on-chain inside the `task_metadata_uri` field. Anyone can verify that the marketplace details match the on-chain record.
-
-### Input Security & Sanitization
-All inputs passing between the client and the off-chain database go through a strict validation pipeline:
-- **Sanitization**: Deep HTML tag stripping to prevent XSS vulnerabilities.
-- **Strict Typing**: Character limits and constraint enforcement (e.g., listing deadlines and review windows).
-- **Privacy Logic**: Database-level security ensuring private contact info is only accessible to authorized participants.
-
----
-
-## System Architecture & Scalability (Load Estimates)
-
-Forge is built on a modern, serverless, and decentralized stack. Below is an honest, technical assessment of the platform's current scalability and infrastructure limits:
-
-1. **Frontend & Hosting (Vercel Edge Network)**
-   - **Capacity:** `100,000+ Concurrent Users`
-   - Next.js running on Vercel scales almost infinitely. The UI, static assets, and cached marketplace data can easily handle massive traffic spikes without going down.
-
-2. **Database (Supabase / PostgreSQL)**
-   - **Capacity:** `~1,000 - 5,000 Active Users (Standard Tier)`
-   - The primary bottleneck here is database connection pooling. The platform handles reads/writes smoothly up to a few thousand concurrent users before needing a dedicated database instance upgrade.
-
-3. **Blockchain RPC (Solana Web3.js)**
-   - **Capacity:** `~10-20 Transactions per Second (Public RPC)`
-   - Currently, Forge utilizes public Solana RPC nodes which enforce strict IP-based rate limiting. If 50 users attempt to escrow funds simultaneously, the RPC will throttle the app.
-   - **Scaling Solution:** For mainnet production, this requires migrating to a dedicated premium RPC provider (e.g., Helius or QuickNode) to unlock thousands of transactions per second.
-
-4. **Gasless Relayer (Sponsoring Wallet)**
-   - **Capacity:** `~5-10 Transactions per Second`
-   - Because Forge sponsors user transactions via a single server-side treasury wallet, high concurrent minting can cause blockhash or nonce collisions.
-   - **Scaling Solution:** Implement a fleet of 5-10 rotating fee-payer wallets to handle concurrent co-signing at scale.
-
-5. **AI Tech Verification (Groq + GitHub API)**
-   - **Capacity:** `~30-60 Users per Minute (Strictest Bottleneck)`
-   - The AI verification relies on paginating the user's GitHub repositories, which rapidly consumes GitHub API rate limits (5,000 requests/hr max). Additionally, free-tier Groq API limits enforce a strict Requests Per Minute (RPM) ceiling. If usage spikes, AI verification will throttle until limits reset.
+### forge_identity (Planned)
+On-chain identity gate. Marks wallets as human-verified. Status: In Research.
 
 ---
 
-## Setup Instructions
+## Hybrid Storage Architecture
+
+| Layer | Technology | What's Stored |
+|---|---|---|
+| On-Chain | Solana / Anchor PDAs | Escrow state, task ID, client/worker wallets, SOL amount, deadlines, difficulty, status |
+| Off-Chain | Supabase (PostgreSQL) | Task titles, descriptions, skill tags, AI briefs, applicant tracking, social profiles, rankings |
+| Integrity Bridge | SHA-256 content hash | Hash of off-chain metadata stored on-chain in `task_metadata_uri` for trustless verification |
+
+### Security and Input Validation
+- **XSS Prevention:** Deep HTML tag stripping on all user inputs.
+- **Strict Typing:** Character limits and constraint enforcement across all fields.
+- **Privacy Logic:** Database-level row security — private contact info is only accessible to authorized task participants.
+
+---
+
+## Scalability and Infrastructure
+
+| Component | Current Capacity | Scaling Path |
+|---|---|---|
+| Frontend (Vercel Edge) | 100,000+ concurrent users | Scales automatically |
+| Database (Supabase) | ~1,000-5,000 active users | Upgrade to dedicated PostgreSQL instance |
+| Blockchain RPC (Public Solana) | ~10-20 TPS | Migrate to Helius or QuickNode for dedicated RPC |
+| Gasless Relayer (Single treasury wallet) | ~5-10 TPS | Rotate fleet of 5-10 fee-payer wallets |
+| AI Verification (Groq + GitHub API) | ~30-60 users/min | GitHub App installation + paid Groq tier |
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Blockchain | Solana (Devnet) |
+| Smart Contracts | Anchor 0.30.1 (Rust) |
+| Frontend | Next.js 15, React, TypeScript |
+| Styling | Vanilla CSS (Neo-Brutalist design system) |
+| Database | Supabase (PostgreSQL) |
+| Wallet | Phantom, Backpack (via @solana/wallet-adapter) |
+| AI | Groq API (LLaMA-3.3-70B) |
+| Hosting | Vercel Edge Network |
+| Transaction Relay | Custom Next.js API route (/api/transactions/relay) |
+
+---
+
+## Getting Started
 
 ### Prerequisites
+
 - Node.js 18+
+- Rust (stable)
 - Solana CLI
-- Anchor framework
-- PostgreSQL database (Supabase recommended)
+- Anchor CLI 0.30.1
+- Supabase project (for the database)
 
-### Running Locally
+### 1. Clone and Install
 
-1. **Install Dependencies**
-   ```bash
-   npm install
-   ```
+```bash
+git clone https://github.com/your-org/forge-v1.git
+cd forge-v1
+npm install
+```
 
-2. **Environment Variables**
-   Create a `.env.local` file and add the required variables for your RPC endpoint and Supabase instance.
+### 2. Configure Environment Variables
 
-3. **Deploy Programs**
-   ```bash
-   cd anchor
-   anchor build
-   anchor deploy
-   ```
+Create a `.env.local` file in the project root:
 
-4. **Start Development Server**
-   ```bash
-   npm run dev
-   ```
+```env
+# Solana
+NEXT_PUBLIC_RPC_URL=https://api.devnet.solana.com
+
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+# Transaction Relay (Forge Treasury)
+NEXT_PUBLIC_FORGE_FEE_PAYER_PUBLIC_KEY=your_fee_payer_pubkey
+FORGE_FEE_PAYER_SECRET_KEY=your_fee_payer_secret_key_array
+
+# AI
+GROQ_API_KEY=your_groq_api_key
+GITHUB_TOKEN=your_github_personal_access_token
+```
+
+### 3. Build and Deploy Smart Contracts
+
+```bash
+cd anchor
+
+# Build both programs
+anchor build
+
+# Deploy to devnet (requires ~4-5 SOL in your wallet)
+anchor program deploy --program-name forge_escrow --provider.cluster devnet
+anchor program deploy --program-name forge_sbt --provider.cluster devnet
+
+# Copy generated IDLs to the frontend
+cp target/idl/forge_escrow.json ../app/lib/idl/
+cp target/idl/forge_sbt.json ../app/lib/idl/
+```
+
+### 4. Run the Development Server
+
+```bash
+cd ..
+npm run dev
+```
+
+Open http://localhost:3000 in your browser.
 
 ---
 
-## Monetization
+## Project Structure
 
-- **Protocol fee**: Platform fee on every completed escrow.
-- **Featured listings**: Pay to boost tasks to the top of the marketplace.
-- **Premium Identity**: Workers pay for enhanced profile cards and priority ranking.
-- **SBT API**: External protocols pay to query Forge trust scores.
+```
+forge-v1/
+├── anchor/                      # Solana smart contracts (Anchor/Rust)
+│   ├── programs/
+│   │   ├── forge_escrow/        # Task lifecycle & payment escrow
+│   │   └── forge_sbt/           # Soulbound Token minting & reputation
+│   ├── target/
+│   │   ├── deploy/              # Compiled .so binaries & keypairs
+│   │   └── idl/                 # Auto-generated IDL JSON files
+│   └── Anchor.toml
+│
+└── app/                         # Next.js frontend application
+    ├── lib/
+    │   ├── hooks/
+    │   │   ├── useEscrow.ts     # Escrow interaction hook
+    │   │   └── useSbt.ts        # SBT minting hook
+    │   ├── idl/                 # Anchor IDL files for frontend
+    │   └── sponsored-tx.ts      # Gasless transaction relay helper
+    ├── api/
+    │   └── transactions/
+    │       └── relay/           # Server-side fee-payer relay endpoint
+    ├── marketplace/             # Task browsing & discovery
+    ├── dashboard/               # Client task management
+    └── profile/                 # Developer identity & SBT display
+```
+
+---
+
+## The Bigger Picture — On-Chain Professional Identity
+
+Forge is not just a marketplace. The SBT system creates a portable, human-verified, tamper-proof professional identity that lives in your wallet.
+
+- **For developers:** Share your wallet address in a job application. Employers verify your entire work history on-chain in seconds.
+- **For DAOs:** Filter contributors by SBT credentials (e.g., only wallets with 5+ Rust task completions can apply to this grant).
+- **For other protocols:** DeFi platforms, lending protocols, and dApps can read Forge SBTs as trust signals.
+- **For emerging markets:** A freelancer in Lagos with 50 on-chain completions has equal credibility to anyone globally. No LinkedIn required.
+
+---
+
+## Roadmap
+
+| Phase | Timeline | Milestone |
+|---|---|---|
+| Phase 1 | Shipped | Core smart contracts live on devnet, full escrow lifecycle, dual SBT minting, AI GitHub verification, gasless relay |
+| Phase 2 | Months 1-2 | AI GitHub grading (originality + complexity), skill-tier SBTs (Apprentice to Grandmaster), fork-fraud prevention |
+| Phase 3 | Months 3-4 | Public developer profiles, Forge Score algorithm, shareable Profile Cards |
+| Phase 4 | Months 5-6 | Social layer, peer endorsements, direct messaging, team bounties |
+| Phase 5 | Months 7+ | Enterprise recruiting tools, DAO integrations, public SBT Verification API, Mainnet launch |
+
+---
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/my-feature`)
+3. Commit your changes (`git commit -m 'feat: add my feature'`)
+4. Push to the branch (`git push origin feature/my-feature`)
+5. Open a Pull Request
+
+---
+
+## License
+
+MIT License. See LICENSE for details.
+
+---
+
+Built for the Solana Frontier Hackathon 2026

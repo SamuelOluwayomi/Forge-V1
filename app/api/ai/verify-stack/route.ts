@@ -137,7 +137,7 @@ Example output: TypeScript, React, Next.js, Rust, Solana, Python, Node.js, Tailw
     });
 
     let stackRaw = completion.choices[0]?.message?.content?.trim() || "Fullstack Developer";
-    // Clean: remove any numbering, bullet points, or extra formatting the AI might add
+    // Clean formatting
     stackRaw = stackRaw.replace(/^\d+[\.\)]\s*/gm, "").replace(/^[-•]\s*/gm, "");
     const stackArray = stackRaw.split(/[,|\n]/).map(s => s.trim()).filter(s => s.length > 0 && s.length < 30);
     const stack = stackArray.join(" | ");

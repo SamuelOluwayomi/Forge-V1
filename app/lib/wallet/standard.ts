@@ -86,10 +86,9 @@ function createConnector(wallet: StandardWallet): WalletConnector {
       ] as StandardConnectFeature[typeof StandardConnect];
 
       if (!options?.silent) {
-        // Step 1: Try native API first to reliably open the popup in Chrome.
-        // If it succeeds, the extension is now "unlocked" for this page, so we
-        // can use silent connect to get the Wallet Standard account object
-        // without prompting a second time.
+        // Step 1: Try native API to open popup.
+        // If successful, the extension unlocks for this page, allowing
+        // silent connect to get the Wallet Standard account object.
         const usedNative = await tryNativeConnect(wallet.name);
         if (usedNative) {
           const { accounts } = await connectFeature.connect({ silent: true });

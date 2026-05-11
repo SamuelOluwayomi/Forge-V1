@@ -108,7 +108,7 @@ export function TechStackVerification({ isOpen, onClose, currentGithub, onSucces
         },
       };
 
-      // 2. Upload metadata JSON via server API (uses service role key to bypass RLS)
+      // 2. Upload metadata JSON via server API
       let metadataUri = "";
       const fileName = `tech-stack-${wallet?.account.address.toString().slice(-8)}.json`;
       
@@ -126,7 +126,7 @@ export function TechStackVerification({ isOpen, onClose, currentGithub, onSucces
         console.warn("Metadata upload failed, using fallback URI", uploadErr);
       }
 
-      // Fallback: short static URI — avoids Solana buffer overrun from base64 data URIs
+      // Fallback: static URI
       if (!metadataUri) {
         metadataUri = `${process.env.NEXT_PUBLIC_APP_URL || "https://forge-frontier.vercel.app"}/api/stack-metadata?w=${wallet?.account.address.toString().slice(-8)}`;
       }

@@ -288,7 +288,7 @@ Forge is not just a marketplace. The SBT system creates a portable, human-verifi
 | Phase 2 | Months 1-2 | AI GitHub grading (originality + complexity), skill-tier SBTs (Apprentice to Grandmaster), fork-fraud prevention |
 | Phase 3 | Months 3-4 | Public developer profiles, Forge Score algorithm, shareable Profile Cards |
 | Phase 4 | Months 5-6 | Social layer, peer endorsements, direct messaging, team bounties |
-| Phase 5 | Months 7+ | Enterprise recruiting tools, DAO integrations, public SBT Verification API, Mainnet launch |
+| Phase 5 | Months 7+ | Enterprise recruiting tools, DAO integrations, public SBT Verification API, addition of ai marketplace, Mainnet launch |
 
 ---
 
